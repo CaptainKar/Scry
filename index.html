@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>LoL Matchup Analyzer</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+
+  <div class="titlebar">
+    <div class="logo">LOL<br />MATCHUP<br />ANALYZER</div>
+    <div class="team blue">BLUE TEAM</div>
+    <div class="vs">VS</div>
+    <div class="team red">RED TEAM</div>
+  </div>
+
+  <div class="picker-row">
+    <div class="spacer-cell"></div>
+    <div id="blue-picks" class="picks-grid"></div>
+    <div class="spacer-cell"></div>
+    <div id="red-picks" class="picks-grid"></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 90px 1fr;">
+    <table class="stats" style="width:100%">
+      <thead>
+        <tr>
+          <th>Champion</th><th>Teamfight<br/>5v5</th><th>Win Rate</th><th>Role<br/>Score</th>
+          <th>Role<br/>Efficiency</th><th>Power</th><th>Overall</th><th>Champion<br/>Power</th>
+        </tr>
+      </thead>
+      <tbody id="blue-tbody"></tbody>
+      <tfoot><tr class="total-row" id="blue-total"></tr></tfoot>
+    </table>
+
+    <table class="stats" style="width:100%">
+      <thead><tr><th>Matchup %</th></tr></thead>
+      <tbody id="matchup-tbody"></tbody>
+      <tfoot><tr><td id="matchup-total-spacer" style="background:var(--gray-total)"></td></tr></tfoot>
+    </table>
+
+    <table class="stats" style="width:100%">
+      <thead>
+        <tr>
+          <th>Champion</th><th>Teamfight<br/>5v5</th><th>Win Rate</th><th>Role<br/>Score</th>
+          <th>Role<br/>Efficiency</th><th>Power</th><th>Overall</th><th>Champion<br/>Power</th>
+        </tr>
+      </thead>
+      <tbody id="red-tbody"></tbody>
+      <tfoot><tr class="total-row" id="red-total"></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="winprob-wrap">
+    <div><div class="winprob-label blue">WIN PROBABILITY</div><div class="winprob-panel blue" id="winprob-blue">50.0%</div></div>
+    <div class="margin-panel"><div class="margin-label">Margin</div><div id="margin-val">±0.00%</div></div>
+    <div><div class="winprob-label red">WIN PROBABILITY</div><div class="winprob-panel red" id="winprob-red">50.0%</div></div>
+  </div>
+
+  <div class="footer-note">LoL Matchup Analyzer &mdash; data snapshot from LOLANALYZER_fixed.xlsx</div>
+</div>
+
+<script src="src/data.js"></script>
+<script src="src/engine.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>
