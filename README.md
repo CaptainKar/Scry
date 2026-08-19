@@ -1,6 +1,17 @@
-# LoL Matchup Analyzer
+<p align="center">
+  <img src="brand/logo-256.png" width="150" alt="Scry">
+</p>
 
-A draft analysis tool for League of Legends. Pick ten champions and it breaks the draft down — win probability, lane by lane matchups, minute by minute power curves, objective control, and a game plan for every pick.
+<h1 align="center">Scry</h1>
+
+<p align="center"><strong>Read the draft before the game is played.</strong></p>
+
+<p align="center"><em>The mark is Summoner&rsquo;s Rift seen through glass &mdash; lane paths in gold, the two<br>
+nexuses lit blue and red, and the draft&rsquo;s own radar shape held in the middle.</em></p>
+
+---
+
+**Scry** is a draft analysis tool for League of Legends. Pick ten champions and it breaks the draft down — win probability, lane by lane matchups, minute by minute power curves, objective control, and a game plan for every pick.
 
 **Live: https://captainkar.github.io/lol-analyzer/**
 
@@ -95,11 +106,12 @@ Everything is in `index.html` — CSS in `<style>`, then three scripts: the cham
 | `index.html` | The entire application |
 | `og.png` | Link preview image |
 | `DEPLOY.md` | Deployment notes |
+| `brand/` | Logo and favicon in SVG, PNG (16&ndash;512px), `.ico`, and the SCRY wordmark lockup |
 
 ---
 
 ## Disclaimer
 
-LoL Matchup Analyzer is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
+Scry is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
 
 Champion art is used under Riot's [Legal Jibber Jabber](https://www.riotgames.com/en/legal) fan-content policy, which permits it on the condition that the project stays **non-commercial**. Please keep it free of ads and paywalls.
