@@ -13,7 +13,7 @@ nexuses lit blue and red, and the draft&rsquo;s own radar shape held in the midd
 
 **Scry** is a draft analysis tool for League of Legends. Pick ten champions and it breaks the draft down — win probability, lane by lane matchups, minute by minute power curves, objective control, and a game plan for every pick.
 
-**Live: https://captainkar.github.io/lol-analyzer/**
+**Live: https://captainkar.github.io/Scry/**
 
 One HTML file. No install, no build step, no server, no account.
 
