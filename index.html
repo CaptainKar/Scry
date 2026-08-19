@@ -389,7 +389,7 @@ table.stats tbody tr:hover td { background: rgba(212, 175, 90, 0.075); }
 .name-portrait .portrait-img { transition: transform 0.45s cubic-bezier(0.22,0.61,0.36,1), filter 0.3s ease; }
 table.stats tbody tr:hover .name-portrait .portrait-img { transform: scale(1.09); }
 table.stats.side-table-red tbody tr:hover .name-portrait .portrait-img { transform: scaleX(-1) scale(1.09); }
-table.stats tbody tr:hover .name-portrait { opacity: 0.6; }
+table.stats tbody tr:hover .name-portrait { opacity: 0.94; }
 .name-portrait { transition: opacity 0.3s ease; }
 table.stats tbody tr:last-child td { border-bottom: none; }
 /* overflow is VISIBLE so the portrait can spill out of its own cell and run
@@ -410,12 +410,12 @@ table.stats.side-table-red tbody tr:hover td.name { background-color: transparen
    (~320px) the icon only covered the first third of the gradient, where the
    mask is still ~0.8 opaque. So it never faded, and it ran under the Win Rate
    number at nearly full strength.
-   132% keeps a small deliberate bleed past the Champion column while making the
-   box only fractionally wider than the icon, so the gradient actually falls
-   across the artwork and is gone before the next column's value. */
+   FINAL RULE: the box is exactly 100% of td.name. No bleed at all. The artwork
+   is physically incapable of reaching another column's value, regardless of
+   viewport width, row height or how the 21% column resolves. */
 .name-portrait {
-  position: absolute; top: 0; bottom: 0; width: 132%; overflow: hidden;
-  pointer-events: none; opacity: 0.40; filter: saturate(1.02) contrast(1.02); z-index: 0;
+  position: absolute; top: 0; bottom: 0; width: 100%; overflow: hidden;
+  pointer-events: none; opacity: 0.80; filter: saturate(1.04) contrast(1.03); z-index: 0;
 }
 table.stats.side-table-blue .name-portrait { left: 0; }
 table.stats.side-table-red .name-portrait { right: 0; }
@@ -440,7 +440,7 @@ table.stats.side-table-red .name-portrait { right: 0; }
   /* 108% instead of 120%: the icon is square, so its WIDTH is driven by this
      number. 1.08 x 96px row = ~104px, which fits inside the Champion column at
      every layout width the table actually renders at. */
-  background-size: auto 108%;
+  background-size: auto 118%;
   background-position: left 40%;
 }
 /* Mirror the red side's portrait so the two teams are genuine mirror images
@@ -454,21 +454,21 @@ table.stats.side-table-red .name-portrait .portrait-img {
    time it reaches the Win Rate column. The old angled clip-path is dropped --
    the gradient IS the edge treatment now. */
 table.stats.side-table-blue .name-portrait {
-  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
-  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
 }
 table.stats.side-table-red .name-portrait {
-  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
-  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
 }
 .name-portrait::after {
   content: ""; position: absolute; inset: 0;
 }
 table.stats.side-table-blue .name-portrait::after {
-  background: linear-gradient(to right, rgba(6,9,17,0.02) 0%, rgba(6,9,17,0.22) 100%);
+  background: linear-gradient(to right, rgba(6,9,17,0.0) 0%, rgba(6,9,17,0.14) 100%);
 }
 table.stats.side-table-red .name-portrait::after {
-  background: linear-gradient(to left, rgba(6,9,17,0.02) 0%, rgba(6,9,17,0.22) 100%);
+  background: linear-gradient(to left, rgba(6,9,17,0.0) 0%, rgba(6,9,17,0.14) 100%);
 }
 .name-text {
   position: relative; z-index: 1;
