@@ -379,26 +379,25 @@ table.stats.side-table-red tbody tr:hover td.name { background-color: transparen
 table.stats.side-table-blue .name-portrait { left: 0; }
 table.stats.side-table-red .name-portrait { right: 0; }
 /* Head placement.
-   HORIZONTAL: the art is sized by HEIGHT (not `cover`), so it keeps its true
-   proportions and occupies only the left third of the widened portrait box --
-   which is exactly the Champion column. Anchoring it to the outer edge puts
-   the head directly beneath the "Champion" header rather than floating out
-   over the stats.
-   VERTICAL: anchored to the TOP of the artwork, never to a fixed percentage.
-   That earlier approach assumed every champion's face sat at the same height
-   in their art, which is simply not true -- so on champions drawn higher or
-   lower than average the eyes fell outside the crop entirely.
-   Loading art is a 308x560 portrait, and the one thing that IS reliable across
-   all 173 champions is that the head lives in the upper third. Top-anchoring at
-   220% of row height shows the top ~45% of the artwork, which contains every
-   champion's head with room to spare, and places a typical face (about 22%
-   down the image) at 0.22 x 2.2 = 48% of row height -- the centre line.
-   Faces drawn as high as 15% or as low as 30% still land at 33%-66%, comfortably
-   inside the row. No champion can lose their eyes off the edge. */
+   The source is Riot's SQUARE champion icon, not the loading splash.
+   Every previous attempt here tried to guess a single crop of the 308x560
+   loading art that would frame all 173 faces -- fixed percentages, then
+   top-anchoring at 220%. Both failed, because champions are simply not drawn
+   at a consistent height: rendering a sample of the roster showed Malphite as
+   bare rock, Zac as a green blob, and Rammus, Ornn, Maokai, Illaoi and Skarner
+   with no face in frame at all.
+   Riot's square icon solves it at the source -- they have already framed every
+   champion on the face, so there is nothing left to guess.
+   HORIZONTAL: still sized by HEIGHT so the square keeps its proportions and
+   sits at the outer edge, directly beneath the "Champion" header.
+   VERTICAL: 120% with a 40% anchor zooms in slightly and nudges the image down,
+   which lands the EYES on the row's centre line rather than the middle of the
+   head (eyes sit above centre in a portrait, so a plain centre crop reads
+   slightly high). */
 .name-portrait .portrait-img {
   position: absolute; inset: 0; background-repeat: no-repeat;
-  background-size: auto 220%;
-  background-position: left top;
+  background-size: auto 120%;
+  background-position: left 40%;
 }
 /* Mirror the red side's portrait so the two teams are genuine mirror images
    of each other -- without this, blue and red show the pixel-identical crop
@@ -871,7 +870,13 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
 .tab.active { color: var(--gold-bright); }
 .tab:active { transform: scale(0.97); }
 
-.tab-stage { position: relative; min-height: 470px; overflow: hidden; }
+/* overflow-x is clipped so the horizontal page-slide animation never spills
+   sideways, but overflow-y MUST stay visible. It was `overflow: hidden`, which
+   silently cut the bottom off any page taller than the stage -- most visibly on
+   TIMELINE, where a minute carrying several events grows the readout past the
+   fold. `clip` + `visible` is the one pair CSS allows to mix; `hidden` +
+   `visible` would compute the visible axis back to `auto`. */
+.tab-stage { position: relative; min-height: 470px; overflow-x: clip; overflow-y: visible; }
 .tab-page { display: none; }
 .tab-page.active { display: block; }
 /* Direction-aware: the page arrives from the side you travelled from, so the
@@ -955,9 +960,9 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
 .champ-panel { width: min(1320px, 97vw); }
 .ch-id { display: flex; align-items: center; gap: 13px; }
 .ch-face { width: 58px; height: 58px; border-radius: 14px; flex: 0 0 auto;
-  /* Top-anchored for the same reason as the table portraits: the head is the
-     one thing reliably in the upper third of every champion's loading art. */
-  background-size: 100% auto; background-position: center top; background-repeat: no-repeat;
+  /* Square icon into a square box, so `cover` is exact -- no crop guesswork.
+     The 45% anchor lifts the eyes a touch off dead centre. */
+  background-size: cover; background-position: center 45%; background-repeat: no-repeat;
   border: 1px solid rgba(212,175,90,0.45); box-shadow: 0 0 18px rgba(0,0,0,0.5); }
 .ch-name { font-size: 23px; font-weight: 800; letter-spacing: 0.6px; }
 .ch-meta { font-size: 10.5px; color: var(--ink-dim); letter-spacing: 0.5px; margin-top: 2px; }
@@ -1007,16 +1012,240 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
 .cmp-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 9px; flex-wrap: wrap; }
 .cmp-ctl { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
 .cmp-lab { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; color: var(--ink-dim); }
-.cmp-sel { background: rgba(255,255,255,0.07); color: var(--ink); font-size: 11px; font-weight: 700;
+/* The closed control was already themed, but the OPTION LIST is drawn by the
+   OS, not by this stylesheet -- so it fell back to a white system popup while
+   the option text inherited the app's near-white ink. White on white.
+   `color-scheme: dark` is what actually makes the native popup dark; the
+   explicit option colours are the belt-and-braces fallback for browsers that
+   ignore it. */
+.cmp-sel { background: rgba(12,17,28,0.92); color: var(--ink); font-size: 11px; font-weight: 700;
   border: 1px solid rgba(212,175,90,0.4); border-radius: 9px; padding: 6px 10px; cursor: pointer;
-  max-width: 220px; outline: none; }
+  max-width: 240px; outline: none; color-scheme: dark;
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%),
+                    linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: calc(100% - 15px) calc(50% + 1px), calc(100% - 10px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+  padding-right: 26px;
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease; }
+.cmp-sel:hover { border-color: rgba(212,175,90,0.7); background-color: rgba(20,27,42,0.95); }
 .cmp-sel:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,90,0.2); }
+.cmp-sel:disabled { opacity: 0.45; cursor: not-allowed; }
+.cmp-sel option { background: #0d1017; color: #e9edf5; font-weight: 700; padding: 6px; }
+.cmp-sel option:checked { background: #1b2436; color: var(--gold-bright); }
 .cmp-clear { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16); color: var(--ink);
   width: 26px; height: 26px; border-radius: 50%; font-size: 15px; line-height: 1; cursor: pointer; }
 .cmp-clear:hover { background: rgba(255,107,106,0.35); color: #fff; }
 .cmp-key { display: flex; gap: 16px; margin-top: 8px; font-size: 10px; }
 .cmp-key span { display: flex; align-items: center; gap: 5px; color: var(--ink-dim); }
 .cmp-key i { width: 16px; height: 2.5px; border-radius: 2px; display: inline-block; }
+
+/* ---------- Fight forecast readout ---------- */
+.fr-box { margin-top: 11px; }
+.fr-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fr-min { font-size: 11px; font-weight: 700; letter-spacing: 1.6px; color: var(--ink-dim); }
+.fr-min b { color: var(--gold-bright); font-size: 15px; font-variant-numeric: tabular-nums; }
+.fr-chip { font-size: 9.5px; font-weight: 900; letter-spacing: 1.3px; padding: 3px 10px;
+  border-radius: 20px; border: 1px solid; }
+.fr-spacer { flex: 1; }
+.fr-hint { font-size: 9px; font-style: italic; color: rgba(255,255,255,0.3); }
+.fr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.fr-cell { border-radius: 12px; padding: 7px 12px; border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03); }
+.fr-k { font-size: 8.5px; font-weight: 800; letter-spacing: 1.2px; color: var(--ink-dim); }
+.fr-v { font-size: 17px; font-weight: 800; margin: 2px 0 1px; font-variant-numeric: tabular-nums; }
+.fr-u { font-size: 10px; font-weight: 700; color: var(--ink-dim); margin-left: 2px; }
+.fr-n { font-size: 9.5px; color: var(--ink-dim); line-height: 1.45; }
+.fr-meter { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.09); overflow: hidden; margin-top: 4px; }
+.fr-fill { height: 100%; border-radius: 3px; transition: width 0.25s cubic-bezier(0.24,1.06,0.36,1); }
+/* Two columns and a RESERVED height. Previously this was a single column that
+   grew with the event count, so hovering a busy minute pushed the phase cards
+   below the fold -- the page literally changed height as you moved the mouse.
+   min-height holds the space open, max-height stops a crowded minute from ever
+   growing it, and the overflow scrolls inside the box instead of the page. */
+.fr-events { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px; align-content: start;
+  min-height: 74px; max-height: 112px; overflow-y: auto;
+  scrollbar-width: none; -ms-overflow-style: none; }
+.fr-events::-webkit-scrollbar { width: 0; height: 0; display: none; }
+@media (max-width: 1100px) { .fr-events { grid-template-columns: 1fr; } }
+.fr-ev { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; border-radius: 10px;
+  background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.07); }
+.fr-ev.quiet { opacity: 0.65; font-style: italic; }
+.fr-tag { flex: 0 0 auto; font-size: 8px; font-weight: 900; letter-spacing: 1.1px;
+  padding: 2px 7px; border-radius: 20px; border: 1px solid; }
+.fr-el { flex: 0 0 auto; font-size: 11.5px; font-weight: 800; color: var(--ink); }
+.fr-en { font-size: 10.5px; color: var(--ink-dim); line-height: 1.5; }
+.fr-foot { margin-top: 8px; font-size: 8.5px; font-style: italic; color: rgba(255,255,255,0.32);
+  line-height: 1.45; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; }
+/* Ribbon bars grow from the baseline as the page opens. */
+@keyframes fpBarIn { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.tab-page.active .fp-bar { transform-box: fill-box; transform-origin: 50% 100%;
+  animation: fpBarIn 0.5s cubic-bezier(0.24,1.06,0.36,1) both; }
+@media (max-width: 1100px) { .fr-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .tab-page.active .fp-bar { animation: none; } }
+
+/* ---------- Progress page ---------- */
+.cp-card { position: relative; }
+/* A spine runs through the stage cards so they read as a progression rather
+   than six unrelated tiles. */
+.cp-node { position: absolute; left: 0; right: 0; top: -1px; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,90,0.35), transparent); }
+.cp-dot { position: absolute; left: 14px; top: -4px; width: 9px; height: 9px; border-radius: 50%;
+  box-shadow: 0 0 10px currentColor; }
+.tab-page.active .cp-dot { animation: cpDot 0.5s cubic-bezier(0.26,1.1,0.4,1) both; }
+@keyframes cpDot { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
+.cp-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.cp-band { font-size: 8px; font-weight: 900; letter-spacing: 1px; padding: 2px 7px;
+  border-radius: 20px; border: 1px solid; white-space: nowrap; }
+.cp-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 8px 0 7px; }
+.cp-mk { font-size: 7.5px; font-weight: 800; letter-spacing: 1px; color: var(--ink-dim); }
+.cp-mt { height: 5px; border-radius: 999px; background: rgba(255,255,255,0.08);
+  overflow: hidden; margin: 3px 0 3px; }
+.cp-mf { height: 100%; border-radius: 999px; transform-origin: left center; }
+.tab-page.active .cp-mf { animation: barGrow 0.62s cubic-bezier(0.22,1,0.36,1) both; }
+.cp-mv { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cp-mu { font-size: 8px; font-weight: 600; color: var(--ink-dim); margin-left: 4px; }
+/* Cards lift slightly under the cursor so the page feels handled. */
+.cp-card { transition: transform 0.26s cubic-bezier(0.24,1.06,0.36,1), border-color 0.26s ease, box-shadow 0.26s ease; }
+.cp-card:hover { transform: translateY(-3px); border-color: rgba(212,175,90,0.45);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.4); }
+@media (prefers-reduced-motion: reduce) {
+  .tab-page.active .cp-dot, .tab-page.active .cp-mf { animation: none; }
+  .cp-card:hover { transform: none; }
+}
+
+/* ---------- Timeline motion pass ---------- */
+/* The ribbon bars used to all grow on one cadence. Now they sweep left to
+   right in step with the curve drawing itself, so the two read as one event. */
+@keyframes fpBarIn2 {
+  0%   { transform: scaleY(0); opacity: 0; }
+  55%  { opacity: 1; }
+  78%  { transform: scaleY(1.09); }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+.tab-page.active .fp-bar { transform-box: fill-box; transform-origin: 50% 100%;
+  animation: fpBarIn2 0.52s cubic-bezier(0.24,1.06,0.36,1) both; }
+/* Objective flags drop in and settle rather than simply fading. */
+@keyframes phObjDrop {
+  0%   { opacity: 0; transform: translateY(-14px) scale(0.82); }
+  62%  { opacity: 1; }
+  80%  { transform: translateY(2px) scale(1.04); }
+  100% { opacity: 1; transform: none; }
+}
+.modal-overlay.open .ph-obj { transform-box: fill-box; transform-origin: center;
+  animation: phObjDrop 0.5s cubic-bezier(0.26,1.1,0.4,1) both; }
+/* A light sweep travels the plot once the curve finishes drawing. */
+@keyframes phWipe { 0% { transform: translateX(-30%); opacity: 0; }
+  12% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translateX(1460px); opacity: 0; } }
+.tab-page.active .ph-wipe { animation: phWipe 1.5s cubic-bezier(0.4,0.75,0.3,1) 0.35s both; }
+/* Readout cells re-key when you scrub, so the numbers feel live. */
+@keyframes frPulse { 0% { opacity: 0.35; transform: translateY(3px); } 100% { opacity: 1; transform: none; } }
+.fr-cell { animation: frPulse 0.26s cubic-bezier(0.24,1.06,0.36,1) both; }
+.fr-ev { animation: bdRowIn 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+.fr-ev:nth-child(2) { animation-delay: 0.05s; }
+.fr-ev:nth-child(3) { animation-delay: 0.09s; }
+.fr-ev:nth-child(4) { animation-delay: 0.12s; }
+.fr-ev:nth-child(n+5) { animation-delay: 0.15s; }
+.fr-chip { animation: frPulse 0.3s cubic-bezier(0.26,1.1,0.4,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .tab-page.active .ph-wipe { animation: none; opacity: 0; }
+  .fr-cell, .fr-ev, .fr-chip { animation: none; }
+  .modal-overlay.open .ph-obj { animation: none; }
+}
+
+/* Profile gives the radar a real half of the page rather than a fixed 400px
+   rail, so it reads as the primary object on the screen. */
+.sec-split.profile-split { grid-template-columns: minmax(420px, 1fr) 1fr; }
+.radar-box.big .radar-svg.big { max-width: 100%; }
+.radar-svg.big { width: 100%; max-width: none; height: auto; }
+/* Hover state: the touched spoke lifts, everything else recedes. */
+.tr-hit { cursor: crosshair; }
+.radar-svg .tr-axis, .radar-svg .tr-lab, .radar-svg .tr-vtx {
+  transition: opacity 0.18s ease, stroke-width 0.18s ease, r 0.18s ease, fill 0.18s ease; }
+.radar-svg.dim .tr-axis, .radar-svg.dim .tr-lab { opacity: 0.28; }
+.radar-svg .tr-axis.on { opacity: 1; stroke: rgba(212,175,90,0.85); stroke-width: 1.8; }
+.radar-svg .tr-lab.on { opacity: 1; fill: var(--gold-bright); font-size: 10.5px; }
+.radar-svg.dim .tr-vtx { opacity: 0.35; }
+.radar-svg .tr-vtx.on { opacity: 1; r: 6; }
+.tr-wedge { fill: rgba(212,175,90,0.09); opacity: 0; transition: opacity 0.18s ease; pointer-events: none; }
+.tr-wedge.on { opacity: 1; }
+/* Readout row lights up in sync with the spoke under the cursor. */
+.rd-row { border-radius: 7px; padding: 1px 4px; transition: background 0.18s ease; }
+.rd-row.on { background: rgba(212,175,90,0.14); }
+.rd-row.on .rd-k { color: var(--gold-bright); }
+/* Floating detail card that follows the hovered axis. */
+.tr-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -108%);
+  background: rgba(10,14,24,0.96); border: 1px solid rgba(212,175,90,0.55); border-radius: 10px;
+  padding: 7px 11px; box-shadow: var(--shadow-lg); z-index: 30; white-space: nowrap;
+  transition: opacity 0.16s ease; }
+.tr-tip.on { opacity: 1; }
+.tr-tip .tt-k { font-size: 8.5px; font-weight: 900; letter-spacing: 1.2px; color: var(--gold-bright); }
+.tr-tip .tt-r { display: flex; gap: 10px; margin-top: 3px; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tr-tip .tt-d { font-size: 9px; color: var(--ink-dim); margin-top: 2px; font-style: italic; }
+.radar-box.big { position: relative; }
+@media (max-width: 1100px) { .sec-split.profile-split { grid-template-columns: 1fr; } }
+
+/* ---------- Analytics rows (Role & Kit idiom, reused) ---------- */
+.an-row { display: grid; grid-template-columns: 150px 78px 200px 130px 1fr;
+  align-items: center; gap: 11px; padding: 8px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.05); }
+.an-row:last-of-type { border-bottom: none; }
+.tab-page.active .an-row { animation: bdRowIn 0.44s cubic-bezier(0.22,1,0.36,1) both; }
+.an-k { font-size: 9.5px; font-weight: 800; letter-spacing: 0.9px; color: var(--ink-dim); }
+.an-v { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.an-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07);
+  overflow: hidden; position: relative; }
+.an-track.dual { overflow: visible; }
+.an-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px;
+  background: rgba(212,175,90,0.5); }
+.an-fill { position: absolute; top: 0; bottom: 0; border-radius: 999px; transform-origin: left center; }
+.an-track:not(.dual) .an-fill { left: 0; }
+.tab-page.active .an-fill { animation: barGrow 0.68s cubic-bezier(0.22,1,0.36,1) both; }
+.an-dot { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%;
+  margin: -4px 0 0 -4px; z-index: 2; }
+.an-dot.early { background: rgba(10,14,24,0.9); border: 2px solid rgba(255,255,255,0.7); }
+.an-dot.late { background: var(--gold-bright); border: 2px solid rgba(10,14,24,0.9);
+  box-shadow: 0 0 8px rgba(212,175,90,0.6); }
+.an-chip { font-size: 8.5px; font-weight: 900; letter-spacing: 1.1px; padding: 3px 9px;
+  border-radius: 20px; border: 1px solid; text-align: center; justify-self: start; }
+.an-n { font-size: 10px; color: var(--ink-dim); line-height: 1.5; }
+.an-n b { color: var(--ink); font-weight: 700; }
+@media (max-width: 1200px) {
+  .an-row { grid-template-columns: 120px 62px 1fr 110px; }
+  .an-n { grid-column: 1 / -1; padding-left: 2px; }
+}
+
+/* ---------- Profile radar, enlarged ---------- */
+.radar-box.big { display: flex; align-items: center; justify-content: center; padding: 6px; }
+.radar-svg.big { width: 100%; max-width: 460px; height: auto; }
+/* Rings draw outward, then each axis spoke fades in, then the polygons scale
+   up from the centre -- so the chart assembles rather than just appearing. */
+@keyframes trRingIn { from { opacity: 0; transform: scale(0.72); } to { opacity: 1; transform: scale(1); } }
+@keyframes trAxisIn { from { opacity: 0; } to { opacity: 1; } }
+.tab-page.active .tr-ring { transform-box: view-box; transform-origin: var(--rc);
+  animation: trRingIn 0.6s cubic-bezier(0.24,1.06,0.36,1) both; }
+.tab-page.active .tr-axis { animation: trAxisIn 0.5s ease both; }
+.tab-page.active .tr-lab { animation: trAxisIn 0.55s ease both; }
+/* A slow gold sweep around the rim keeps the chart alive once it settles. */
+@keyframes trSweep { to { transform: rotate(360deg); } }
+.tr-sweep { transform-box: view-box; transform-origin: var(--rc);
+  animation: trSweep 18s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tab-page.active .tr-ring, .tab-page.active .tr-axis, .tab-page.active .tr-lab { animation: none; }
+  .tr-sweep { animation: none; opacity: 0; }
+}
+/* Axis value readout beside the chart */
+.rd-list { display: flex; flex-direction: column; gap: 5px; }
+.rd-row { display: grid; grid-template-columns: 78px 1fr 40px; align-items: center; gap: 8px; }
+.tab-page.active .rd-row { animation: bdRowIn 0.42s cubic-bezier(0.22,1,0.36,1) both; }
+.rd-k { font-size: 9px; font-weight: 800; letter-spacing: 0.8px; color: var(--ink-dim); }
+.rd-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.07);
+  position: relative; overflow: visible; }
+.rd-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: rgba(212,175,90,0.45); }
+.rd-b, .rd-r { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
+.tab-page.active .rd-b, .tab-page.active .rd-r { animation: barGrow 0.6s cubic-bezier(0.22,1,0.36,1) both; transform-origin: left center; }
+.rd-d { font-size: 10px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Trading windows */
 .tw-sum { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -1167,17 +1396,11 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
 .wc-t { font-size: 10.5px; color: var(--ink-dim); line-height: 1.55; }
 @media (max-width: 900px) { .wc-row { grid-template-columns: 1fr; gap: 2px; } }
 
-.swap-row { display: grid; grid-template-columns: 52px 1fr 16px 1fr 62px; align-items: center; gap: 7px;
-  padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.055); }
-.swap-row:last-child { border-bottom: none; }
-.tab-page.active .swap-row { animation: bdRowIn 0.44s cubic-bezier(0.22,1,0.36,1) both; }
 .sw-role { font-size: 9px; font-weight: 800; letter-spacing: 0.8px; color: var(--ink-dim); }
 .sw-from { font-size: 11px; color: var(--ink-dim); text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.25); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sw-arr { font-size: 11px; color: rgba(212,175,90,0.75); text-align: center; }
 .sw-to { font-size: 11.5px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sw-gain { font-size: 11.5px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
-.swap-row.best { background: linear-gradient(90deg, rgba(212,175,90,0.13), transparent);
-  border-radius: 8px; box-shadow: inset 2px 0 0 rgba(212,175,90,0.8); }
 .swap-none { font-size: 10.5px; color: var(--ink-dim); font-style: italic; text-align: center; padding: 16px 8px; line-height: 1.55; }
 
 .ban-row { display: grid; grid-template-columns: 1fr 54px; align-items: center; gap: 8px; padding: 7px 4px;
@@ -1365,8 +1588,9 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
 
       <div class="tab-stage" id="tab-stage">
         <section class="tab-page" data-page="timeline">
-          <div class="page-lead">Win probability read minute by minute. Blue fill above the line, red below &mdash; hover for any exact minute.</div>
+          <div class="page-lead">Win probability read minute by minute, with the model&rsquo;s expected fight pressure underneath. Hover anywhere on the chart to read that exact minute &mdash; kills, who wins a 5v5, and what is happening.</div>
           <div class="sec-box" id="phase-chart"></div>
+          <div class="sec-box fr-box" id="phase-readout"></div>
           <div class="phase-cards" id="phase-cards"></div>
         </section>
 
@@ -1374,6 +1598,8 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
           <div class="page-lead">Every factor&rsquo;s share of the gap. The bars sum to exactly the headline figure.</div>
           <div class="sec-box" id="phase-breakdown"></div>
           <div class="factor-cards" id="factor-cards"></div>
+          <div class="adv-h gold" style="margin-top:13px">HOW SOLID IS THIS READ &mdash; SHAPE OF THE EDGE, NOT ITS SIZE</div>
+          <div class="sec-box" id="bd-analytics"></div>
           <div class="dep-row" id="dep-row"></div>
         </section>
 
@@ -1381,6 +1607,8 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
           <div class="page-lead">Win-probability points won or lost in each slot, measured counters included.</div>
           <div class="sec-box" id="phase-lanes"></div>
           <div class="lane-cards" id="lane-cards"></div>
+          <div class="adv-h gold" style="margin-top:13px">LANE SHAPE &mdash; WHEN EACH EDGE EXISTS, NOT JUST HOW BIG IT IS</div>
+          <div class="sec-box" id="lane-analytics"></div>
         </section>
 
         <section class="tab-page" data-page="objectives">
@@ -1432,10 +1660,13 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
         </section>
 
         <section class="tab-page" data-page="profile">
-          <div class="page-lead">Team shape against team shape, and every champion&rsquo;s own power curve.</div>
-          <div class="sec-split">
-            <div class="sec-box radar-box" id="phase-radar"></div>
-            <div class="sec-box" id="phase-champcurves"></div>
+          <div class="page-lead">Team shape against team shape, and every champion&rsquo;s own power curve. Hover any spoke on the radar to read that axis.</div>
+          <div class="sec-split profile-split">
+            <div class="sec-box radar-box big" id="phase-radar"></div>
+            <div>
+              <div class="sec-box" id="phase-champcurves"></div>
+              <div class="sec-box" id="phase-axes" style="margin-top:10px"></div>
+            </div>
           </div>
         </section>
       </div>
@@ -1512,11 +1743,18 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
 
 <script>
 
-const CHAMP_DATA = {"champions":[{"name":"Aatrox","role":"Top","winRate":49.1,"combo":6,"DMG":8,"Sustain":8,"CC":5,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Aatrox","damage":"AD","pickRate":5.68,"banRate":6.51},{"name":"Ahri","role":"Mid","winRate":50.2,"combo":7,"DMG":8,"Sustain":4,"CC":5,"Mobility":9,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Ahri","damage":"AP","pickRate":9.23,"banRate":3.63},{"name":"Akali","role":"Mid","winRate":48.5,"combo":6,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":6,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Akali","damage":"AP","pickRate":6.86,"banRate":13.28},{"name":"Akshan","role":"Mid","winRate":50.8,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":9,"Teamfight":6,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Akshan","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Alistar","role":"Support","winRate":50.3,"combo":8,"DMG":6,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":6,"Safety":8,"Waveclear":5,"Versatility":6,"splashId":"Alistar","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ambessa","role":"Top","winRate":49.5,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Ambessa","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Amumu","role":"Jungle","winRate":49.6,"combo":7,"DMG":7,"Sustain":6,"CC":9,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Amumu","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Anivia","role":"Mid","winRate":50.6,"combo":7,"DMG":9,"Sustain":5,"CC":7,"Mobility":4,"Teamfight":8,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":6,"splashId":"Anivia","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Annie","role":"Mid","winRate":49.9,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Annie","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Aphelios","role":"ADC","winRate":50.3,"combo":6,"DMG":9,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Aphelios","damage":"AD","pickRate":3.91,"banRate":1.24},{"name":"Ashe","role":"ADC","winRate":50.0,"combo":7,"DMG":7,"Sustain":4,"CC":8,"Mobility":4,"Teamfight":7,"Utility":7,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Ashe","damage":"AD","pickRate":8.3,"banRate":3.28},{"name":"Aurelion Sol","role":"Mid","winRate":51.0,"combo":6,"DMG":9,"Sustain":5,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":4,"Waveclear":8,"Versatility":7,"splashId":"AurelionSol","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Aurora","role":"Mid","winRate":50.2,"combo":7,"DMG":8,"Sustain":6,"CC":6,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Aurora","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Azir","role":"Mid","winRate":47.3,"combo":8,"DMG":9,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":4,"Waveclear":8,"Versatility":7,"splashId":"Azir","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Bard","role":"Support","winRate":49.8,"combo":8,"DMG":6,"Sustain":5,"CC":8,"Mobility":7,"Teamfight":9,"Utility":9,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Bard","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Bel'Veth","role":"Jungle","winRate":51.5,"combo":6,"DMG":9,"Sustain":6,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Belveth","damage":"AD","pickRate":4.48,"banRate":4.87},{"name":"Blitzcrank","role":"Support","winRate":50.4,"combo":8,"DMG":7,"Sustain":5,"CC":9,"Mobility":6,"Teamfight":7,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":5,"Versatility":6,"splashId":"Blitzcrank","damage":"AP","pickRate":6.55,"banRate":13.46},{"name":"Brand","role":"Support","winRate":50.7,"combo":7,"DMG":9,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":8,"Safety":4,"Waveclear":8,"Versatility":6,"splashId":"Brand","damage":"AP","pickRate":3.98,"banRate":6.84},{"name":"Braum","role":"Support","winRate":50.0,"combo":7,"DMG":6,"Sustain":8,"CC":9,"Mobility":4,"Teamfight":8,"Utility":8,"Scaling":6,"Safety":8,"Waveclear":5,"Versatility":6,"splashId":"Braum","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Briar","role":"Jungle","winRate":52.3,"combo":6,"DMG":9,"Sustain":7,"CC":4,"Mobility":8,"Teamfight":7,"Utility":3,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":5,"splashId":"Briar","damage":"AD","pickRate":6.18,"banRate":11.77},{"name":"Caitlyn","role":"ADC","winRate":49.6,"combo":6,"DMG":8,"Sustain":4,"CC":5,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":8,"Versatility":7,"splashId":"Caitlyn","damage":"AD","pickRate":18.3,"banRate":21.57},{"name":"Camille","role":"Support","winRate":47.13,"combo":7,"DMG":8,"Sustain":6,"CC":6,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Camille","damage":"AD","pickRate":4.01,"banRate":8.45},{"name":"Cassiopeia","role":"Mid","winRate":48.6,"combo":8,"DMG":9,"Sustain":5,"CC":6,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":10,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Cassiopeia","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Cho'Gath","role":"Top","winRate":50.7,"combo":7,"DMG":8,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":7,"Waveclear":7,"Versatility":6,"splashId":"Chogath","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Corki","role":"Mid","winRate":50.7,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Corki","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Darius","role":"Top","winRate":49.0,"combo":6,"DMG":9,"Sustain":8,"CC":7,"Mobility":5,"Teamfight":8,"Utility":4,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Darius","damage":"AD","pickRate":8.62,"banRate":15.0},{"name":"Diana","role":"Mid","winRate":50.5,"combo":8,"DMG":9,"Sustain":6,"CC":6,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Diana","damage":"AP","pickRate":3.59,"banRate":3.76},{"name":"Dr. Mundo","role":"Top","winRate":51.2,"combo":5,"DMG":7,"Sustain":9,"CC":5,"Mobility":4,"Teamfight":7,"Utility":3,"Scaling":7,"Safety":8,"Waveclear":5,"Versatility":5,"splashId":"DrMundo","damage":"AP","pickRate":4.52,"banRate":4.17},{"name":"Draven","role":"ADC","winRate":48.8,"combo":6,"DMG":10,"Sustain":4,"CC":3,"Mobility":7,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Draven","damage":"AD","pickRate":3.1,"banRate":6.89},{"name":"Ekko","role":"Jungle","winRate":49.9,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Ekko","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Elise","role":"Jungle","winRate":52.0,"combo":7,"DMG":7,"Sustain":5,"CC":6,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Elise","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Evelynn","role":"Jungle","winRate":50.7,"combo":7,"DMG":9,"Sustain":5,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Evelynn","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ezreal","role":"ADC","winRate":46.5,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Ezreal","damage":"AD","pickRate":11.91,"banRate":4.0},{"name":"Fiddlesticks","role":"Jungle","winRate":52.5,"combo":9,"DMG":9,"Sustain":6,"CC":8,"Mobility":5,"Teamfight":9,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"FiddleSticks","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Fiora","role":"Top","winRate":51.7,"combo":6,"DMG":9,"Sustain":6,"CC":4,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":9,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Fiora","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Fizz","role":"Mid","winRate":51.8,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Fizz","damage":"AP","pickRate":5.74,"banRate":9.51},{"name":"Galio","role":"Mid","winRate":49.8,"combo":8,"DMG":7,"Sustain":7,"CC":9,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Galio","damage":"AP","pickRate":4.32,"banRate":2.31},{"name":"Gangplank","role":"Top","winRate":49.8,"combo":7,"DMG":9,"Sustain":5,"CC":5,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":9,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Gangplank","damage":"AD","pickRate":3.91,"banRate":4.46},{"name":"Garen","role":"Top","winRate":51.8,"combo":6,"DMG":8,"Sustain":8,"CC":5,"Mobility":6,"Teamfight":7,"Utility":3,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Garen","damage":"AD","pickRate":8.19,"banRate":6.31},{"name":"Gnar","role":"Top","winRate":49.2,"combo":8,"DMG":7,"Sustain":6,"CC":8,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Gnar","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Gragas","role":"Jungle","winRate":50.7,"combo":7,"DMG":7,"Sustain":6,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Gragas","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Graves","role":"Jungle","winRate":50.5,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Graves","damage":"AD","pickRate":9.45,"banRate":8.44},{"name":"Gwen","role":"Top","winRate":49.3,"combo":7,"DMG":9,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Gwen","damage":"AP","pickRate":3.56,"banRate":2.39},{"name":"Hecarim","role":"Jungle","winRate":50.5,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":9,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Hecarim","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Heimerdinger","role":"Mid","winRate":50.8,"combo":6,"DMG":9,"Sustain":4,"CC":5,"Mobility":4,"Teamfight":6,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":9,"Versatility":6,"splashId":"Heimerdinger","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Hwei","role":"Mid","winRate":50.9,"combo":6,"DMG":8,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":6,"Utility":4,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Hwei","damage":"AP","pickRate":3.31,"banRate":1.99},{"name":"Illaoi","role":"Top","winRate":52.1,"combo":7,"DMG":9,"Sustain":7,"CC":7,"Mobility":5,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Illaoi","damage":"AD","pickRate":3.93,"banRate":9.41},{"name":"Irelia","role":"Top","winRate":48.6,"combo":8,"DMG":9,"Sustain":6,"CC":6,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Irelia","damage":"AD","pickRate":3.24,"banRate":8.35},{"name":"Ivern","role":"Jungle","winRate":52.8,"combo":7,"DMG":5,"Sustain":8,"CC":6,"Mobility":6,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Ivern","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Janna","role":"Support","winRate":52.0,"combo":7,"DMG":3,"Sustain":7,"CC":6,"Mobility":8,"Teamfight":7,"Utility":10,"Scaling":5,"Safety":5,"Waveclear":5,"Versatility":7,"splashId":"Janna","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Jarvan IV","role":"Jungle","winRate":51.2,"combo":8,"DMG":8,"Sustain":7,"CC":7,"Mobility":7,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"JarvanIV","damage":"AD","pickRate":4.13,"banRate":0.78},{"name":"Jax","role":"Top","winRate":50.0,"combo":7,"DMG":9,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Jax","damage":"HYB","pickRate":5.54,"banRate":8.0},{"name":"Jayce","role":"Top","winRate":48.6,"combo":8,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Jayce","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Jhin","role":"ADC","winRate":49.6,"combo":7,"DMG":9,"Sustain":4,"CC":5,"Mobility":5,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Jhin","damage":"AD","pickRate":13.79,"banRate":2.48},{"name":"Jinx","role":"ADC","winRate":52.0,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Jinx","damage":"AD","pickRate":11.38,"banRate":3.11},{"name":"K'Sante","role":"Top","winRate":49.6,"combo":7,"DMG":8,"Sustain":8,"CC":7,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":7,"splashId":"KSante","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Kai'Sa","role":"ADC","winRate":50.0,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Kaisa","damage":"HYB","pickRate":16.37,"banRate":3.89},{"name":"Kalista","role":"ADC","winRate":49.3,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":9,"Teamfight":6,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Kalista","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Karma","role":"Support","winRate":49.2,"combo":8,"DMG":6,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Karma","damage":"AP","pickRate":3.85,"banRate":1.55},{"name":"Karthus","role":"Jungle","winRate":52.1,"combo":7,"DMG":9,"Sustain":3,"CC":4,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":9,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Karthus","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Kassadin","role":"Mid","winRate":51.1,"combo":8,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Kassadin","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Katarina","role":"Mid","winRate":49.6,"combo":8,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Katarina","damage":"AP","pickRate":6.4,"banRate":6.95},{"name":"Kayle","role":"Top","winRate":50.3,"combo":7,"DMG":8,"Sustain":5,"CC":4,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Kayle","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Kayn","role":"Jungle","winRate":50.6,"combo":8,"DMG":9,"Sustain":5,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Kayn","damage":"AD","pickRate":9.32,"banRate":5.88},{"name":"Kennen","role":"Top","winRate":53.1,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Kennen","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Kha'Zix","role":"Jungle","winRate":48.0,"combo":8,"DMG":9,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Khazix","damage":"AD","pickRate":4.2,"banRate":1.88},{"name":"Kindred","role":"Jungle","winRate":50.4,"combo":7,"DMG":8,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":6,"Scaling":9,"Safety":8,"Waveclear":7,"Versatility":7,"splashId":"Kindred","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Kled","role":"Top","winRate":51.0,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Kled","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Kog'Maw","role":"ADC","winRate":51.7,"combo":6,"DMG":9,"Sustain":4,"CC":3,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"KogMaw","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"LeBlanc","role":"Mid","winRate":49.9,"combo":9,"DMG":9,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Leblanc","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Lee Sin","role":"Jungle","winRate":48.5,"combo":8,"DMG":8,"Sustain":6,"CC":5,"Mobility":10,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"LeeSin","damage":"AD","pickRate":10.44,"banRate":11.67},{"name":"Leona","role":"Support","winRate":52.0,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Leona","damage":"AP","pickRate":7.85,"banRate":9.29},{"name":"Lillia","role":"Jungle","winRate":51.7,"combo":7,"DMG":8,"Sustain":5,"CC":6,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Lillia","damage":"AP","pickRate":3.58,"banRate":1.7},{"name":"Lissandra","role":"Mid","winRate":51.2,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Lissandra","damage":"AP","pickRate":3.37,"banRate":2.08},{"name":"Lucian","role":"ADC","winRate":48.7,"combo":7,"DMG":8,"Sustain":4,"CC":4,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Lucian","damage":"AD","pickRate":7.05,"banRate":1.62},{"name":"Lulu","role":"Support","winRate":50.4,"combo":7,"DMG":5,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Lulu","damage":"AP","pickRate":5.86,"banRate":3.67},{"name":"Lux","role":"Support","winRate":49.8,"combo":7,"DMG":8,"Sustain":4,"CC":6,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Lux","damage":"AP","pickRate":13.03,"banRate":11.84},{"name":"Malphite","role":"Top","winRate":51.3,"combo":7,"DMG":7,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Malphite","damage":"AP","pickRate":5.92,"banRate":12.25},{"name":"Malzahar","role":"Mid","winRate":52.2,"combo":6,"DMG":8,"Sustain":4,"CC":6,"Mobility":4,"Teamfight":6,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Malzahar","damage":"AP","pickRate":6.41,"banRate":14.39},{"name":"Maokai","role":"Jungle","winRate":50.6,"combo":6,"DMG":7,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":7,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":7,"Versatility":6,"splashId":"Maokai","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Master Yi","role":"Jungle","winRate":49.5,"combo":7,"DMG":9,"Sustain":5,"CC":3,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"MasterYi","damage":"AD","pickRate":8.94,"banRate":15.23},{"name":"Mel","role":"Mid","winRate":47.5,"combo":7,"DMG":8,"Sustain":5,"CC":4,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Mel","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Milio","role":"Support","winRate":52.0,"combo":7,"DMG":6,"Sustain":6,"CC":4,"Mobility":7,"Teamfight":7,"Utility":8,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Milio","damage":"AP","pickRate":3.77,"banRate":1.97},{"name":"Miss Fortune","role":"ADC","winRate":50.3,"combo":6,"DMG":9,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":6,"splashId":"MissFortune","damage":"AD","pickRate":14.38,"banRate":4.18},{"name":"Mordekaiser","role":"Top","winRate":50.7,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":5,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Mordekaiser","damage":"AP","pickRate":8.66,"banRate":15.28},{"name":"Morgana","role":"Support","winRate":50.6,"combo":7,"DMG":7,"Sustain":5,"CC":8,"Mobility":5,"Teamfight":7,"Utility":8,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Morgana","damage":"AP","pickRate":7.26,"banRate":20.54},{"name":"Naafiri","role":"Jungle","winRate":49.17,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":5,"Utility":3,"Scaling":6,"Safety":7,"Waveclear":7,"Versatility":4,"splashId":"Naafiri","damage":"AD","pickRate":3.92,"banRate":15.19},{"name":"Nami","role":"Support","winRate":51.7,"combo":7,"DMG":4,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Nami","damage":"AP","pickRate":5.17,"banRate":0.69},{"name":"Nasus","role":"Top","winRate":53.6,"combo":6,"DMG":8,"Sustain":8,"CC":4,"Mobility":4,"Teamfight":7,"Utility":3,"Scaling":10,"Safety":7,"Waveclear":6,"Versatility":5,"splashId":"Nasus","damage":"AD","pickRate":6.75,"banRate":9.0},{"name":"Nautilus","role":"Support","winRate":50.5,"combo":7,"DMG":7,"Sustain":7,"CC":9,"Mobility":4,"Teamfight":8,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Nautilus","damage":"AP","pickRate":9.69,"banRate":11.22},{"name":"Neeko","role":"Mid","winRate":51.1,"combo":7,"DMG":8,"Sustain":5,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Neeko","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Nidalee","role":"Jungle","winRate":51.8,"combo":7,"DMG":8,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Nidalee","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Nilah","role":"ADC","winRate":52.8,"combo":7,"DMG":8,"Sustain":6,"CC":4,"Mobility":9,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Nilah","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Nocturne","role":"Jungle","winRate":51.7,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Nocturne","damage":"AD","pickRate":7.43,"banRate":13.37},{"name":"Nunu & Willump","role":"Jungle","winRate":51.1,"combo":7,"DMG":7,"Sustain":8,"CC":7,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Nunu","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Olaf","role":"Jungle","winRate":52.2,"combo":7,"DMG":9,"Sustain":7,"CC":6,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Olaf","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Orianna","role":"Mid","winRate":50.6,"combo":7,"DMG":8,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Orianna","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ornn","role":"Top","winRate":50.2,"combo":7,"DMG":7,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":8,"Utility":7,"Scaling":7,"Safety":7,"Waveclear":7,"Versatility":6,"splashId":"Ornn","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Pantheon","role":"Support","winRate":49.8,"combo":7,"DMG":8,"Sustain":5,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Pantheon","damage":"AD","pickRate":5.42,"banRate":2.83},{"name":"Poppy","role":"Top","winRate":51.8,"combo":7,"DMG":7,"Sustain":8,"CC":8,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":8,"Waveclear":6,"Versatility":6,"splashId":"Poppy","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Pyke","role":"Support","winRate":48.3,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Pyke","damage":"HYB","pickRate":7.1,"banRate":15.86},{"name":"Qiyana","role":"Mid","winRate":50.5,"combo":8,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":7,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Qiyana","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Quinn","role":"Top","winRate":52.0,"combo":7,"DMG":8,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Quinn","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rakan","role":"Support","winRate":49.9,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Rakan","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rammus","role":"Jungle","winRate":52.9,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Rammus","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Rek'Sai","role":"Jungle","winRate":51.3,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"RekSai","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rell","role":"Support","winRate":51.3,"combo":7,"DMG":7,"Sustain":7,"CC":9,"Mobility":4,"Teamfight":8,"Utility":8,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Rell","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Renata Glasc","role":"Support","winRate":51.0,"combo":7,"DMG":6,"Sustain":5,"CC":7,"Mobility":5,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Renata","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Renekton","role":"Top","winRate":50.3,"combo":7,"DMG":9,"Sustain":7,"CC":6,"Mobility":7,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Renekton","damage":"AD","pickRate":4.87,"banRate":3.3},{"name":"Rengar","role":"Jungle","winRate":48.3,"combo":9,"DMG":9,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":7,"Utility":3,"Scaling":9,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Rengar","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Riven","role":"Top","winRate":50.0,"combo":9,"DMG":9,"Sustain":5,"CC":5,"Mobility":10,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Riven","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rumble","role":"Top","winRate":49.3,"combo":7,"DMG":8,"Sustain":5,"CC":6,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":6,"splashId":"Rumble","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ryze","role":"Mid","winRate":49.2,"combo":7,"DMG":8,"Sustain":4,"CC":5,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":9,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Ryze","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Samira","role":"ADC","winRate":50.1,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Samira","damage":"AD","pickRate":5.54,"banRate":8.12},{"name":"Sejuani","role":"Jungle","winRate":48.5,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Sejuani","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Senna","role":"Support","winRate":50.9,"combo":6,"DMG":7,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":7,"Utility":7,"Scaling":9,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Senna","damage":"AD","pickRate":4.7,"banRate":2.56},{"name":"Seraphine","role":"Support","winRate":50.8,"combo":7,"DMG":6,"Sustain":5,"CC":6,"Mobility":5,"Teamfight":7,"Utility":9,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Seraphine","damage":"AP","pickRate":10.79,"banRate":13.62},{"name":"Sett","role":"Top","winRate":51.9,"combo":7,"DMG":9,"Sustain":7,"CC":7,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Sett","damage":"AD","pickRate":8.03,"banRate":4.06},{"name":"Shaco","role":"Jungle","winRate":49.1,"combo":8,"DMG":8,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Shaco","damage":"AD","pickRate":5.67,"banRate":24.58},{"name":"Shen","role":"Top","winRate":50.9,"combo":7,"DMG":7,"Sustain":8,"CC":7,"Mobility":4,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":8,"Waveclear":6,"Versatility":6,"splashId":"Shen","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Shyvana","role":"Jungle","winRate":53.1,"combo":7,"DMG":8,"Sustain":8,"CC":7,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":7,"Waveclear":6,"Versatility":7,"splashId":"Shyvana","damage":"AD","pickRate":5.35,"banRate":4.12},{"name":"Singed","role":"Top","winRate":51.0,"combo":6,"DMG":7,"Sustain":8,"CC":4,"Mobility":6,"Teamfight":7,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":5,"splashId":"Singed","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Sion","role":"Top","winRate":50.7,"combo":7,"DMG":8,"Sustain":9,"CC":8,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Sion","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Sivir","role":"ADC","winRate":50.6,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":7,"Teamfight":7,"Utility":7,"Scaling":7,"Safety":6,"Waveclear":8,"Versatility":7,"splashId":"Sivir","damage":"AD","pickRate":3.14,"banRate":1.02},{"name":"Skarner","role":"Jungle","winRate":48.6,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Skarner","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Smolder","role":"ADC","winRate":51.0,"combo":8,"DMG":8,"Sustain":6,"CC":4,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":10,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Smolder","damage":"AD","pickRate":4.42,"banRate":2.3},{"name":"Sona","role":"Support","winRate":49.8,"combo":7,"DMG":5,"Sustain":5,"CC":6,"Mobility":6,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Sona","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Soraka","role":"Support","winRate":51.5,"combo":7,"DMG":4,"Sustain":8,"CC":5,"Mobility":5,"Teamfight":7,"Utility":10,"Scaling":6,"Safety":5,"Waveclear":5,"Versatility":7,"splashId":"Soraka","damage":"AP","pickRate":3.61,"banRate":1.59},{"name":"Swain","role":"Support","winRate":49.92,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Swain","damage":"AP","pickRate":4.11,"banRate":3.8},{"name":"Sylas","role":"Mid","winRate":49.3,"combo":7,"DMG":8,"Sustain":6,"CC":6,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Sylas","damage":"AP","pickRate":7.0,"banRate":12.18},{"name":"Syndra","role":"Mid","winRate":51.0,"combo":7,"DMG":9,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":9,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Syndra","damage":"AP","pickRate":5.74,"banRate":7.5},{"name":"Tahm Kench","role":"Support","winRate":49.4,"combo":7,"DMG":7,"Sustain":9,"CC":7,"Mobility":4,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"TahmKench","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Taliyah","role":"Jungle","winRate":51.7,"combo":7,"DMG":8,"Sustain":4,"CC":5,"Mobility":7,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Taliyah","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Talon","role":"Mid","winRate":50.8,"combo":8,"DMG":9,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Talon","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Taric","role":"Support","winRate":53.8,"combo":7,"DMG":6,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Taric","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Teemo","role":"Top","winRate":51.7,"combo":6,"DMG":7,"Sustain":3,"CC":4,"Mobility":7,"Teamfight":6,"Utility":3,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Teemo","damage":"AP","pickRate":7.33,"banRate":15.76},{"name":"Thresh","role":"Support","winRate":51.1,"combo":7,"DMG":5,"Sustain":6,"CC":9,"Mobility":6,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Thresh","damage":"AD","pickRate":10.41,"banRate":5.29},{"name":"Tristana","role":"ADC","winRate":50.9,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Tristana","damage":"AD","pickRate":7.45,"banRate":3.54},{"name":"Trundle","role":"Jungle","winRate":49.2,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Trundle","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Tryndamere","role":"Top","winRate":51.4,"combo":7,"DMG":9,"Sustain":5,"CC":3,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Tryndamere","damage":"AD","pickRate":3.85,"banRate":3.58},{"name":"Twisted Fate","role":"Mid","winRate":50.7,"combo":8,"DMG":8,"Sustain":4,"CC":4,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":9,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"TwistedFate","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Twitch","role":"ADC","winRate":51.7,"combo":6,"DMG":9,"Sustain":4,"CC":3,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":4,"Waveclear":7,"Versatility":7,"splashId":"Twitch","damage":"AD","pickRate":4.78,"banRate":5.87},{"name":"Udyr","role":"Jungle","winRate":49.1,"combo":7,"DMG":8,"Sustain":7,"CC":5,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Udyr","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Urgot","role":"Top","winRate":51.8,"combo":6,"DMG":9,"Sustain":6,"CC":5,"Mobility":5,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Urgot","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Varus","role":"ADC","winRate":47.8,"combo":6,"DMG":8,"Sustain":4,"CC":6,"Mobility":4,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Varus","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Vayne","role":"ADC","winRate":50.7,"combo":7,"DMG":9,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Vayne","damage":"AD","pickRate":5.23,"banRate":9.88},{"name":"Veigar","role":"Mid","winRate":51.8,"combo":7,"DMG":9,"Sustain":3,"CC":4,"Mobility":4,"Teamfight":7,"Utility":5,"Scaling":10,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Veigar","damage":"AP","pickRate":6.58,"banRate":4.59},{"name":"Vel'Koz","role":"Support","winRate":50.5,"combo":7,"DMG":9,"Sustain":3,"CC":7,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Velkoz","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Vex","role":"Mid","winRate":51.0,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Vex","damage":"AP","pickRate":3.86,"banRate":3.98},{"name":"Vi","role":"Jungle","winRate":50.8,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Vi","damage":"AD","pickRate":5.26,"banRate":1.55},{"name":"Viego","role":"Jungle","winRate":49.6,"combo":6,"DMG":9,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Viego","damage":"AD","pickRate":10.68,"banRate":8.08},{"name":"Viktor","role":"Mid","winRate":51.7,"combo":7,"DMG":9,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":5,"Waveclear":9,"Versatility":7,"splashId":"Viktor","damage":"AP","pickRate":6.42,"banRate":9.74},{"name":"Vladimir","role":"Mid","winRate":50.2,"combo":6,"DMG":9,"Sustain":8,"CC":3,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Vladimir","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Volibear","role":"Jungle","winRate":49.5,"combo":7,"DMG":7,"Sustain":8,"CC":7,"Mobility":6,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Volibear","damage":"AD","pickRate":3.61,"banRate":1.7},{"name":"Warwick","role":"Jungle","winRate":52.1,"combo":6,"DMG":7,"Sustain":8,"CC":6,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":6,"Safety":7,"Waveclear":6,"Versatility":5,"splashId":"Warwick","damage":"AD","pickRate":6.88,"banRate":6.55},{"name":"Wukong","role":"Jungle","winRate":52.4,"combo":8,"DMG":8,"Sustain":6,"CC":7,"Mobility":8,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"MonkeyKing","damage":"AD","pickRate":4.76,"banRate":1.91},{"name":"Xayah","role":"ADC","winRate":51.1,"combo":5,"DMG":8,"Sustain":5,"CC":4,"Mobility":7,"Teamfight":6,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Xayah","damage":"AD","pickRate":4.02,"banRate":0.62},{"name":"Xerath","role":"Mid","winRate":52.3,"combo":7,"DMG":9,"Sustain":3,"CC":7,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Xerath","damage":"AP","pickRate":3.89,"banRate":18.14},{"name":"Xin Zhao","role":"Jungle","winRate":51.1,"combo":6,"DMG":8,"Sustain":7,"CC":5,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"XinZhao","damage":"AD","pickRate":3.56,"banRate":0.94},{"name":"Yasuo","role":"Mid","winRate":50.0,"combo":8,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Yasuo","damage":"AD","pickRate":11.21,"banRate":16.97},{"name":"Yone","role":"Mid","winRate":50.1,"combo":8,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Yone","damage":"AD","pickRate":9.3,"banRate":9.11},{"name":"Yorick","role":"Top","winRate":51.8,"combo":4,"DMG":8,"Sustain":7,"CC":4,"Mobility":4,"Teamfight":5,"Utility":3,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":5,"splashId":"Yorick","damage":"AD","pickRate":4.47,"banRate":9.92},{"name":"Yuumi","role":"Support","winRate":48.0,"combo":6,"DMG":4,"Sustain":8,"CC":3,"Mobility":2,"Teamfight":6,"Utility":10,"Scaling":6,"Safety":4,"Waveclear":3,"Versatility":4,"splashId":"Yuumi","damage":"AP","pickRate":4.83,"banRate":3.44},{"name":"Yunara","role":"ADC","winRate":49.6,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Yunara","damage":"AD","pickRate":5.36,"banRate":1.01},{"name":"Zac","role":"Jungle","winRate":50.5,"combo":8,"DMG":6,"Sustain":9,"CC":9,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":9,"Waveclear":7,"Versatility":7,"splashId":"Zac","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zed","role":"Mid","winRate":49.4,"combo":7,"DMG":9,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":5,"Utility":3,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":5,"splashId":"Zed","damage":"AD","pickRate":8.54,"banRate":18.93},{"name":"Zeri","role":"ADC","winRate":50.7,"combo":6,"DMG":8,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Zeri","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Ziggs","role":"Mid","winRate":51.0,"combo":7,"DMG":9,"Sustain":3,"CC":6,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":4,"Waveclear":9,"Versatility":7,"splashId":"Ziggs","damage":"AD","pickRate":3.4,"banRate":3.18},{"name":"Zilean","role":"Support","winRate":51.8,"combo":7,"DMG":6,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Zilean","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zoe","role":"Mid","winRate":51.9,"combo":8,"DMG":9,"Sustain":3,"CC":6,"Mobility":7,"Teamfight":6,"Utility":5,"Scaling":7,"Safety":4,"Waveclear":7,"Versatility":6,"splashId":"Zoe","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zyra","role":"Support","winRate":50.8,"combo":7,"DMG":8,"Sustain":3,"CC":8,"Mobility":4,"Teamfight":7,"Utility":7,"Scaling":6,"Safety":3,"Waveclear":8,"Versatility":6,"splashId":"Zyra","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zaahen","role":"Top","winRate":50.6,"combo":7,"DMG":9,"Sustain":8,"CC":5,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":8,"splashId":"Zaahen","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Locke","role":"Mid","winRate":48.4,"combo":8,"DMG":9,"Sustain":5,"CC":5,"Mobility":8,"Teamfight":6,"Utility":4,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":5,"splashId":"Locke","damage":"AP","pickRate":5.56,"banRate":31.37}],"roleWeights":{"Top":{"DMG":0.2,"Sustain":0.12,"CC":0.12,"Mobility":0.08,"Teamfight":0.13,"Utility":0.05,"Scaling":0.15,"Safety":0.1,"Waveclear":0.03,"Versatility":0.02},"Jungle":{"DMG":0.18,"Sustain":0.08,"CC":0.15,"Mobility":0.15,"Teamfight":0.16,"Utility":0.06,"Scaling":0.1,"Safety":0.08,"Waveclear":0.02,"Versatility":0.02},"Mid":{"DMG":0.24,"Sustain":0.06,"CC":0.1,"Mobility":0.14,"Teamfight":0.12,"Utility":0.05,"Scaling":0.11,"Safety":0.1,"Waveclear":0.06,"Versatility":0.02},"ADC":{"DMG":0.3,"Sustain":0.04,"CC":0.05,"Mobility":0.08,"Teamfight":0.14,"Utility":0.05,"Scaling":0.18,"Safety":0.1,"Waveclear":0.04,"Versatility":0.02},"Support":{"DMG":0.05,"Sustain":0.08,"CC":0.22,"Mobility":0.08,"Teamfight":0.16,"Utility":0.25,"Scaling":0.04,"Safety":0.08,"Waveclear":0.02,"Versatility":0.02}}};
+const CHAMP_DATA = {"champions":[{"name":"Aatrox","role":"Top","winRate":49.1,"combo":6,"DMG":8,"Sustain":8,"CC":5,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Aatrox","damage":"AD","pickRate":5.68,"banRate":6.51},{"name":"Ahri","role":"Mid","winRate":50.2,"combo":7,"DMG":8,"Sustain":4,"CC":5,"Mobility":9,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Ahri","damage":"AP","pickRate":9.23,"banRate":3.63},{"name":"Akali","role":"Mid","winRate":48.5,"combo":6,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":6,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Akali","damage":"AP","pickRate":6.86,"banRate":13.28},{"name":"Akshan","role":"Mid","winRate":50.8,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":9,"Teamfight":6,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Akshan","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Alistar","role":"Support","winRate":50.3,"combo":8,"DMG":6,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":6,"Safety":8,"Waveclear":5,"Versatility":6,"splashId":"Alistar","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ambessa","role":"Top","winRate":49.5,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Ambessa","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Amumu","role":"Jungle","winRate":49.6,"combo":7,"DMG":7,"Sustain":6,"CC":9,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Amumu","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Anivia","role":"Mid","winRate":50.6,"combo":7,"DMG":9,"Sustain":5,"CC":7,"Mobility":4,"Teamfight":8,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":6,"splashId":"Anivia","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Annie","role":"Mid","winRate":49.9,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Annie","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Aphelios","role":"ADC","winRate":50.3,"combo":6,"DMG":9,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Aphelios","damage":"AD","pickRate":3.91,"banRate":1.24},{"name":"Ashe","role":"ADC","winRate":50.0,"combo":7,"DMG":7,"Sustain":4,"CC":8,"Mobility":4,"Teamfight":7,"Utility":7,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Ashe","damage":"AD","pickRate":8.3,"banRate":3.28},{"name":"Aurelion Sol","role":"Mid","winRate":51.0,"combo":6,"DMG":9,"Sustain":5,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":4,"Waveclear":8,"Versatility":7,"splashId":"AurelionSol","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Aurora","role":"Mid","winRate":50.2,"combo":7,"DMG":8,"Sustain":6,"CC":6,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Aurora","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Azir","role":"Mid","winRate":47.3,"combo":8,"DMG":9,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":4,"Waveclear":8,"Versatility":7,"splashId":"Azir","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Bard","role":"Support","winRate":49.8,"combo":8,"DMG":6,"Sustain":5,"CC":8,"Mobility":7,"Teamfight":9,"Utility":9,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Bard","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Bel'Veth","role":"Jungle","winRate":51.5,"combo":6,"DMG":9,"Sustain":6,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Belveth","damage":"AD","pickRate":4.48,"banRate":4.87},{"name":"Blitzcrank","role":"Support","winRate":50.4,"combo":8,"DMG":7,"Sustain":5,"CC":9,"Mobility":6,"Teamfight":7,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":5,"Versatility":6,"splashId":"Blitzcrank","damage":"AP","pickRate":6.55,"banRate":13.46},{"name":"Brand","role":"Support","winRate":50.7,"combo":7,"DMG":9,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":8,"Safety":4,"Waveclear":8,"Versatility":6,"splashId":"Brand","damage":"AP","pickRate":3.98,"banRate":6.84},{"name":"Braum","role":"Support","winRate":50.0,"combo":7,"DMG":6,"Sustain":8,"CC":9,"Mobility":4,"Teamfight":8,"Utility":8,"Scaling":6,"Safety":8,"Waveclear":5,"Versatility":6,"splashId":"Braum","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Briar","role":"Jungle","winRate":52.3,"combo":6,"DMG":9,"Sustain":7,"CC":4,"Mobility":8,"Teamfight":7,"Utility":3,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":5,"splashId":"Briar","damage":"AD","pickRate":6.18,"banRate":11.77},{"name":"Caitlyn","role":"ADC","winRate":49.6,"combo":6,"DMG":8,"Sustain":4,"CC":5,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":8,"Versatility":7,"splashId":"Caitlyn","damage":"AD","pickRate":18.3,"banRate":21.57},{"name":"Camille","role":"Support","winRate":47.13,"combo":7,"DMG":8,"Sustain":6,"CC":6,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Camille","damage":"AD","pickRate":4.01,"banRate":8.45},{"name":"Cassiopeia","role":"Mid","winRate":48.6,"combo":8,"DMG":9,"Sustain":5,"CC":6,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":10,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Cassiopeia","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Cho'Gath","role":"Top","winRate":50.7,"combo":7,"DMG":8,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":7,"Waveclear":7,"Versatility":6,"splashId":"Chogath","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Corki","role":"Mid","winRate":50.7,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Corki","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Darius","role":"Top","winRate":49.0,"combo":6,"DMG":9,"Sustain":8,"CC":7,"Mobility":5,"Teamfight":8,"Utility":4,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Darius","damage":"AD","pickRate":8.62,"banRate":15.0},{"name":"Diana","role":"Mid","winRate":50.5,"combo":8,"DMG":9,"Sustain":6,"CC":6,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Diana","damage":"AP","pickRate":3.59,"banRate":3.76},{"name":"Dr. Mundo","role":"Top","winRate":51.2,"combo":5,"DMG":7,"Sustain":9,"CC":5,"Mobility":4,"Teamfight":7,"Utility":3,"Scaling":7,"Safety":8,"Waveclear":5,"Versatility":5,"splashId":"DrMundo","damage":"AP","pickRate":4.52,"banRate":4.17},{"name":"Draven","role":"ADC","winRate":48.8,"combo":6,"DMG":10,"Sustain":4,"CC":3,"Mobility":7,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Draven","damage":"AD","pickRate":3.1,"banRate":6.89},{"name":"Ekko","role":"Jungle","winRate":49.9,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Ekko","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Elise","role":"Jungle","winRate":52.0,"combo":7,"DMG":7,"Sustain":5,"CC":6,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Elise","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Evelynn","role":"Jungle","winRate":50.7,"combo":7,"DMG":9,"Sustain":5,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Evelynn","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ezreal","role":"ADC","winRate":46.5,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Ezreal","damage":"AD","pickRate":11.91,"banRate":4.0},{"name":"Fiddlesticks","role":"Jungle","winRate":52.5,"combo":9,"DMG":9,"Sustain":6,"CC":8,"Mobility":5,"Teamfight":9,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Fiddlesticks","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Fiora","role":"Top","winRate":51.7,"combo":6,"DMG":9,"Sustain":6,"CC":4,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":9,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Fiora","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Fizz","role":"Mid","winRate":51.8,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Fizz","damage":"AP","pickRate":5.74,"banRate":9.51},{"name":"Galio","role":"Mid","winRate":49.8,"combo":8,"DMG":7,"Sustain":7,"CC":9,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Galio","damage":"AP","pickRate":4.32,"banRate":2.31},{"name":"Gangplank","role":"Top","winRate":49.8,"combo":7,"DMG":9,"Sustain":5,"CC":5,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":9,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Gangplank","damage":"AD","pickRate":3.91,"banRate":4.46},{"name":"Garen","role":"Top","winRate":51.8,"combo":6,"DMG":8,"Sustain":8,"CC":5,"Mobility":6,"Teamfight":7,"Utility":3,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Garen","damage":"AD","pickRate":8.19,"banRate":6.31},{"name":"Gnar","role":"Top","winRate":49.2,"combo":8,"DMG":7,"Sustain":6,"CC":8,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Gnar","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Gragas","role":"Jungle","winRate":50.7,"combo":7,"DMG":7,"Sustain":6,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Gragas","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Graves","role":"Jungle","winRate":50.5,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Graves","damage":"AD","pickRate":9.45,"banRate":8.44},{"name":"Gwen","role":"Top","winRate":49.3,"combo":7,"DMG":9,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Gwen","damage":"AP","pickRate":3.56,"banRate":2.39},{"name":"Hecarim","role":"Jungle","winRate":50.5,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":9,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Hecarim","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Heimerdinger","role":"Mid","winRate":50.8,"combo":6,"DMG":9,"Sustain":4,"CC":5,"Mobility":4,"Teamfight":6,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":9,"Versatility":6,"splashId":"Heimerdinger","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Hwei","role":"Mid","winRate":50.9,"combo":6,"DMG":8,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":6,"Utility":4,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Hwei","damage":"AP","pickRate":3.31,"banRate":1.99},{"name":"Illaoi","role":"Top","winRate":52.1,"combo":7,"DMG":9,"Sustain":7,"CC":7,"Mobility":5,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Illaoi","damage":"AD","pickRate":3.93,"banRate":9.41},{"name":"Irelia","role":"Top","winRate":48.6,"combo":8,"DMG":9,"Sustain":6,"CC":6,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Irelia","damage":"AD","pickRate":3.24,"banRate":8.35},{"name":"Ivern","role":"Jungle","winRate":52.8,"combo":7,"DMG":5,"Sustain":8,"CC":6,"Mobility":6,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Ivern","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Janna","role":"Support","winRate":52.0,"combo":7,"DMG":3,"Sustain":7,"CC":6,"Mobility":8,"Teamfight":7,"Utility":10,"Scaling":5,"Safety":5,"Waveclear":5,"Versatility":7,"splashId":"Janna","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Jarvan IV","role":"Jungle","winRate":51.2,"combo":8,"DMG":8,"Sustain":7,"CC":7,"Mobility":7,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"JarvanIV","damage":"AD","pickRate":4.13,"banRate":0.78},{"name":"Jax","role":"Top","winRate":50.0,"combo":7,"DMG":9,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Jax","damage":"HYB","pickRate":5.54,"banRate":8.0},{"name":"Jayce","role":"Top","winRate":48.6,"combo":8,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Jayce","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Jhin","role":"ADC","winRate":49.6,"combo":7,"DMG":9,"Sustain":4,"CC":5,"Mobility":5,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Jhin","damage":"AD","pickRate":13.79,"banRate":2.48},{"name":"Jinx","role":"ADC","winRate":52.0,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Jinx","damage":"AD","pickRate":11.38,"banRate":3.11},{"name":"K'Sante","role":"Top","winRate":49.6,"combo":7,"DMG":8,"Sustain":8,"CC":7,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":7,"splashId":"KSante","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Kai'Sa","role":"ADC","winRate":50.0,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Kaisa","damage":"HYB","pickRate":16.37,"banRate":3.89},{"name":"Kalista","role":"ADC","winRate":49.3,"combo":6,"DMG":8,"Sustain":4,"CC":4,"Mobility":9,"Teamfight":6,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Kalista","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Karma","role":"Support","winRate":49.2,"combo":8,"DMG":6,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Karma","damage":"AP","pickRate":3.85,"banRate":1.55},{"name":"Karthus","role":"Jungle","winRate":52.1,"combo":7,"DMG":9,"Sustain":3,"CC":4,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":9,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Karthus","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Kassadin","role":"Mid","winRate":51.1,"combo":8,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Kassadin","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Katarina","role":"Mid","winRate":49.6,"combo":8,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Katarina","damage":"AP","pickRate":6.4,"banRate":6.95},{"name":"Kayle","role":"Top","winRate":50.3,"combo":7,"DMG":8,"Sustain":5,"CC":4,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Kayle","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Kayn","role":"Jungle","winRate":50.6,"combo":8,"DMG":9,"Sustain":5,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Kayn","damage":"AD","pickRate":9.32,"banRate":5.88},{"name":"Kennen","role":"Top","winRate":53.1,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Kennen","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Kha'Zix","role":"Jungle","winRate":48.0,"combo":8,"DMG":9,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Khazix","damage":"AD","pickRate":4.2,"banRate":1.88},{"name":"Kindred","role":"Jungle","winRate":50.4,"combo":7,"DMG":8,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":6,"Scaling":9,"Safety":8,"Waveclear":7,"Versatility":7,"splashId":"Kindred","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Kled","role":"Top","winRate":51.0,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Kled","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Kog'Maw","role":"ADC","winRate":51.7,"combo":6,"DMG":9,"Sustain":4,"CC":3,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"KogMaw","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"LeBlanc","role":"Mid","winRate":49.9,"combo":9,"DMG":9,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Leblanc","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Lee Sin","role":"Jungle","winRate":48.5,"combo":8,"DMG":8,"Sustain":6,"CC":5,"Mobility":10,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"LeeSin","damage":"AD","pickRate":10.44,"banRate":11.67},{"name":"Leona","role":"Support","winRate":52.0,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Leona","damage":"AP","pickRate":7.85,"banRate":9.29},{"name":"Lillia","role":"Jungle","winRate":51.7,"combo":7,"DMG":8,"Sustain":5,"CC":6,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Lillia","damage":"AP","pickRate":3.58,"banRate":1.7},{"name":"Lissandra","role":"Mid","winRate":51.2,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Lissandra","damage":"AP","pickRate":3.37,"banRate":2.08},{"name":"Lucian","role":"ADC","winRate":48.7,"combo":7,"DMG":8,"Sustain":4,"CC":4,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Lucian","damage":"AD","pickRate":7.05,"banRate":1.62},{"name":"Lulu","role":"Support","winRate":50.4,"combo":7,"DMG":5,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Lulu","damage":"AP","pickRate":5.86,"banRate":3.67},{"name":"Lux","role":"Support","winRate":49.8,"combo":7,"DMG":8,"Sustain":4,"CC":6,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Lux","damage":"AP","pickRate":13.03,"banRate":11.84},{"name":"Malphite","role":"Top","winRate":51.3,"combo":7,"DMG":7,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Malphite","damage":"AP","pickRate":5.92,"banRate":12.25},{"name":"Malzahar","role":"Mid","winRate":52.2,"combo":6,"DMG":8,"Sustain":4,"CC":6,"Mobility":4,"Teamfight":6,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Malzahar","damage":"AP","pickRate":6.41,"banRate":14.39},{"name":"Maokai","role":"Jungle","winRate":50.6,"combo":6,"DMG":7,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":7,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":7,"Versatility":6,"splashId":"Maokai","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Master Yi","role":"Jungle","winRate":49.5,"combo":7,"DMG":9,"Sustain":5,"CC":3,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"MasterYi","damage":"AD","pickRate":8.94,"banRate":15.23},{"name":"Mel","role":"Mid","winRate":47.5,"combo":7,"DMG":8,"Sustain":5,"CC":4,"Mobility":7,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Mel","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Milio","role":"Support","winRate":52.0,"combo":7,"DMG":6,"Sustain":6,"CC":4,"Mobility":7,"Teamfight":7,"Utility":8,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Milio","damage":"AP","pickRate":3.77,"banRate":1.97},{"name":"Miss Fortune","role":"ADC","winRate":50.3,"combo":6,"DMG":9,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":6,"splashId":"MissFortune","damage":"AD","pickRate":14.38,"banRate":4.18},{"name":"Mordekaiser","role":"Top","winRate":50.7,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":5,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Mordekaiser","damage":"AP","pickRate":8.66,"banRate":15.28},{"name":"Morgana","role":"Support","winRate":50.6,"combo":7,"DMG":7,"Sustain":5,"CC":8,"Mobility":5,"Teamfight":7,"Utility":8,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Morgana","damage":"AP","pickRate":7.26,"banRate":20.54},{"name":"Naafiri","role":"Jungle","winRate":49.17,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":5,"Utility":3,"Scaling":6,"Safety":7,"Waveclear":7,"Versatility":4,"splashId":"Naafiri","damage":"AD","pickRate":3.92,"banRate":15.19},{"name":"Nami","role":"Support","winRate":51.7,"combo":7,"DMG":4,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Nami","damage":"AP","pickRate":5.17,"banRate":0.69},{"name":"Nasus","role":"Top","winRate":53.6,"combo":6,"DMG":8,"Sustain":8,"CC":4,"Mobility":4,"Teamfight":7,"Utility":3,"Scaling":10,"Safety":7,"Waveclear":6,"Versatility":5,"splashId":"Nasus","damage":"AD","pickRate":6.75,"banRate":9.0},{"name":"Nautilus","role":"Support","winRate":50.5,"combo":7,"DMG":7,"Sustain":7,"CC":9,"Mobility":4,"Teamfight":8,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Nautilus","damage":"AP","pickRate":9.69,"banRate":11.22},{"name":"Neeko","role":"Mid","winRate":51.1,"combo":7,"DMG":8,"Sustain":5,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Neeko","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Nidalee","role":"Jungle","winRate":51.8,"combo":7,"DMG":8,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Nidalee","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Nilah","role":"ADC","winRate":52.8,"combo":7,"DMG":8,"Sustain":6,"CC":4,"Mobility":9,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Nilah","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Nocturne","role":"Jungle","winRate":51.7,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Nocturne","damage":"AD","pickRate":7.43,"banRate":13.37},{"name":"Nunu & Willump","role":"Jungle","winRate":51.1,"combo":7,"DMG":7,"Sustain":8,"CC":7,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Nunu","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Olaf","role":"Jungle","winRate":52.2,"combo":7,"DMG":9,"Sustain":7,"CC":6,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Olaf","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Orianna","role":"Mid","winRate":50.6,"combo":7,"DMG":8,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Orianna","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ornn","role":"Top","winRate":50.2,"combo":7,"DMG":7,"Sustain":8,"CC":8,"Mobility":4,"Teamfight":8,"Utility":7,"Scaling":7,"Safety":7,"Waveclear":7,"Versatility":6,"splashId":"Ornn","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Pantheon","role":"Support","winRate":49.8,"combo":7,"DMG":8,"Sustain":5,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Pantheon","damage":"AD","pickRate":5.42,"banRate":2.83},{"name":"Poppy","role":"Top","winRate":51.8,"combo":7,"DMG":7,"Sustain":8,"CC":8,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":8,"Waveclear":6,"Versatility":6,"splashId":"Poppy","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Pyke","role":"Support","winRate":48.3,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Pyke","damage":"HYB","pickRate":7.1,"banRate":15.86},{"name":"Qiyana","role":"Mid","winRate":50.5,"combo":8,"DMG":9,"Sustain":4,"CC":4,"Mobility":10,"Teamfight":7,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Qiyana","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Quinn","role":"Top","winRate":52.0,"combo":7,"DMG":8,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Quinn","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rakan","role":"Support","winRate":49.9,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Rakan","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rammus","role":"Jungle","winRate":52.9,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":6,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Rammus","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Rek'Sai","role":"Jungle","winRate":51.3,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"RekSai","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rell","role":"Support","winRate":51.3,"combo":7,"DMG":7,"Sustain":7,"CC":9,"Mobility":4,"Teamfight":8,"Utility":8,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Rell","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Renata Glasc","role":"Support","winRate":51.0,"combo":7,"DMG":6,"Sustain":5,"CC":7,"Mobility":5,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Renata","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Renekton","role":"Top","winRate":50.3,"combo":7,"DMG":9,"Sustain":7,"CC":6,"Mobility":7,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Renekton","damage":"AD","pickRate":4.87,"banRate":3.3},{"name":"Rengar","role":"Jungle","winRate":48.3,"combo":9,"DMG":9,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":7,"Utility":3,"Scaling":9,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Rengar","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Riven","role":"Top","winRate":50.0,"combo":9,"DMG":9,"Sustain":5,"CC":5,"Mobility":10,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Riven","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Rumble","role":"Top","winRate":49.3,"combo":7,"DMG":8,"Sustain":5,"CC":6,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":8,"Versatility":6,"splashId":"Rumble","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Ryze","role":"Mid","winRate":49.2,"combo":7,"DMG":8,"Sustain":4,"CC":5,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":9,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Ryze","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Samira","role":"ADC","winRate":50.1,"combo":7,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Samira","damage":"AD","pickRate":5.54,"banRate":8.12},{"name":"Sejuani","role":"Jungle","winRate":48.5,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":7,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Sejuani","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Senna","role":"Support","winRate":50.9,"combo":6,"DMG":7,"Sustain":4,"CC":4,"Mobility":6,"Teamfight":7,"Utility":7,"Scaling":9,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Senna","damage":"AD","pickRate":4.7,"banRate":2.56},{"name":"Seraphine","role":"Support","winRate":50.8,"combo":7,"DMG":6,"Sustain":5,"CC":6,"Mobility":5,"Teamfight":7,"Utility":9,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Seraphine","damage":"AP","pickRate":10.79,"banRate":13.62},{"name":"Sett","role":"Top","winRate":51.9,"combo":7,"DMG":9,"Sustain":7,"CC":7,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Sett","damage":"AD","pickRate":8.03,"banRate":4.06},{"name":"Shaco","role":"Jungle","winRate":49.1,"combo":8,"DMG":8,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":6,"Versatility":6,"splashId":"Shaco","damage":"AD","pickRate":5.67,"banRate":24.58},{"name":"Shen","role":"Top","winRate":50.9,"combo":7,"DMG":7,"Sustain":8,"CC":7,"Mobility":4,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":8,"Waveclear":6,"Versatility":6,"splashId":"Shen","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Shyvana","role":"Jungle","winRate":53.1,"combo":7,"DMG":8,"Sustain":8,"CC":7,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":7,"Waveclear":6,"Versatility":7,"splashId":"Shyvana","damage":"AD","pickRate":5.35,"banRate":4.12},{"name":"Singed","role":"Top","winRate":51.0,"combo":6,"DMG":7,"Sustain":8,"CC":4,"Mobility":6,"Teamfight":7,"Utility":3,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":5,"splashId":"Singed","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Sion","role":"Top","winRate":50.7,"combo":7,"DMG":8,"Sustain":9,"CC":8,"Mobility":4,"Teamfight":8,"Utility":5,"Scaling":8,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Sion","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Sivir","role":"ADC","winRate":50.6,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":7,"Teamfight":7,"Utility":7,"Scaling":7,"Safety":6,"Waveclear":8,"Versatility":7,"splashId":"Sivir","damage":"AD","pickRate":3.14,"banRate":1.02},{"name":"Skarner","role":"Jungle","winRate":48.6,"combo":7,"DMG":7,"Sustain":8,"CC":9,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Skarner","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Smolder","role":"ADC","winRate":51.0,"combo":8,"DMG":8,"Sustain":6,"CC":4,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":10,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Smolder","damage":"AD","pickRate":4.42,"banRate":2.3},{"name":"Sona","role":"Support","winRate":49.8,"combo":7,"DMG":5,"Sustain":5,"CC":6,"Mobility":6,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Sona","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Soraka","role":"Support","winRate":51.5,"combo":7,"DMG":4,"Sustain":8,"CC":5,"Mobility":5,"Teamfight":7,"Utility":10,"Scaling":6,"Safety":5,"Waveclear":5,"Versatility":7,"splashId":"Soraka","damage":"AP","pickRate":3.61,"banRate":1.59},{"name":"Swain","role":"Support","winRate":49.92,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Swain","damage":"AP","pickRate":4.11,"banRate":3.8},{"name":"Sylas","role":"Mid","winRate":49.3,"combo":7,"DMG":8,"Sustain":6,"CC":6,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Sylas","damage":"AP","pickRate":7.0,"banRate":12.18},{"name":"Syndra","role":"Mid","winRate":51.0,"combo":7,"DMG":9,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":9,"Safety":5,"Waveclear":8,"Versatility":7,"splashId":"Syndra","damage":"AP","pickRate":5.74,"banRate":7.5},{"name":"Tahm Kench","role":"Support","winRate":49.4,"combo":7,"DMG":7,"Sustain":9,"CC":7,"Mobility":4,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"TahmKench","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Taliyah","role":"Jungle","winRate":51.7,"combo":7,"DMG":8,"Sustain":4,"CC":5,"Mobility":7,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Taliyah","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Talon","role":"Mid","winRate":50.8,"combo":8,"DMG":9,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Talon","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Taric","role":"Support","winRate":53.8,"combo":7,"DMG":6,"Sustain":8,"CC":9,"Mobility":5,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Taric","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Teemo","role":"Top","winRate":51.7,"combo":6,"DMG":7,"Sustain":3,"CC":4,"Mobility":7,"Teamfight":6,"Utility":3,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Teemo","damage":"AP","pickRate":7.33,"banRate":15.76},{"name":"Thresh","role":"Support","winRate":51.1,"combo":7,"DMG":5,"Sustain":6,"CC":9,"Mobility":6,"Teamfight":8,"Utility":9,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Thresh","damage":"AD","pickRate":10.41,"banRate":5.29},{"name":"Tristana","role":"ADC","winRate":50.9,"combo":6,"DMG":8,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Tristana","damage":"AD","pickRate":7.45,"banRate":3.54},{"name":"Trundle","role":"Jungle","winRate":49.2,"combo":7,"DMG":8,"Sustain":7,"CC":6,"Mobility":6,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Trundle","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Tryndamere","role":"Top","winRate":51.4,"combo":7,"DMG":9,"Sustain":5,"CC":3,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Tryndamere","damage":"AD","pickRate":3.85,"banRate":3.58},{"name":"Twisted Fate","role":"Mid","winRate":50.7,"combo":8,"DMG":8,"Sustain":4,"CC":4,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":9,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"TwistedFate","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Twitch","role":"ADC","winRate":51.7,"combo":6,"DMG":9,"Sustain":4,"CC":3,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":4,"Waveclear":7,"Versatility":7,"splashId":"Twitch","damage":"AD","pickRate":4.78,"banRate":5.87},{"name":"Udyr","role":"Jungle","winRate":49.1,"combo":7,"DMG":8,"Sustain":7,"CC":5,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":8,"Safety":6,"Waveclear":6,"Versatility":7,"splashId":"Udyr","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Urgot","role":"Top","winRate":51.8,"combo":6,"DMG":9,"Sustain":6,"CC":5,"Mobility":5,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Urgot","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Varus","role":"ADC","winRate":47.8,"combo":6,"DMG":8,"Sustain":4,"CC":6,"Mobility":4,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Varus","damage":"HYB","pickRate":1.4,"banRate":0.9},{"name":"Vayne","role":"ADC","winRate":50.7,"combo":7,"DMG":9,"Sustain":4,"CC":3,"Mobility":9,"Teamfight":6,"Utility":3,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Vayne","damage":"AD","pickRate":5.23,"banRate":9.88},{"name":"Veigar","role":"Mid","winRate":51.8,"combo":7,"DMG":9,"Sustain":3,"CC":4,"Mobility":4,"Teamfight":7,"Utility":5,"Scaling":10,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Veigar","damage":"AP","pickRate":6.58,"banRate":4.59},{"name":"Vel'Koz","role":"Support","winRate":50.5,"combo":7,"DMG":9,"Sustain":3,"CC":7,"Mobility":5,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Velkoz","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Vex","role":"Mid","winRate":51.0,"combo":7,"DMG":8,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":7,"Utility":6,"Scaling":7,"Safety":5,"Waveclear":7,"Versatility":6,"splashId":"Vex","damage":"AP","pickRate":3.86,"banRate":3.98},{"name":"Vi","role":"Jungle","winRate":50.8,"combo":7,"DMG":8,"Sustain":6,"CC":7,"Mobility":7,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Vi","damage":"AD","pickRate":5.26,"banRate":1.55},{"name":"Viego","role":"Jungle","winRate":49.6,"combo":6,"DMG":9,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":4,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"Viego","damage":"AD","pickRate":10.68,"banRate":8.08},{"name":"Viktor","role":"Mid","winRate":51.7,"combo":7,"DMG":9,"Sustain":4,"CC":6,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":9,"Safety":5,"Waveclear":9,"Versatility":7,"splashId":"Viktor","damage":"AP","pickRate":6.42,"banRate":9.74},{"name":"Vladimir","role":"Mid","winRate":50.2,"combo":6,"DMG":9,"Sustain":8,"CC":3,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Vladimir","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Volibear","role":"Jungle","winRate":49.5,"combo":7,"DMG":7,"Sustain":8,"CC":7,"Mobility":6,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":7,"Waveclear":6,"Versatility":6,"splashId":"Volibear","damage":"AD","pickRate":3.61,"banRate":1.7},{"name":"Warwick","role":"Jungle","winRate":52.1,"combo":6,"DMG":7,"Sustain":8,"CC":6,"Mobility":6,"Teamfight":7,"Utility":4,"Scaling":6,"Safety":7,"Waveclear":6,"Versatility":5,"splashId":"Warwick","damage":"AD","pickRate":6.88,"banRate":6.55},{"name":"Wukong","role":"Jungle","winRate":52.4,"combo":8,"DMG":8,"Sustain":6,"CC":7,"Mobility":8,"Teamfight":8,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"MonkeyKing","damage":"AD","pickRate":4.76,"banRate":1.91},{"name":"Xayah","role":"ADC","winRate":51.1,"combo":5,"DMG":8,"Sustain":5,"CC":4,"Mobility":7,"Teamfight":6,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Xayah","damage":"AD","pickRate":4.02,"banRate":0.62},{"name":"Xerath","role":"Mid","winRate":52.3,"combo":7,"DMG":9,"Sustain":3,"CC":7,"Mobility":5,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":4,"Waveclear":9,"Versatility":6,"splashId":"Xerath","damage":"AP","pickRate":3.89,"banRate":18.14},{"name":"Xin Zhao","role":"Jungle","winRate":51.1,"combo":6,"DMG":8,"Sustain":7,"CC":5,"Mobility":7,"Teamfight":7,"Utility":4,"Scaling":6,"Safety":6,"Waveclear":6,"Versatility":6,"splashId":"XinZhao","damage":"AD","pickRate":3.56,"banRate":0.94},{"name":"Yasuo","role":"Mid","winRate":50.0,"combo":8,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":6,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Yasuo","damage":"AD","pickRate":11.21,"banRate":16.97},{"name":"Yone","role":"Mid","winRate":50.1,"combo":8,"DMG":9,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":8,"Utility":4,"Scaling":8,"Safety":5,"Waveclear":7,"Versatility":7,"splashId":"Yone","damage":"AD","pickRate":9.3,"banRate":9.11},{"name":"Yorick","role":"Top","winRate":51.8,"combo":4,"DMG":8,"Sustain":7,"CC":4,"Mobility":4,"Teamfight":5,"Utility":3,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":5,"splashId":"Yorick","damage":"AD","pickRate":4.47,"banRate":9.92},{"name":"Yuumi","role":"Support","winRate":48.0,"combo":6,"DMG":4,"Sustain":8,"CC":3,"Mobility":2,"Teamfight":6,"Utility":10,"Scaling":6,"Safety":4,"Waveclear":3,"Versatility":4,"splashId":"Yuumi","damage":"AP","pickRate":4.83,"banRate":3.44},{"name":"Yunara","role":"ADC","winRate":49.6,"combo":7,"DMG":8,"Sustain":6,"CC":5,"Mobility":8,"Teamfight":7,"Utility":5,"Scaling":7,"Safety":6,"Waveclear":7,"Versatility":6,"splashId":"Yunara","damage":"AD","pickRate":5.36,"banRate":1.01},{"name":"Zac","role":"Jungle","winRate":50.5,"combo":8,"DMG":6,"Sustain":9,"CC":9,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":9,"Waveclear":7,"Versatility":7,"splashId":"Zac","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zed","role":"Mid","winRate":49.4,"combo":7,"DMG":9,"Sustain":4,"CC":3,"Mobility":10,"Teamfight":5,"Utility":3,"Scaling":7,"Safety":6,"Waveclear":6,"Versatility":5,"splashId":"Zed","damage":"AD","pickRate":8.54,"banRate":18.93},{"name":"Zeri","role":"ADC","winRate":50.7,"combo":6,"DMG":8,"Sustain":5,"CC":4,"Mobility":9,"Teamfight":7,"Utility":5,"Scaling":8,"Safety":6,"Waveclear":7,"Versatility":7,"splashId":"Zeri","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Ziggs","role":"Mid","winRate":51.0,"combo":7,"DMG":9,"Sustain":3,"CC":6,"Mobility":6,"Teamfight":8,"Utility":6,"Scaling":7,"Safety":4,"Waveclear":9,"Versatility":7,"splashId":"Ziggs","damage":"AD","pickRate":3.4,"banRate":3.18},{"name":"Zilean","role":"Support","winRate":51.8,"combo":7,"DMG":6,"Sustain":4,"CC":7,"Mobility":6,"Teamfight":7,"Utility":9,"Scaling":6,"Safety":5,"Waveclear":6,"Versatility":7,"splashId":"Zilean","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zoe","role":"Mid","winRate":51.9,"combo":8,"DMG":9,"Sustain":3,"CC":6,"Mobility":7,"Teamfight":6,"Utility":5,"Scaling":7,"Safety":4,"Waveclear":7,"Versatility":6,"splashId":"Zoe","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zyra","role":"Support","winRate":50.8,"combo":7,"DMG":8,"Sustain":3,"CC":8,"Mobility":4,"Teamfight":7,"Utility":7,"Scaling":6,"Safety":3,"Waveclear":8,"Versatility":6,"splashId":"Zyra","damage":"AP","pickRate":1.4,"banRate":0.9},{"name":"Zaahen","role":"Top","winRate":50.6,"combo":7,"DMG":9,"Sustain":8,"CC":5,"Mobility":6,"Teamfight":8,"Utility":4,"Scaling":9,"Safety":6,"Waveclear":7,"Versatility":8,"splashId":"Zaahen","damage":"AD","pickRate":1.4,"banRate":0.9},{"name":"Locke","role":"Mid","winRate":48.4,"combo":8,"DMG":9,"Sustain":5,"CC":5,"Mobility":8,"Teamfight":6,"Utility":4,"Scaling":7,"Safety":5,"Waveclear":6,"Versatility":5,"splashId":"Locke","damage":"AP","pickRate":5.56,"banRate":31.37}],"roleWeights":{"Top":{"DMG":0.2,"Sustain":0.12,"CC":0.12,"Mobility":0.08,"Teamfight":0.13,"Utility":0.05,"Scaling":0.15,"Safety":0.1,"Waveclear":0.03,"Versatility":0.02},"Jungle":{"DMG":0.18,"Sustain":0.08,"CC":0.15,"Mobility":0.15,"Teamfight":0.16,"Utility":0.06,"Scaling":0.1,"Safety":0.08,"Waveclear":0.02,"Versatility":0.02},"Mid":{"DMG":0.24,"Sustain":0.06,"CC":0.1,"Mobility":0.14,"Teamfight":0.12,"Utility":0.05,"Scaling":0.11,"Safety":0.1,"Waveclear":0.06,"Versatility":0.02},"ADC":{"DMG":0.3,"Sustain":0.04,"CC":0.05,"Mobility":0.08,"Teamfight":0.14,"Utility":0.05,"Scaling":0.18,"Safety":0.1,"Waveclear":0.04,"Versatility":0.02},"Support":{"DMG":0.05,"Sustain":0.08,"CC":0.22,"Mobility":0.08,"Teamfight":0.16,"Utility":0.25,"Scaling":0.04,"Safety":0.08,"Waveclear":0.02,"Versatility":0.02}}};
 
 </script>
 <script>
 
+
+// Riot's square champion icon. Pinned to a specific Data Dragon build because
+// old versions stay hosted indefinitely, so this cannot break when Riot ships a
+// new patch, and it avoids a network round-trip just to learn the version.
+const DDRAGON_VER = "16.16.1";
+const champIconUrl = (splashId) =>
+  `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VER}/img/champion/${splashId}.png`;
 
 const ROLES = ["Top", "Jungle", "Mid", "ADC", "Support"];
 
@@ -1914,14 +2152,25 @@ function winProbBreakdown(blue, red, blueChamps, redChamps, actualDistance) {
   return raw.map((x) => ({ ...x, v: round(x.v * k, 2) }));
 }
 
-// Aggregate radar profile for a whole side: the mean of its picks on each of
-// the five axes already used on the per-champion charts.
+// Aggregate radar profile for a whole side. Eight axes rather than five: the
+// original set collapsed Utility, Teamfight and Waveclear out of the picture
+// entirely, which meant two drafts with completely different win conditions
+// could trace nearly the same shape.
+const TEAM_AXES = [
+  { k: "DMG", l: "DAMAGE" },
+  { k: "CC", l: "CONTROL" },
+  { k: "Teamfight", l: "TEAMFIGHT" },
+  { k: "Mobility", l: "MOBILITY" },
+  { k: "Scaling", l: "GROWTH" },
+  { k: "__survival", l: "SURVIVAL" },
+  { k: "Utility", l: "UTILITY" },
+  { k: "Waveclear", l: "WAVECLEAR" },
+];
 function teamProfile(champs) {
   const f = champs.filter(Boolean);
-  const ax = ["DMG", "CC", "Mobility", "Scaling", "__survival"];
-  return ax.map((k) => ({
-    key: k,
-    v: f.length ? f.reduce((s, c) => s + (k === "__survival" ? (c.Sustain + c.Safety) / 2 : c[k]), 0) / f.length : 0,
+  return TEAM_AXES.map((a) => ({
+    key: a.k, label: a.l,
+    v: f.length ? f.reduce((s, c) => s + (a.k === "__survival" ? (c.Sustain + c.Safety) / 2 : c[a.k]), 0) / f.length : 0,
   }));
 }
 
@@ -1938,6 +2187,309 @@ function champCurves(champs) {
 
 // Per phase: each side's mean z-score, the gap between them, and the champion
 // most responsible for that side's standing in that phase.
+// ---------------------------------------------------------------------------
+// Fight forecast -- when this game gets violent, and who wants each fight.
+// ---------------------------------------------------------------------------
+// This is a model of GAME RHYTHM, not a prediction of a specific match. It is
+// built from three things that are real and checkable rather than invented:
+//
+//   1. Neutral objective spawn times -- fixed game data, already in OBJECTIVES.
+//   2. Champion power spikes (level 6, first item, level 11, level 16) -- fixed
+//      game mechanics with well-known approximate timings.
+//   3. The two drafts' own appetite for fighting, from CC / Mobility /
+//      Teamfight / DMG ratings that already drive the rest of this model.
+//
+// The per-minute kill figures are deliberately NOT invented point by point. A
+// relative pressure curve is built first, then scaled so its mean over a
+// normal-length game equals a realistic combined-kills-per-minute figure. CKPM
+// is a standard esports statistic, so the aggregate is anchored to something
+// checkable even though no public dataset gives a clean minute-by-minute kill
+// distribution. Treat single-minute numbers as "roughly this busy", not as a
+// forecast of exact kills.
+const CKPM_BASE = 0.92;      // combined kills/min, both teams, average draft
+const CKPM_SWING = 0.34;     // how far draft tempo can move that, either way
+const NORMAL_GAME_MIN = 32;  // length the CKPM average is calibrated over
+
+// Fixed mechanical spikes. Times are the minute the spike lands for most of
+// the map, not for any one role.
+const FIGHT_SPIKES = [
+  { t: 2,  amp: 0.16, sd: 1.0, label: "Level 2 spike",
+    note: "First real trade window. Whoever hits level 2 on the wave first can force a summoner or a kill." },
+  { t: 7,  amp: 0.34, sd: 1.9, label: "Ultimates online",
+    note: "Level 6 lands across the map. Kill pressure jumps in every lane at once and the jungle starts converting ganks." },
+  { t: 11, amp: 0.30, sd: 1.9, label: "First items complete",
+    note: "First big item purchases land. Lane bullies have to cash in here or start falling off." },
+  { t: 16, amp: 0.26, sd: 2.1, label: "Level 11 / second item",
+    note: "Second ultimate rank plus a second item. Skirmishes stop being trades and start being kills." },
+  { t: 22, amp: 0.24, sd: 2.3, label: "Level 16 / ults maxed",
+    note: "Ultimates maxed and three items deep. Teamfights start ending in aces rather than even trades." },
+  { t: 30, amp: 0.30, sd: 3.4, label: "Death timers bite",
+    note: "Respawn timers are long enough that one lost fight ends the game. Nobody takes a coin flip without a reason." },
+];
+
+// Relative "how much fighting happens here" before the draft is considered.
+function fightBase(t) {
+  if (t < 1.5) return 0.05;                              // minions have not met
+  const laning = 0.55 * Math.min(1, (t - 1.5) / 4);      // skirmishes ramp in
+  const grouping = 1.35 / (1 + Math.exp(-(t - 19) / 4.2)); // teams become units
+  return laning + grouping;
+}
+
+function fightForecast(blueChamps, redChamps, curve) {
+  const bf = blueChamps.filter(Boolean), rf = redChamps.filter(Boolean);
+  const all = bf.concat(rf);
+  const any = all.length > 0;
+
+  // How much these two drafts want to fight at all.
+  // Weighted toward the ability to COMMIT -- hard CC and teamfight -- rather
+  // than raw damage. An early version averaged CC/Mobility/Teamfight/DMG
+  // equally and scored a Jayce-Nidalee-Zoe-Caitlyn poke draft as MORE
+  // fight-hungry than a Malphite-Amumu-Leona engage draft, which is exactly
+  // backwards: poke comps have high damage and mobility precisely so they can
+  // win without ever committing to a fight.
+  //
+  // Centre and scale measured empirically, not guessed: 20,000 random
+  // role-legal 10-champion drafts give a mean of 6.575 and sd 0.201. The first
+  // version divided by the PER-CHAMPION sd (~0.69), which is the same
+  // scale-mismatch that has bitten this model before -- averaging ten picks
+  // shrinks the spread by roughly root-10, so every real draft collapsed toward
+  // z=0 and engage comps barely separated from poke comps.
+  const appetite = (cs) => (cs.length
+    ? cs.reduce((s, c) => s + (c.CC * 0.38 + c.Teamfight * 0.34 + c.Mobility * 0.16 + c.DMG * 0.12), 0) / cs.length
+    : 6.575);
+  const tempoZ = Math.max(-3, Math.min(3, (appetite(all) - 6.575) / 0.201));
+  // Clamped to a defensible range. Mirror drafts (the same five champions on
+  // both sides) can push tempoZ to the stops, and an unclamped result drifted
+  // to 0.46 combined kills/min -- below anything a real game produces.
+  const ckpm = Math.max(0.55, Math.min(1.45, CKPM_BASE + (tempoZ / 2.2) * CKPM_SWING));
+
+  // Engage specifically: hard CC plus the mobility to land it. High-engage
+  // drafts concentrate their violence onto objectives; poke and scaling drafts
+  // spread it thinner and later.
+  // Same empirical calibration: mean 6.007, sd 0.266 across 20,000 drafts.
+  const engage = (cs) => (cs.length
+    ? cs.reduce((s, c) => s + (c.CC * 0.62 + c.Mobility * 0.38), 0) / cs.length
+    : 6.007);
+  const engageZ = Math.max(-3, Math.min(3, (engage(all) - 6.007) / 0.266));
+
+  const bump = (t, mu, sd, amp) => amp * Math.exp(-((t - mu) ** 2) / (2 * sd * sd));
+
+  // Objective pull, scaled by how well the drafts can actually convert a
+  // contested objective into a fight.
+  const OBJ_AMP = { DRAGON: 0.30, HERALD: 0.34, BARON: 0.70, SOUL: 0.74, ELDER: 0.86 };
+  const OBJ_SD = { DRAGON: 1.6, HERALD: 1.8, BARON: 2.2, SOUL: 2.4, ELDER: 2.6 };
+
+  const raw = [];
+  for (let t = 0; t <= GAME_END_MIN; t++) {
+    let v = fightBase(t);
+    let objPull = 0;
+    OBJECTIVES.forEach((o) => { objPull += bump(t, o.t, OBJ_SD[o.key], OBJ_AMP[o.key]); });
+    v += objPull * (1 + 0.20 * engageZ);
+    FIGHT_SPIKES.forEach((s) => { v += bump(t, s.t, s.sd, s.amp); });
+    // A side that is clearly ahead at minute t has a reason to force the issue.
+    const wp = curve && curve.points[t] ? curve.points[t].blue : 50;
+    v *= 1 + 0.06 * Math.min(1, Math.abs(wp - 50) / 12);
+    raw.push(Math.max(0.02, v));
+  }
+
+  // Scale so the mean over a normal-length game equals the CKPM figure. This
+  // is what keeps the numbers honest: the aggregate is anchored, the shape is
+  // structural, and no single minute was hand-picked.
+  const norm = raw.slice(0, NORMAL_GAME_MIN + 1);
+  const meanRaw = norm.reduce((s, v) => s + v, 0) / norm.length;
+  const maxRaw = Math.max(...raw);
+
+  let cum = 0;
+  const points = raw.map((v, t) => {
+    const kills = any ? (v / meanRaw) * ckpm : 0;
+    cum += kills;
+    const pressure = (v / maxRaw) * 100;
+    return {
+      t,
+      kills: round(kills, 2),
+      cumulative: round(cum, 1),
+      pressure: round(pressure, 1),
+      // Thresholds set so the bands actually discriminate. Pressure is
+      // normalised against the game's own busiest minute, and the late game is
+      // always busiest, so low cut-offs would label almost everything DECISIVE.
+      level: pressure >= 90 ? "DECISIVE" : pressure >= 68 ? "FIGHT WINDOW"
+           : pressure >= 40 ? "SKIRMISH" : "QUIET",
+    };
+  });
+
+  // What is actually happening at each minute, in plain language.
+  const eventsAt = (t) => {
+    const out = [];
+    OBJECTIVES.forEach((o) => {
+      if (Math.abs(o.t - t) <= 1) out.push({ kind: "OBJECTIVE", label: o.label,
+        note: `${o.label} is up at ${o.t}:00 -- expect both sides to commit.` });
+    });
+    FIGHT_SPIKES.forEach((s) => {
+      if (Math.abs(s.t - t) <= 1) out.push({ kind: "SPIKE", label: s.label, note: s.note });
+    });
+    if (curve) {
+      curve.crossings.forEach((cr) => {
+        if (Math.abs(cr.t - t) <= 1) out.push({ kind: "SWING", label: "Advantage flips",
+          note: `Around minute ${cr.t} the favourite changes to ${cr.to === "blue" ? "Blue" : "Red"}.` });
+      });
+    }
+    // Individual champions arriving at their own peak is a real fight trigger.
+    [[bf, "Blue"], [rf, "Red"]].forEach(([side, name]) => {
+      side.forEach((c) => {
+        let peak = 0, best = -Infinity;
+        for (let k = 0; k <= GAME_END_MIN; k++) {
+          const p = champPowerAt(c, k);
+          if (p > best) { best = p; peak = k; }
+        }
+        if (Math.abs(peak - t) <= 1 && peak > 2 && peak < GAME_END_MIN - 1) {
+          out.push({ kind: "PEAK", label: `${c.name} peaks`,
+            note: `${c.name} (${name}) is at their strongest here. ${name} should be looking for the fight.` });
+        }
+      });
+    });
+    return out;
+  };
+
+  // Who actually wins a straight 5v5 at minute t -- distinct from who is
+  // favoured to win the game.
+  const tfAt = (t) => {
+    const sideTf = (cs) => (cs.length
+      ? cs.reduce((s, c) => s + c.Teamfight * 0.6 + c.CC * 0.25 + c.combo * 0.15, 0) / cs.length
+      : 0);
+    const powB = bf.length ? bf.reduce((s, c) => s + champPowerAt(c, t), 0) / bf.length : 0;
+    const powR = rf.length ? rf.reduce((s, c) => s + champPowerAt(c, t), 0) / rf.length : 0;
+    const d = (sideTf(bf) - sideTf(rf)) * 0.30 + (powB - powR) * 0.55;
+    return { edge: round(d, 3), side: Math.abs(d) < 0.12 ? "even" : d > 0 ? "blue" : "red" };
+  };
+
+  // The three busiest stretches, for a summary read. Built with an explicit
+  // loop rather than .filter: a filter compares each candidate against entries
+  // that were themselves already rejected, so peaks got dropped in pairs and
+  // the list came back short.
+  const hotspots = [];
+  points.slice(3).slice().sort((a, b) => b.pressure - a.pressure).forEach((p) => {
+    if (hotspots.length >= 3) return;
+    if (hotspots.every((q) => Math.abs(q.t - p.t) > 6)) hotspots.push(p);
+  });
+  hotspots.sort((a, b) => a.t - b.t);
+
+  return { points, eventsAt, tfAt, hotspots, ckpm: round(ckpm, 2),
+    tempoZ: round(tempoZ, 2), engageZ: round(engageZ, 2), any };
+}
+
+// ---------------------------------------------------------------------------
+// Breakdown analytics -- how trustworthy is the number, not just what is it.
+// ---------------------------------------------------------------------------
+// The waterfall already shows each factor's contribution in percentage points,
+// so a separate "leverage" figure would just restate the same bar. These are
+// the questions the waterfall genuinely cannot answer.
+function breakdownAnalytics(breakdown, distance, margin) {
+  const vals = breakdown.map((b) => b.v);
+  const absSum = vals.reduce((s, v) => s + Math.abs(v), 0);
+
+  // 1. Concentration (Herfindahl over absolute shares). A +7 lead carried
+  //    entirely by one factor is far more fragile than +7 spread across four,
+  //    because a single bad assumption erases it. 1/n is perfectly spread,
+  //    1.0 is everything resting on one term.
+  const shares = absSum > 1e-9 ? vals.map((v) => Math.abs(v) / absSum) : vals.map(() => 0);
+  const hhi = shares.reduce((s, x) => s + x * x, 0);
+  const nEff = hhi > 1e-9 ? 1 / hhi : 0;           // effective number of factors
+  const conc = absSum > 1e-9
+    ? (hhi <= 0.32 ? "BROAD" : hhi <= 0.5 ? "MIXED" : "NARROW")
+    : "NONE";
+
+  // 2. Agreement -- do the factors tell the same story, or is one big term
+  //    dragging three dissenters along?
+  const favBlue = vals.filter((v) => v > 0.005).length;
+  const favRed = vals.filter((v) => v < -0.005).length;
+  const agree = favBlue === 0 && favRed === 0 ? "NO SIGNAL"
+    : favRed === 0 ? "UNANIMOUS" : favBlue === 0 ? "UNANIMOUS"
+    : (Math.max(favBlue, favRed) >= 3 ? "MAJORITY" : "SPLIT");
+
+  // 3. Edge measured against the model's OWN margin.
+  //    An earlier version turned this into "probability the sign is real" via a
+  //    normal CDF and reported 100% on an ordinary draft. That was nonsense:
+  //    `margin` is the model's internal display band, not a validated
+  //    predictive standard error, and this model has never been checked against
+  //    real match outcomes. Feeding a display band into a normal CDF
+  //    manufactures certainty out of nothing. What can honestly be said is
+  //    narrower and still useful -- how large the edge is next to the
+  //    resolution of the model that produced it.
+  const ratio = margin > 1e-9 ? Math.abs(distance) / margin : 0;
+  const resolution = absSum < 1e-9 ? "NO SIGNAL"
+    : ratio < 1 ? "INSIDE THE MARGIN"
+    : ratio < 3 ? "CLEAR"
+    : "DECISIVE";
+
+  // 4. How far this draft is from a coin flip, in the units of the biggest
+  //    factor -- "Red needs +2.4 points of Win Rate to level it".
+  const biggest = breakdown.reduce((a, b) => (Math.abs(b.v) > Math.abs(a.v) ? b : a), breakdown[0] || { v: 0, label: "-" });
+  const toEven = round(Math.abs(distance), 2);
+
+  return {
+    hhi: round(hhi, 3), nEff: round(nEff, 2), conc,
+    agree, favBlue, favRed,
+    ratio: round(ratio, 2), resolution,
+    biggest: biggest.label, toEven, absSum: round(absSum, 2),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Lane analytics -- a lane edge is a number, but WHEN it exists matters more.
+// ---------------------------------------------------------------------------
+// Two lanes can both read +4 and mean completely different things: one is +4
+// from minute 3 and gone by 20, the other is level until 25 and then decisive.
+function laneAnalytics(blueChamps, redChamps) {
+  return ROLES.map((role, i) => {
+    const b = blueChamps[i], r = redChamps[i];
+    if (!b || !r) {
+      return { role, blue: b ? b.name : null, red: r ? r.name : null, ok: false };
+    }
+    // Per-minute lane read, same construction the champion modal uses.
+    const rel = [];
+    for (let t = 0; t <= GAME_END_MIN; t++) {
+      const d = champPowerAt(b, t) - champPowerAt(r, t);
+      rel.push(100 / (1 + Math.exp(-d * CHAMP_LANE_K)));
+    }
+    const mean = rel.reduce((s, v) => s + v, 0) / rel.length;
+    const sd = Math.sqrt(rel.reduce((s, v) => s + (v - mean) ** 2, 0) / rel.length);
+    let peak = 0, trough = 0;
+    rel.forEach((v, t) => { if (v > rel[peak]) peak = t; if (v < rel[trough]) trough = t; });
+
+    // Does the lane's owner change hands, and when?
+    let flip = null;
+    for (let t = 1; t <= GAME_END_MIN; t++) {
+      if ((rel[t - 1] - 50 < 0) !== (rel[t] - 50 < 0)) { flip = t; break; }
+    }
+    // Early edge vs late edge -- the snowball question. A lane that is ahead
+    // early AND owned by the better scaler is the one that ends games.
+    const early = rel.slice(0, 15).reduce((s, v) => s + v, 0) / 15;
+    const late = rel.slice(32).reduce((s, v) => s + v, 0) / (rel.length - 32);
+    const swing = round(late - early, 1);
+
+    // Bands set from the measured distribution over 4,000 random role-legal
+    // matchups rather than guesswork: lane sd runs p33 2.56 / p67 4.84, and
+    // |swing| p33 3.9. The first pass used 1.6 / 3.4 and 2.0, which labelled
+    // essentially every real lane VOLATILE and GROWS -- the same scale
+    // mismatch that has caught this model before.
+    const shape = Math.abs(swing) < 3.9 ? "FLAT" : swing > 0 ? "GROWS" : "FADES";
+    const vol = sd < 2.56 ? "STEADY" : sd < 4.84 ? "MOVES" : "VOLATILE";
+
+    return {
+      role, ok: true, blue: b.name, red: r.name,
+      mean: round(mean, 1), sd: round(sd, 2), vol,
+      early: round(early, 1), late: round(late, 1), swing, shape,
+      // Most lane curves are monotone, so the extreme lands on an endpoint in
+      // about a third of matchups. Only surface these when genuinely interior;
+      // "peaks at minute 50" tells the reader nothing.
+      peak: (peak > 1 && peak < GAME_END_MIN - 1) ? peak : null,
+      trough: (trough > 1 && trough < GAME_END_MIN - 1) ? trough : null,
+      peakV: round(rel[peak], 1), troughV: round(rel[trough], 1),
+      flip, owner: mean >= 50 ? "blue" : "red",
+    };
+  });
+}
+
 function phaseReport(blueChamps, redChamps) {
   const sideZ = (champs, ph) => {
     const f = champs.filter(Boolean);
@@ -2340,31 +2892,6 @@ function computeSide(picks, synergyMod = 0) {
 }
 
 // ---------------------------------------------------------------------------
-// LIGHTWEIGHT WIN PROBABILITY
-//
-// Same maths as computeMatchup's headline number, with the phase curve,
-// waterfall, radar and sparklines skipped. The swap search below runs this
-// ~865 times per open, so it has to be the cheap path -- computing 41-point
-// power curves for every hypothetical would make the feature unusable.
-// ---------------------------------------------------------------------------
-function quickWinProb(bluePicks, redPicks) {
-  const bc = bluePicks.map(findChampion), rc = redPicks.map(findChampion);
-  const blue = computeSide(bluePicks, 0), red = computeSide(redPicks, 0);
-  let bAdj = 0, rAdj = 0;
-  for (let i = 0; i < ROLES.length; i++) {
-    if (!bc[i] || !rc[i]) continue;
-    const v = counterVerdict(bc[i], rc[i]);
-    bAdj += v * COUNTER_LOGODDS;
-    rAdj -= v * COUNTER_LOGODDS;
-  }
-  const bComp = blue.rows.filter((r) => !r.empty).map((r) => r.composite);
-  const rComp = red.rows.filter((r) => !r.empty).map((r) => r.composite);
-  const to5 = (a) => (a.length ? (a.reduce((s, x) => s + x, 0) / a.length) * 5 : 0);
-  if (!bComp.length && !rComp.length) return 50;
-  return 100 / (1 + Math.exp(-((to5(bComp) + bAdj) - (to5(rComp) + rAdj))));
-}
-
-// ---------------------------------------------------------------------------
 // SWAP FINDER
 //
 // For each slot, try every legal alternative and report the single change that
@@ -2423,40 +2950,6 @@ function winConditions(side, arche, curve, dep, control, phases) {
   return out;
 }
 
-function swapFinder(bluePicks, redPicks, side) {
-  const mine = side === "blue" ? bluePicks.slice() : redPicks.slice();
-  const theirs = side === "blue" ? redPicks : bluePicks;
-  const filled = mine.filter(Boolean).length;
-  if (filled < 3) return { ready: false, slots: [] };
-  const taken = new Set(bluePicks.concat(redPicks).filter(Boolean));
-  const base = side === "blue" ? quickWinProb(bluePicks, redPicks) : 100 - quickWinProb(bluePicks, redPicks);
-  const out = [];
-  for (let i = 0; i < ROLES.length; i++) {
-    if (!mine[i]) continue;
-    const original = mine[i];
-    let best = null;
-    for (const cand of CHAMPIONS) {
-      if (taken.has(cand.name)) continue;
-      // Same-role candidates only. Without this the search returns whichever
-      // champion has the highest raw win rate for EVERY slot -- it suggested
-      // Taric in all five, which is numerically true and useless as advice.
-      // Role Fit penalises off-role picks but not enough to outweigh a big win
-      // rate gap, and a draft tool that recommends Taric jungle is not a draft
-      // tool anyone would use.
-      if (cand.role !== ROLES[i]) continue;
-      mine[i] = cand.name;
-      const wp = side === "blue" ? quickWinProb(mine, theirs) : 100 - quickWinProb(theirs, mine);
-      if (!best || wp > best.wp) best = { name: cand.name, wp, role: cand.role };
-    }
-    mine[i] = original;
-    if (best) {
-      out.push({ role: ROLES[i], current: original, suggest: best.name,
-        suggestRole: best.role, gain: round(best.wp - base, 2) });
-    }
-  }
-  out.sort((a, b) => b.gain - a.gain);
-  return { ready: true, base: round(base, 2), slots: out };
-}
 
 // ---------------------------------------------------------------------------
 // DRAFT DEPENDENCY
@@ -2996,7 +3489,7 @@ function computeMatchup(bluePicks, redPicks) {
   };
 }
 
-const engineExports = { loadChampionData, findChampion, computeMatchup, computeSide, phaseReport, powerCurveReport, swapFinder, quickWinProb, championReport, progressPlan, champPowerAt, DRAKES, ROLES, CHAMPIONS: () => CHAMPIONS, getGlobalRange };
+const engineExports = { loadChampionData, findChampion, computeMatchup, computeSide, phaseReport, powerCurveReport, fightForecast, breakdownAnalytics, laneAnalytics, TEAM_AXES, championReport, progressPlan, champPowerAt, DRAKES, ROLES, CHAMPIONS: () => CHAMPIONS, getGlobalRange };
 if (typeof window !== "undefined") window.engine = engineExports;
 if (typeof module !== "undefined") module.exports = engineExports;
 
@@ -3354,7 +3847,7 @@ function renderRow(tbody, side, row, changed, opts) {
         portrait.className = "name-portrait";
         const img = document.createElement("div");
         img.className = "portrait-img";
-        img.style.backgroundImage = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${row.splashId}_0.jpg)`;
+        img.style.backgroundImage = `url(${champIconUrl(row.splashId)})`;
         portrait.appendChild(img);
         td.appendChild(portrait);
         // Off-role flag: the model scores Role Fit against the SLOT
@@ -3558,9 +4051,14 @@ function catmullRomPath(pts) {
   return d;
 }
 
-function buildPhaseChart(curve, phases) {
+function buildPhaseChart(curve, phases, fc) {
   const P = curve.points;
-  const W = 1420, H = 440, padL = 62, padR = 30, padT = 40, padB = 62;
+  // Height budget matters here. At 1080p the panel caps at 94vh (~1015px) and
+  // the whole page -- head, tabs, lead, chart, readout, phase cards -- has to
+  // fit inside that or the cards at the bottom get cut off. The plot was 338
+  // tall inside a 508 viewBox, which rendered ~532px and pushed the page over.
+  // 270 inside 440 renders ~450px and buys back the difference.
+  const W = 1420, H = 440, padL = 62, padR = 30, padT = 34, padB = 136;
   const iw = W - padL - padR, ih = H - padT - padB;
   const vals = P.map((p) => p.blue);
   let lo = Math.min(...vals), hi = Math.max(...vals);
@@ -3591,7 +4089,33 @@ function buildPhaseChart(curve, phases) {
     grid += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + ih}" stroke="rgba(255,255,255,0.045)" stroke-width="1"/>`;
     grid += `<text x="${x}" y="${padT + ih + 18}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)">${t}</text>`;
   }
-  grid += `<text x="${padL + iw / 2}" y="${H - 8}" text-anchor="middle" font-size="10" font-style="italic" fill="rgba(255,255,255,0.4)">game time (minutes)</text>`;
+  grid += `<text x="${padL + iw / 2}" y="${H - 6}" text-anchor="middle" font-size="10" font-style="italic" fill="rgba(255,255,255,0.4)">game time (minutes)</text>`;
+
+  // ---- Fight pressure ribbon -------------------------------------------
+  // One bar per minute, height and colour by how much fighting the model
+  // expects there. This is the "where does this game get violent" read at a
+  // glance, before you hover anything.
+  let ribbon = "";
+  // rY leaves a clear lane for the minute labels at padT+ih+18: the header
+  // sits at rY-6, so anything tighter than +46 puts it straight through them.
+  const rY = padT + ih + 46, rH = 30;
+  if (fc && fc.points) {
+    const bw = iw / GAME_END_MIN;
+    const COL = { QUIET: "rgba(120,132,158,0.45)", SKIRMISH: "rgba(212,175,90,0.55)",
+      "FIGHT WINDOW": "rgba(255,150,90,0.75)", DECISIVE: "rgba(255,90,88,0.92)" };
+    fc.points.forEach((p, i) => {
+      const h = Math.max(2, (p.pressure / 100) * rH);
+      const w2 = bw * 0.86;
+      // Centred on the minute tick so the bar lines up with the crosshair, but
+      // clamped at both ends -- otherwise minute 0 and minute 50 hang half a
+      // bar outside the axis.
+      const bx = Math.max(padL, Math.min(W - padR - w2, xFor(i) - w2 / 2));
+      ribbon += `<rect class="fp-bar" x="${bx.toFixed(2)}" y="${(rY + rH - h).toFixed(2)}" width="${w2.toFixed(2)}" height="${h.toFixed(2)}" rx="1.5" fill="${COL[p.level]}" style="animation-delay:${(300 + i * 26)}ms"><title>minute ${i} &middot; ${p.level} &middot; ~${p.kills.toFixed(2)} kills</title></rect>`;
+    });
+    ribbon += `<text x="${padL}" y="${rY - 6}" font-size="9.5" font-weight="800" letter-spacing="1.4" fill="rgba(212,175,90,0.8)">FIGHT PRESSURE &mdash; WHERE THE KILLS HAPPEN</text>`;
+    ribbon += `<text x="${W - padR}" y="${rY - 6}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">~${(fc.ckpm).toFixed(2)} combined kills/min &middot; ~${fc.points[32].cumulative} by 32:00</text>`;
+    ribbon += `<line x1="${padL}" y1="${rY + rH}" x2="${W - padR}" y2="${rY + rH}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+  }
 
   // Objective spawns -- the moments the draft is actually tested.
   let objs = "";
@@ -3643,26 +4167,264 @@ function buildPhaseChart(curve, phases) {
       <linearGradient id="gLine" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0%" stop-color="#7fd4ff"/><stop offset="50%" stop-color="#e8f7ff"/><stop offset="100%" stop-color="#7fd4ff"/>
       </linearGradient>
+      <linearGradient id="gWipe" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="50%" stop-color="rgba(255,255,255,0.09)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
     </defs>
     ${bands}${grid}
     <path class="ph-area" d="${area}" fill="url(#gUp)" clip-path="url(#clipUp)"/>
     <path class="ph-area" d="${area}" fill="url(#gDn)" clip-path="url(#clipDn)"/>
     <path class="ph-line" d="${line}" fill="none" stroke="url(#gLine)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-    ${objs}${marks}
+    ${objs}${marks}${ribbon}
+    <rect class="ph-wipe" x="${padL}" y="${padT}" width="120" height="${ih}" fill="url(#gWipe)" pointer-events="none"/>
     <g id="ph-hover" style="opacity:0">
-      <line id="ph-hx" y1="${padT}" y2="${padT + ih}" stroke="rgba(255,255,255,0.55)" stroke-width="1" stroke-dasharray="3 3"/>
+      <line id="ph-hx" y1="${padT}" y2="${rY + rH}" stroke="rgba(255,255,255,0.55)" stroke-width="1" stroke-dasharray="3 3"/>
       <circle id="ph-hd" r="5.5" fill="#fff" stroke="rgba(6,9,17,0.9)" stroke-width="1.8"/>
       <g id="ph-htip"><rect id="ph-hbg" rx="7" height="36" fill="rgba(10,14,24,0.95)" stroke="rgba(212,175,90,0.55)"/>
       <text id="ph-ht1" font-size="11" font-weight="800" fill="#f3e2b8"></text>
       <text id="ph-ht2" font-size="11" font-weight="700"></text></g>
     </g>
     <rect id="ph-hit" x="${padL}" y="${padT}" width="${iw}" height="${ih}" fill="transparent" style="cursor:crosshair"/>
+    <rect id="ph-hit2" x="${padL}" y="${rY - 14}" width="${iw}" height="${rH + 18}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
+}
+
+// The hovered minute, in full. This is the piece that answers "what actually
+// happens here" rather than just "who is winning here".
+// Breakdown analytics, in the Role & Kit row idiom: label, value, a track that
+// carries the meaning, and a verdict chip on the right.
+// Numeric companion to the radar. The shape shows the profile; this says which
+// side actually owns each axis and by how much, which a polygon cannot.
+// Live radar. Hovering a wedge lifts that spoke, dims the rest, grows both
+// vertices on it, lights the matching readout row, and floats a card with the
+// two values and the gap. Attached after the SVG is in the DOM.
+function attachRadarHover(profiles) {
+  const box = document.getElementById("phase-radar");
+  const svg = box && box.querySelector("svg");
+  if (!svg) return;
+  let tip = box.querySelector(".tr-tip");
+  if (!tip) { tip = document.createElement("div"); tip.className = "tr-tip"; box.appendChild(tip); }
+  const AX = (typeof engine !== "undefined" && engine.TEAM_AXES) || [];
+  const B = (profiles && profiles.blue) || [], R = (profiles && profiles.red) || [];
+  const rows = document.querySelectorAll("#phase-axes .rd-row");
+
+  const clear = () => {
+    svg.classList.remove("dim");
+    svg.querySelectorAll(".on").forEach((e) => e.classList.remove("on"));
+    rows.forEach((r) => r.classList.remove("on"));
+    tip.classList.remove("on");
+  };
+  const show = (i, ev) => {
+    svg.classList.add("dim");
+    svg.querySelectorAll(".on").forEach((e) => e.classList.remove("on"));
+    rows.forEach((r) => r.classList.remove("on"));
+    svg.querySelectorAll(`[data-ax="${i}"]`).forEach((e) => {
+      if (!e.classList.contains("tr-hit")) e.classList.add("on");
+    });
+    if (rows[i]) rows[i].classList.add("on");
+    const ax = AX[i] || { l: "AXIS", k: "" };
+    const bv = (B.find((p) => p.key === ax.k) || { v: null }).v;
+    const rv = (R.find((p) => p.key === ax.k) || { v: null }).v;
+    const solo = !R.length;
+    const d = (bv != null && rv != null) ? bv - rv : null;
+    const dTone = d == null ? "var(--ink-dim)" : Math.abs(d) < 0.35 ? "var(--ink-dim)" : d > 0 ? "#9bdcff" : "#ffb3b2";
+    tip.innerHTML = `<div class="tt-k">${ax.l}</div>
+      <div class="tt-r">
+        ${bv != null ? `<span style="color:${solo ? "var(--ink)" : "#9bdcff"}">${solo ? "" : "BLUE "}${bv.toFixed(1)}</span>` : ""}
+        ${rv != null ? `<span style="color:#ffb3b2">RED ${rv.toFixed(1)}</span>` : ""}
+      </div>
+      ${d != null ? `<div class="tt-d" style="color:${dTone}">${Math.abs(d) < 0.35 ? "level on this axis"
+        : (d > 0 ? "Blue" : "Red") + " ahead by " + Math.abs(d).toFixed(1)}</div>` : ""}`;
+    const r = box.getBoundingClientRect(), s = svg.getBoundingClientRect();
+    // Anchor the card to the spoke's own label, not the pointer, so it does
+    // not jitter as the mouse moves inside the wedge.
+    const lab = svg.querySelector(`text.tr-lab[data-ax="${i}"]`);
+    if (lab) {
+      const lb = lab.getBoundingClientRect();
+      tip.style.left = (lb.left + lb.width / 2 - r.left) + "px";
+      tip.style.top = (lb.top - r.top) + "px";
+    } else if (ev) {
+      tip.style.left = (ev.clientX - r.left) + "px";
+      tip.style.top = (ev.clientY - r.top) + "px";
+    }
+    tip.classList.add("on");
+  };
+  svg.querySelectorAll(".tr-hit").forEach((h) => {
+    const i = +h.dataset.ax;
+    h.addEventListener("mouseenter", (ev) => show(i, ev));
+    h.addEventListener("mousemove", (ev) => show(i, ev));
+  });
+  svg.addEventListener("mouseleave", clear);
+}
+
+function renderTeamAxes(profiles) {
+  const box = document.getElementById("phase-axes");
+  if (!box) return;
+  const B = profiles.blue || [], R = profiles.red || [];
+  if (!B.length && !R.length) { box.innerHTML = ""; return; }
+  const rows = (B.length ? B : R).map((p, i) => {
+    const bv = (B.find((x) => x.key === p.key) || { v: 0 }).v;
+    const rv = (R.find((x) => x.key === p.key) || { v: 0 }).v;
+    const d = bv - rv;
+    const tone = Math.abs(d) < 0.35 ? "var(--ink-dim)" : d > 0 ? "#9bdcff" : "#ffb3b2";
+    // Each half of the bar is that side's rating on a 0-10 scale.
+    return `<div class="rd-row" style="animation-delay:${stg(i, 130, 62)}ms">
+      <span class="rd-k">${p.label || p.key}</span>
+      <div class="rd-bar">
+        <div class="rd-mid"></div>
+        <div class="rd-b" style="right:50%;width:${(bv / 10 * 50).toFixed(1)}%;background:linear-gradient(270deg,#4fc3f7,rgba(79,195,247,0.25));animation-delay:${stg(i, 240, 62)}ms"></div>
+        <div class="rd-r" style="left:50%;width:${(rv / 10 * 50).toFixed(1)}%;background:linear-gradient(90deg,#ff6b6a,rgba(255,107,106,0.25));animation-delay:${stg(i, 240, 62)}ms"></div>
+      </div>
+      <span class="rd-d" style="color:${tone}">${d > 0 ? "+" : ""}${d.toFixed(1)}</span>
+    </div>`;
+  }).join("");
+  box.innerHTML = `<div class="adv-h" style="margin-bottom:8px"><span style="color:#9bdcff">BLUE</span>
+    <span style="color:var(--ink-dim);font-weight:600"> &nbsp;axis by axis&nbsp; </span>
+    <span style="color:#ffb3b2">RED</span></div><div class="rd-list">${rows}</div>
+    <div class="adv-note">Bars run outward from the centre line &mdash; blue left, red right, each on the same 0&ndash;10 scale. The number is blue&rsquo;s edge on that axis.</div>`;
+}
+
+function renderBreakdownAnalytics(result) {
+  const box = document.getElementById("bd-analytics");
+  if (!box) return;
+  const dist = round(result.winProbBlue - 50, 2);
+  const a = engine.breakdownAnalytics(result.breakdown, dist, result.margin);
+  const TONE = { BROAD: "#7fe0a0", MIXED: "#d4af5a", NARROW: "#ff8a89", NONE: "var(--ink-dim)",
+    UNANIMOUS: "#7fe0a0", MAJORITY: "#d4af5a", SPLIT: "#ff8a89", "NO SIGNAL": "var(--ink-dim)",
+    DECISIVE: "#7fe0a0", CLEAR: "#d4af5a", "INSIDE THE MARGIN": "#ff8a89" };
+  // Each row: how far along its own scale does this draft sit.
+  const rows = [
+    { k: "SPREAD OF THE EDGE", v: a.nEff.toFixed(2) + " / 4",
+      pct: Math.min(100, (a.nEff / 4) * 100), chip: a.conc, tone: TONE[a.conc],
+      n: a.conc === "NARROW" ? "Almost all of the gap rests on one factor. Wrong about that factor and the read collapses."
+       : a.conc === "BROAD" ? "The gap is carried by several independent factors, so no single bad assumption erases it."
+       : a.conc === "NONE" ? "No factor separates these drafts."
+       : "The gap leans on a couple of factors rather than all four." },
+    { k: "FACTOR AGREEMENT", v: a.favBlue + " blue / " + a.favRed + " red",
+      pct: a.favBlue + a.favRed ? (Math.max(a.favBlue, a.favRed) / (a.favBlue + a.favRed)) * 100 : 0,
+      chip: a.agree, tone: TONE[a.agree],
+      n: a.agree === "UNANIMOUS" ? "Every factor points the same way -- the cleanest kind of read."
+       : a.agree === "SPLIT" ? "The factors disagree. One large term is outvoting the others, so the headline hides a real argument."
+       : a.agree === "NO SIGNAL" ? "Nothing separates the two drafts on any factor."
+       : "Most factors agree, with one dissenting." },
+    { k: "EDGE vs MODEL MARGIN", v: a.ratio.toFixed(2) + "×",
+      pct: Math.min(100, (a.ratio / 6) * 100), chip: a.resolution, tone: TONE[a.resolution],
+      n: a.resolution === "INSIDE THE MARGIN" ? "The gap is smaller than the model's own margin. Treat these drafts as level."
+       : a.resolution === "NO SIGNAL" ? "There is no gap to measure."
+       : "How far the gap sits outside the model's own resolution. This measures the model, not real match outcomes." },
+  ];
+  box.innerHTML = rows.map((r, i) => `
+    <div class="an-row" style="animation-delay:${stg(i, 130, 95)}ms">
+      <span class="an-k">${r.k}</span>
+      <span class="an-v">${r.v}</span>
+      <div class="an-track"><div class="an-fill" style="width:${r.pct.toFixed(0)}%;background:linear-gradient(90deg,rgba(255,255,255,0.14),${r.tone});animation-delay:${stg(i, 250, 95)}ms"></div></div>
+      <span class="an-chip" style="color:${r.tone};border-color:${r.tone}55;background:${r.tone}14">${r.chip}</span>
+      <span class="an-n">${r.n}</span>
+    </div>`).join("")
+    + `<div class="adv-note">Biggest single factor: <b>${a.biggest}</b>. These describe the <em>shape</em> of the edge &mdash; whether it is broad or brittle, agreed or contested. None of them is a claim about how often the model is right, which has not been measured against real games.</div>`;
+}
+
+// Lane analytics, same idiom. The bar is the lane's average read; the marker
+// shows where it starts and where it ends, so a lane that flips is obvious.
+function renderLaneAnalytics(result) {
+  const box = document.getElementById("lane-analytics");
+  if (!box) return;
+  const L = engine.laneAnalytics(
+    result.blue.rows.map((r) => engine.findChampion(r.name)),
+    result.red.rows.map((r) => engine.findChampion(r.name)));
+  const SHAPE = { GROWS: "#7fe0a0", FADES: "#ff8a89", FLAT: "var(--ink-dim)" };
+  const VOL = { STEADY: "#7fe0a0", MOVES: "#d4af5a", VOLATILE: "#ff8a89" };
+  const rows = L.map((l, i) => {
+    if (!l.ok) {
+      return `<div class="an-row lane" style="animation-delay:${stg(i, 130, 85)}ms">
+        <span class="an-k">${l.role}</span><span class="an-v">&mdash;</span>
+        <div class="an-track"></div><span class="an-chip" style="opacity:0.4">INCOMPLETE</span>
+        <span class="an-n">Both ${l.role} picks are needed to read this lane.</span></div>`;
+    }
+    const own = l.owner === "blue";
+    const col = own ? "#4fc3f7" : "#ff6b6a";
+    const flipTxt = l.flip !== null
+      ? `Hands over at <b>${l.flip} min</b>.`
+      : "Never changes hands.";
+    return `<div class="an-row lane" style="animation-delay:${stg(i, 130, 85)}ms">
+      <span class="an-k">${l.role}</span>
+      <span class="an-v" style="color:${col}">${l.mean.toFixed(1)}%</span>
+      <div class="an-track dual">
+        <div class="an-mid"></div>
+        <div class="an-fill" style="width:${Math.min(100, Math.abs(l.mean - 50) * 4).toFixed(0)}%;${own ? "left:50%" : "right:50%"};background:linear-gradient(90deg,rgba(255,255,255,0.12),${col});animation-delay:${stg(i, 250, 85)}ms"></div>
+        <span class="an-dot early" style="left:${Math.max(2, Math.min(98, l.early)).toFixed(1)}%" title="early game ${l.early}%"></span>
+        <span class="an-dot late" style="left:${Math.max(2, Math.min(98, l.late)).toFixed(1)}%" title="late game ${l.late}%"></span>
+      </div>
+      <span class="an-chip" style="color:${SHAPE[l.shape]};border-color:${SHAPE[l.shape]}55;background:${SHAPE[l.shape]}14">${l.shape}</span>
+      <span class="an-n"><b>${l.blue}</b> vs <b>${l.red}</b> &middot; ${l.early.toFixed(0)}% early &rarr; ${l.late.toFixed(0)}% late
+        &middot; <span style="color:${VOL[l.vol]}">${l.vol.toLowerCase()}</span> &middot; ${flipTxt}</span>
+    </div>`;
+  }).join("");
+  box.innerHTML = rows + `<div class="adv-note">The bar is the lane's average read across the whole game; the two dots are where it <b>starts</b> (hollow) and <b>ends</b> (solid). A lane can average 50% and still decide the game if it swings hard &mdash; that is what the shape chip and the gap between the dots are for.</div>`;
+}
+
+function renderFightReadout(fc, curve, t) {
+  const box = document.getElementById("phase-readout");
+  if (!box || !fc || !fc.points) return;
+  t = Math.max(0, Math.min(GAME_END_MIN, Math.round(t)));
+  const p = fc.points[t], wp = curve.points[t];
+  const tf = fc.tfAt(t);
+  const evs = fc.eventsAt(t);
+  const TONE = { QUIET: "#8e99b4", SKIRMISH: "#d4af5a", "FIGHT WINDOW": "#ff9a5c", DECISIVE: "#ff5a58" };
+  const tone = TONE[p.level];
+  const lead = wp.blue >= 50;
+  const tfLabel = tf.side === "even" ? "Coin flip"
+    : tf.side === "blue" ? "Blue wins it" : "Red wins it";
+  const tfTone = tf.side === "even" ? "var(--ink)" : tf.side === "blue" ? "#9bdcff" : "#ffb3b2";
+  const KIND = { OBJECTIVE: ["OBJECTIVE", "#d4af5a"], SPIKE: ["POWER SPIKE", "#9bdcff"],
+    SWING: ["SWING", "#ff9a5c"], PEAK: ["PEAK", "#7fe0a0"] };
+
+  box.innerHTML = `
+    <div class="fr-head">
+      <div class="fr-min">MINUTE <b>${t}</b></div>
+      <div class="fr-chip" style="color:${tone};border-color:${tone}55;background:${tone}18">${p.level}</div>
+      <div class="fr-spacer"></div>
+      <div class="fr-hint">move along the chart to scrub</div>
+    </div>
+    <div class="fr-grid">
+      <div class="fr-cell">
+        <div class="fr-k">FAVOURED</div>
+        <div class="fr-v" style="color:${lead ? "#9bdcff" : "#ffb3b2"}">${lead ? "BLUE" : "RED"} ${(lead ? wp.blue : wp.red).toFixed(2)}%</div>
+        <div class="fr-n">to win the game from here</div>
+      </div>
+      <div class="fr-cell">
+        <div class="fr-k">5v5 RIGHT NOW</div>
+        <div class="fr-v" style="color:${tfTone}">${tfLabel}</div>
+        <div class="fr-n">who wins a straight fight at this minute</div>
+      </div>
+      <div class="fr-cell">
+        <div class="fr-k">EXPECTED KILLS</div>
+        <div class="fr-v">~${p.kills.toFixed(2)}<span class="fr-u">/min</span></div>
+        <div class="fr-n">~${p.cumulative} total on the board by now</div>
+      </div>
+      <div class="fr-cell">
+        <div class="fr-k">FIGHT PRESSURE</div>
+        <div class="fr-v" style="color:${tone}">${p.pressure.toFixed(0)}<span class="fr-u">/100</span></div>
+        <div class="fr-meter"><div class="fr-fill" style="width:${p.pressure.toFixed(0)}%;background:${tone}"></div></div>
+      </div>
+    </div>
+    <div class="fr-events">
+      ${evs.length
+        ? evs.map((e) => {
+            const [lab, col] = KIND[e.kind] || ["EVENT", "#d4af5a"];
+            return `<div class="fr-ev"><span class="fr-tag" style="color:${col};border-color:${col}55">${lab}</span>
+              <span class="fr-el">${e.label}</span><span class="fr-en">${e.note}</span></div>`;
+          }).join("")
+        : `<div class="fr-ev quiet"><span class="fr-en">Nothing scheduled at this minute &mdash; farm, reset, and set up the next objective.</span></div>`}
+    </div>
+    <div class="fr-foot">Fight pressure is a model of game rhythm from objective timers, level and item spikes, and how much these two drafts can commit to a fight. It is not a prediction of a specific game.</div>`;
 }
 
 // Hover readout. Attached after the SVG is in the DOM; converts pointer x back
 // into a game minute and reads the exact value for that minute.
-function attachPhaseHover(curve) {
+function attachPhaseHover(curve, fc) {
   const svg = document.getElementById("phase-svg");
   if (!svg || !curve) return;
   const hit = svg.querySelector("#ph-hit"), grp = svg.querySelector("#ph-hover");
@@ -3695,17 +4457,29 @@ function attachPhaseHover(curve) {
     t1.setAttribute("x", bx + 9); t1.setAttribute("y", by + 14);
     t2.setAttribute("x", bx + 9); t2.setAttribute("y", by + 27);
     grp.style.opacity = "1";
+    if (fc) renderFightReadout(fc, curve, t);
   }
   hit.addEventListener("mousemove", move);
   hit.addEventListener("mouseleave", () => { grp.style.opacity = "0"; });
+  // The ribbon gets its own hit area so scrubbing along it works too.
+  const hit2 = svg.querySelector("#ph-hit2");
+  if (hit2) {
+    hit2.addEventListener("mousemove", move);
+    hit2.addEventListener("mouseleave", () => { grp.style.opacity = "0"; });
+  }
 }
 
 // --- Win probability waterfall -------------------------------------------
 function buildBreakdownChart(bd, dist) {
-  const W = 1300, H = 215, padL = 150, padR = 130, padT = 16, rowH = 36;
+  const W = 1300, H = 215, padL = 160, padR = 140, padT = 16, rowH = 36;
   const iw = W - padL - padR, cx = padL + iw / 2;
   const maxAbs = Math.max(2, ...bd.map((b) => Math.abs(b.v)), Math.abs(dist));
-  const half = iw / 2;
+  // VAL_GUTTER is reserved for the number printed at the end of each bar.
+  // Without it the longest bar ran the full half-width to exactly padL, and its
+  // value text was then drawn at padL-8 -- straight on top of the row label.
+  // Capping the bar here guarantees the text always lands in clear space.
+  const VAL_GUTTER = 58;
+  const half = iw / 2 - VAL_GUTTER;
   let rows = "";
   bd.forEach((b, i) => {
     const y = padT + i * rowH, w = (Math.abs(b.v) / maxAbs) * half;
@@ -3742,28 +4516,35 @@ function buildBreakdownChart(bd, dist) {
 
 // --- Per-lane contribution ------------------------------------------------
 function buildLaneChart(result) {
-  const W = 1300, H = 230, padL = 110, padR = 110, padT = 14, rowH = 40;
-  const iw = W - padL - padR, cx = padL + iw / 2, half = iw / 2;
+  // padL widened to carry the role AND the matchup on two lines. The champion
+  // names used to be drawn at cx +/- 8 -- dead centre, which is precisely where
+  // every bar starts, so on any lane with a real edge the names sat underneath
+  // the bar. A diverging chart has no free space at the centre, so the text has
+  // to live in the gutters.
+  const W = 1300, H = 258, padL = 196, padR = 150, padT = 14, rowH = 46;
+  const iw = W - padL - padR, cx = padL + iw / 2;
+  const VAL_GUTTER = 58;
+  const half = iw / 2 - VAL_GUTTER;
   const rows = ROLES.map((role, i) => ({ role, v: result.blue.rows[i].laneEdge || 0,
     b: result.blue.rows[i].name, r: result.red.rows[i].name }));
   const maxAbs = Math.max(2, ...rows.map((x) => Math.abs(x.v)));
+  const clip = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + "\u2026" : (s || "\u2014"));
   let out = "";
   rows.forEach((x, i) => {
     const y = padT + i * rowH, w = (Math.abs(x.v) / maxAbs) * half, pos = x.v >= 0;
     out += `<g class="bd-row" style="animation-delay:${stg(i, 140, 109)}ms">
-      <text x="${padL - 12}" y="${y + 18}" text-anchor="end" font-size="11" font-weight="800" fill="rgba(212,175,90,0.9)">${x.role.toUpperCase()}</text>
-      <rect class="bd-bar" x="${pos ? cx : cx - w}" y="${y + 5}" width="${Math.max(1.5, w)}" height="21" rx="5"
+      <text x="${padL - 14}" y="${y + 16}" text-anchor="end" font-size="11" font-weight="800" fill="rgba(212,175,90,0.9)">${x.role.toUpperCase()}</text>
+      <text x="${padL - 14}" y="${y + 30}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.42)"><tspan fill="rgba(155,220,255,0.8)">${clip(x.b, 12)}</tspan> vs <tspan fill="rgba(255,179,178,0.8)">${clip(x.r, 12)}</tspan></text>
+      <rect class="bd-bar" x="${pos ? cx : cx - w}" y="${y + 8}" width="${Math.max(1.5, w)}" height="21" rx="5"
         fill="${pos ? "rgba(79,195,247,0.6)" : "rgba(255,107,106,0.6)"}"
         stroke="${pos ? "rgba(79,195,247,0.9)" : "rgba(255,107,106,0.9)"}" stroke-width="1"/>
-      <text x="${pos ? cx + w + 8 : cx - w - 8}" y="${y + 19}" text-anchor="${pos ? "start" : "end"}"
+      <text x="${pos ? cx + w + 8 : cx - w - 8}" y="${y + 23}" text-anchor="${pos ? "start" : "end"}"
         font-size="11" font-weight="800" fill="${pos ? "#9bdcff" : "#ffb3b2"}">${x.v > 0 ? "+" : ""}${x.v.toFixed(1)}</text>
-      <text x="${cx - 8}" y="${y + 19}" text-anchor="end" font-size="9.5" fill="rgba(155,220,255,0.62)">${x.b || "&mdash;"}</text>
-      <text x="${cx + 8}" y="${y + 19}" text-anchor="start" font-size="9.5" fill="rgba(255,179,178,0.62)">${x.r || "&mdash;"}</text>
       <title>${x.b || "-"} vs ${x.r || "-"}</title>
     </g>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" class="mini-svg">
-    <line x1="${cx}" y1="${padT}" x2="${cx}" y2="${padT + ROLES.length * rowH}" stroke="rgba(212,175,90,0.5)" stroke-width="1.2"/>
+    <line x1="${cx}" y1="${padT}" x2="${cx}" y2="${padT + ROLES.length * rowH - 4}" stroke="rgba(212,175,90,0.5)" stroke-width="1.2"/>
     ${out}
     <text x="${cx - 6}" y="${H - 4}" text-anchor="end" font-size="9" fill="rgba(255,107,106,0.7)">&#9664; Red wins the lane</text>
     <text x="${cx + 6}" y="${H - 4}" text-anchor="start" font-size="9" fill="rgba(79,195,247,0.7)">Blue wins the lane &#9654;</text>
@@ -3772,34 +4553,74 @@ function buildLaneChart(result) {
 
 // --- Team composition radar (both sides overlaid) -------------------------
 function buildTeamRadar(profiles) {
-  const S = 300, cx = S / 2, cy = S / 2 - 4, maxR = 92;
-  const AX = [{ k: "DMG", l: "DAMAGE" }, { k: "CC", l: "CONTROL" }, { k: "Mobility", l: "MOBILITY" },
-              { k: "Scaling", l: "GROWTH" }, { k: "__survival", l: "SURVIVAL" }];
+  // Grown from 300 to 460 and from five axes to eight. maxR scales with it so
+  // the label ring still clears the polygon at the new size.
+  const S = 460, cx = S / 2, cy = S / 2 - 2, maxR = 150;
+  const AX = (typeof TEAM_AXES !== "undefined" && TEAM_AXES) ||
+    [{ k: "DMG", l: "DAMAGE" }, { k: "CC", l: "CONTROL" }, { k: "Mobility", l: "MOBILITY" },
+     { k: "Scaling", l: "GROWTH" }, { k: "__survival", l: "SURVIVAL" }];
   const n = AX.length, step = (Math.PI * 2) / n, a0 = -Math.PI / 2;
   const pt = (i, r) => [cx + r * Math.cos(a0 + i * step), cy + r * Math.sin(a0 + i * step)];
   let grid = "";
-  [0.25, 0.5, 0.75, 1].forEach((f) => {
-    grid += `<polygon points="${AX.map((_, i) => pt(i, maxR * f).join(",")).join(" ")}" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="0.9"/>`;
+  // Rings, each labelled, drawing outward in sequence.
+  [0.25, 0.5, 0.75, 1].forEach((f, ri) => {
+    grid += `<polygon class="tr-ring" style="--rc:${cx}px ${cy}px;animation-delay:${60 + ri * 70}ms" points="${AX.map((_, i) => pt(i, maxR * f).join(",")).join(" ")}" fill="${ri === 3 ? "rgba(255,255,255,0.014)" : "none"}" stroke="rgba(255,255,255,${ri === 3 ? 0.2 : 0.12})" stroke-width="${ri === 3 ? 1.2 : 0.9}"/>`;
+    grid += `<text class="tr-lab" style="animation-delay:${120 + ri * 70}ms" x="${cx + 4}" y="${cy - maxR * f + 3}" font-size="7.5" font-weight="700" fill="rgba(255,255,255,0.24)">${(f * 10).toFixed(0)}</text>`;
   });
   AX.forEach((ax, i) => {
     const a = pt(i, maxR);
-    grid += `<line x1="${cx}" y1="${cy}" x2="${a[0]}" y2="${a[1]}" stroke="rgba(255,255,255,0.11)" stroke-width="0.9"/>`;
-    const b = pt(i, maxR + 20);
-    grid += `<text x="${b[0]}" y="${b[1]}" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-weight="800" letter-spacing="0.4" fill="rgba(255,255,255,0.66)">${ax.l}</text>`;
+    grid += `<line class="tr-axis" data-ax="${i}" style="animation-delay:${340 + i * 45}ms" x1="${cx}" y1="${cy}" x2="${a[0]}" y2="${a[1]}" stroke="rgba(255,255,255,0.11)" stroke-width="0.9"/>`;
+    const b = pt(i, maxR + 26);
+    grid += `<text class="tr-lab" data-ax="${i}" style="animation-delay:${380 + i * 45}ms" x="${b[0]}" y="${b[1]}" text-anchor="middle" dominant-baseline="middle" font-size="9.5" font-weight="800" letter-spacing="0.5" fill="rgba(255,255,255,0.7)">${ax.l}</text>`;
   });
+  // One wedge and one transparent hit sector per axis. The sector spans the
+  // half-step either side of the spoke, so the whole pie slice is hoverable
+  // rather than only the thin line.
+  let wedges = "", hits = "";
+  AX.forEach((ax, i) => {
+    const a1 = a0 + (i - 0.5) * step, a2 = a0 + (i + 0.5) * step;
+    const R = maxR + 18;
+    const p1 = [cx + R * Math.cos(a1), cy + R * Math.sin(a1)];
+    const p2 = [cx + R * Math.cos(a2), cy + R * Math.sin(a2)];
+    const d = `M ${cx} ${cy} L ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} A ${R} ${R} 0 0 1 ${p2[0].toFixed(1)} ${p2[1].toFixed(1)} Z`;
+    wedges += `<path class="tr-wedge" data-ax="${i}" d="${d}"/>`;
+    hits += `<path class="tr-hit" data-ax="${i}" d="${d}" fill="transparent"/>`;
+  });
+
+  // Slow gold sweep around the rim so the chart keeps a pulse after it settles.
+  grid += `<g class="tr-sweep" style="--rc:${cx}px ${cy}px">
+    <path d="M ${cx} ${cy - maxR - 12} A ${maxR + 12} ${maxR + 12} 0 0 1 ${cx + (maxR + 12) * Math.cos(-Math.PI / 2 + 0.7)} ${cy + (maxR + 12) * Math.sin(-Math.PI / 2 + 0.7)}"
+      fill="none" stroke="url(#trSweepG)" stroke-width="2" stroke-linecap="round"/></g>`;
   const poly = (prof, col, delay) => {
     const pts = AX.map((ax, i) => {
       const f = prof.find((p) => p.key === ax.k);
       const v = Math.max(0, Math.min(10, f ? f.v : 0));
       return pt(i, (v / 10) * maxR).join(",");
     }).join(" ");
-    return `<polygon class="tr-poly" style="animation-delay:${delay}ms" points="${pts}" fill="${col}26" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    return `<polygon class="tr-poly" style="animation-delay:${delay}ms" points="${pts}" fill="${col}2e" stroke="${col}" stroke-width="2.6" stroke-linejoin="round" filter="url(#trGlow)"/>`
+      + AX.map((ax, i) => {
+          const f = prof.find((p) => p.key === ax.k);
+          const v = Math.max(0, Math.min(10, f ? f.v : 0));
+          const p = pt(i, (v / 10) * maxR);
+          return `<circle class="tr-poly tr-vtx" data-ax="${i}" style="animation-delay:${delay + 60 + i * 35}ms" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="${col}" stroke="rgba(6,9,17,0.85)" stroke-width="1.4"><title>${ax.l}: ${v.toFixed(1)}</title></circle>`;
+        }).join("");
   };
   // profiles.red may be omitted (the champion modal shows a single profile) --
   // drawing a zeroed polygon would leave a dot at the centre.
-  return `<svg viewBox="0 0 ${S} ${S}" class="radar-svg">${grid}
+  return `<svg viewBox="0 0 ${S} ${S}" class="radar-svg big">
+    <defs>
+      <linearGradient id="trSweepG" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="rgba(212,175,90,0)"/>
+        <stop offset="0.55" stop-color="rgba(212,175,90,0.55)"/>
+        <stop offset="1" stop-color="rgba(243,226,184,0)"/>
+      </linearGradient>
+      <filter id="trGlow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>${wedges}${grid}
     ${profiles.red ? poly(profiles.red, "#ff6b6a", 260) : ""}
-    ${profiles.blue ? poly(profiles.blue, profiles.soloColor || "#4fc3f7", 140) : ""}</svg>`;
+    ${profiles.blue ? poly(profiles.blue, profiles.soloColor || "#4fc3f7", 140) : ""}${hits}</svg>`;
 }
 
 // --- Per-champion power curves (small multiples) --------------------------
@@ -3875,8 +4696,12 @@ function countUp(el) {
 function renderPhaseModal(result) {
   const phases = result.phases;
   const curve = result.curve;
-  document.getElementById("phase-chart").innerHTML = buildPhaseChart(curve, phases);
-  attachPhaseHover(curve);
+  const fcast = window.lastFc = engine.fightForecast(
+    result.blue.rows.map((r) => engine.findChampion(r.name)),
+    result.red.rows.map((r) => engine.findChampion(r.name)), curve);
+  document.getElementById("phase-chart").innerHTML = buildPhaseChart(curve, phases, fcast);
+  renderFightReadout(fcast, curve, 20);
+  attachPhaseHover(curve, fcast);
   const cards = document.getElementById("phase-cards");
   cards.innerHTML = "";
   phases.forEach((p, i) => {
@@ -3920,6 +4745,10 @@ function renderPhaseModal(result) {
   document.getElementById("phase-lanes").innerHTML = buildLaneChart(result);
   document.getElementById("phase-radar").innerHTML = buildTeamRadar(result.profiles);
   document.getElementById("phase-champcurves").innerHTML = buildChampCurves(result.champCurves);
+  renderBreakdownAnalytics(result);
+  renderLaneAnalytics(result);
+  renderTeamAxes(result.profiles);
+  attachRadarHover(result.profiles);
 
   // Factor cards -- the decisive factor is promoted, not just another copy.
   const fc = document.getElementById("factor-cards");
@@ -4269,9 +5098,15 @@ function buildChampChart(rep, cmp) {
   </svg>`;
 }
 
+// Nearest neutral objective to a given minute, for the progress cards.
+function OBJ_NEAR(t) {
+  const O = [[5, "Drake 5:00"], [14, "Herald 14:00"], [20, "Baron 20:00"], [27, "Soul 27:00"], [35, "Elder 35:00"]];
+  const hit = O.find((o) => Math.abs(o[0] - t) <= 4);
+  return hit ? hit[1] : null;
+}
+
 function renderChampModal(rep) {
-  document.getElementById("ch-face").style.backgroundImage =
-    `url(https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${rep.splashId}_0.jpg)`;
+  document.getElementById("ch-face").style.backgroundImage = `url(${champIconUrl(rep.splashId)})`;
   document.getElementById("ch-name").textContent = rep.name;
   const col = rep.side === "blue" ? "var(--blue-main)" : "var(--red-main)";
   document.getElementById("ch-name").style.color = col;
@@ -4456,15 +5291,65 @@ function renderChampModal(rep) {
       <div class="k-why">The enemy pick most likely to remove this champion from a fight.</div>
     </div>`;
 
-  // --- Progress checkpoints ---
+  // --- Progress checkpoints ---------------------------------------------
+  // The six stages used to be plain advice cards. Each one now also carries the
+  // model's own numbers for that stretch: how strong this champion is against
+  // their own curve, and how the lane actually reads there -- so the advice is
+  // anchored to something rather than floating free.
   const cp = engine.progressPlan(engine.findChampion(rep.name), rep.role, rep);
-  document.getElementById("ch-progress").innerHTML = cp.map((x, i) => `
-    <div class="cp-card" style="animation-delay:${stg(i, 150, 102)}ms">
-      <span class="cp-t">${x.t} MIN</span>
+  // Each stage is a RANGE, so average across it rather than sampling one
+  // representative minute. Sampling single minutes (3, 8, 13, 20, 30, 40) meant
+  // the final stage was read at minute 40 while a scaling champion's peak sits
+  // at 50 -- so Nasus reported "weak window" in five stages out of six and
+  // never reached his own peak at all. Averaging the range fixes that and is
+  // the more honest reading of a stage anyway.
+  const STAGE_RANGE = [[0, 5], [5, 10], [10, 15], [15, 25], [25, 35], [35, GAME_END_MIN]];
+  const own = rep.mine || [];
+  const oLo = own.length ? Math.min(...own) : 0, oHi = own.length ? Math.max(...own) : 1;
+  const oSpan = Math.max(1e-6, oHi - oLo);
+  const meanOver = (arr, a, b, get) => {
+    if (!arr || !arr.length) return null;
+    let s = 0, n = 0;
+    for (let t = a; t <= Math.min(b, arr.length - 1); t++) { s += get(arr[t]); n++; }
+    return n ? s / n : null;
+  };
+  const powRange = (a, b) => {
+    const m = meanOver(own, a, b, (v) => v);
+    return m == null ? 0 : ((m - oLo) / oSpan) * 100;
+  };
+  const laneRange = (a, b) => meanOver(rep.rel, a, b, (p) => p.v);
+
+  document.getElementById("ch-progress").innerHTML = cp.map((x, i) => {
+    const rg = STAGE_RANGE[i] || [35, GAME_END_MIN];
+    const t = Math.round((rg[0] + rg[1]) / 2);
+    const pw = powRange(rg[0], rg[1]), ln = laneRange(rg[0], rg[1]);
+    const lnTone = ln == null ? "var(--ink-dim)" : ln >= 53 ? "#7fe0a0" : ln <= 47 ? "#ff8a89" : "var(--ink)";
+    // Is this stage one of this champion's stronger or weaker stretches?
+    const band = pw >= 78 ? ["PEAK WINDOW", "#7fe0a0"] : pw >= 45 ? ["BUILDING", "#d4af5a"] : ["WEAK WINDOW", "#ff8a89"];
+    const obj = OBJ_NEAR(t);
+    return `<div class="cp-card" style="animation-delay:${stg(i, 150, 102)}ms">
+      <div class="cp-node"><span class="cp-dot" style="background:${band[1]}"></span></div>
+      <div class="cp-top">
+        <span class="cp-t">${x.t} MIN</span>
+        <span class="cp-band" style="color:${band[1]};border-color:${band[1]}55;background:${band[1]}14">${band[0]}</span>
+      </div>
       <div class="cp-h">${x.h}</div>
+      <div class="cp-metrics">
+        <div class="cp-m">
+          <div class="cp-mk">YOUR POWER</div>
+          <div class="cp-mt"><div class="cp-mf" style="width:${pw.toFixed(0)}%;background:linear-gradient(90deg,rgba(255,255,255,0.14),${band[1]});animation-delay:${stg(i, 280, 102)}ms"></div></div>
+          <div class="cp-mv" style="color:${band[1]}">${pw.toFixed(0)}<span class="cp-mu">/100 across ${rg[0]}&ndash;${rg[1]} min</span></div>
+        </div>
+        <div class="cp-m">
+          <div class="cp-mk">LANE READ</div>
+          <div class="cp-mt"><div class="cp-mf" style="width:${ln == null ? 0 : Math.min(100, Math.abs(ln - 50) * 4).toFixed(0)}%;background:linear-gradient(90deg,rgba(255,255,255,0.14),${lnTone});animation-delay:${stg(i, 300, 102)}ms"></div></div>
+          <div class="cp-mv" style="color:${lnTone}">${ln == null ? "&mdash;<span class=\"cp-mu\">pick the opposing " + rep.role + "</span>" : ln.toFixed(1) + "%<span class=\"cp-mu\">vs " + rep.foe + "</span>"}</div>
+        </div>
+      </div>
       <div class="cp-b">${x.b}</div>
-      <div class="cp-w">${x.w}</div>
-    </div>`).join("");
+      <div class="cp-w">${obj ? `<b style="color:var(--gold-bright)">${obj}</b> &middot; ` : ""}${x.w}</div>
+    </div>`;
+  }).join("");
 
   // --- Full kit ---
   document.getElementById("ch-kit").innerHTML = rep.kit.map((k, i) => {
@@ -4491,10 +5376,15 @@ function renderChampModal(rep) {
       <ul>${weak.length ? weak.map((k) => `<li><b>${k.label}</b> &mdash; ${k.v} vs a ${rep.role} average of ${k.roleAvg}</li>`).join("") : "<li>No real weaknesses against the role average.</li>"}</ul>
     </div>`;
 
+  // Must cover ALL eight TEAM_AXES keys. This used to supply five; after the
+  // radar grew to eight axes the three it omitted resolved to zero and the
+  // champion's shape collapsed inward on Teamfight, Utility and Waveclear.
   document.getElementById("ch-radar").innerHTML = buildTeamRadar({
     blue: [{ key: "DMG", v: rep.stats.DMG }, { key: "CC", v: rep.stats.CC },
+      { key: "Teamfight", v: rep.stats.Teamfight },
       { key: "Mobility", v: rep.stats.Mobility }, { key: "Scaling", v: rep.stats.Scaling },
-      { key: "__survival", v: (rep.stats.Sustain + rep.stats.Safety) / 2 }],
+      { key: "__survival", v: (rep.stats.Sustain + rep.stats.Safety) / 2 },
+      { key: "Utility", v: rep.stats.Utility }, { key: "Waveclear", v: rep.stats.Waveclear }],
     red: null,
     soloColor: rep.side === "blue" ? "#4fc3f7" : "#ff6b6a",
   });
@@ -4574,7 +5464,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (on && animate !== false) { void p.offsetWidth; p.classList.add(dir); }
     });
     positionInk();
-    if (name === "timeline") attachPhaseHover(lastResult ? lastResult.curve : null);
+    if (name === "timeline") attachPhaseHover(lastResult ? lastResult.curve : null, window.lastFc || null);
+    if (name === "profile" && lastResult) attachRadarHover(lastResult.profiles);
   }
   document.querySelectorAll("#tabbar .tab").forEach((b) => {
     b.addEventListener("click", () => showTab(b.dataset.tab, true));
