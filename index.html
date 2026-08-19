@@ -402,9 +402,20 @@ table.stats.side-table-red tbody tr:hover td.name { background-color: transparen
 /* Portrait is ~2.6x its own cell so it reaches across Teamfight and dies out
    at Win Rate. It stays z-index 0 and pointer-events:none, so it sits behind
    the stat numbers (which are lifted to z-index 1) and never eats a click. */
+/* Width is the whole bug.
+   The fade mask below is applied to THIS box. When the portrait was wide splash
+   art the box and the artwork were the same width, so the gradient dissolved
+   the picture. The square champion icon is sized by ROW HEIGHT instead --
+   about 1.1x of 96px, so ~105px -- and sits hard left. Against a 215%-wide box
+   (~320px) the icon only covered the first third of the gradient, where the
+   mask is still ~0.8 opaque. So it never faded, and it ran under the Win Rate
+   number at nearly full strength.
+   132% keeps a small deliberate bleed past the Champion column while making the
+   box only fractionally wider than the icon, so the gradient actually falls
+   across the artwork and is gone before the next column's value. */
 .name-portrait {
-  position: absolute; top: 0; bottom: 0; width: 215%; overflow: hidden;
-  pointer-events: none; opacity: 0.46; filter: saturate(1.02) contrast(1.02); z-index: 0;
+  position: absolute; top: 0; bottom: 0; width: 132%; overflow: hidden;
+  pointer-events: none; opacity: 0.40; filter: saturate(1.02) contrast(1.02); z-index: 0;
 }
 table.stats.side-table-blue .name-portrait { left: 0; }
 table.stats.side-table-red .name-portrait { right: 0; }
@@ -426,7 +437,10 @@ table.stats.side-table-red .name-portrait { right: 0; }
    slightly high). */
 .name-portrait .portrait-img {
   position: absolute; inset: 0; background-repeat: no-repeat;
-  background-size: auto 120%;
+  /* 108% instead of 120%: the icon is square, so its WIDTH is driven by this
+     number. 1.08 x 96px row = ~104px, which fits inside the Champion column at
+     every layout width the table actually renders at. */
+  background-size: auto 108%;
   background-position: left 40%;
 }
 /* Mirror the red side's portrait so the two teams are genuine mirror images
@@ -440,12 +454,12 @@ table.stats.side-table-red .name-portrait .portrait-img {
    time it reaches the Win Rate column. The old angled clip-path is dropped --
    the gradient IS the edge treatment now. */
 table.stats.side-table-blue .name-portrait {
-  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 26%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.16) 82%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 26%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.16) 82%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
+  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
 }
 table.stats.side-table-red .name-portrait {
-  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 26%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.16) 82%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 26%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.16) 82%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
+  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.88) 32%, rgba(0,0,0,0.34) 58%, rgba(0,0,0,0.06) 76%, rgba(0,0,0,0) 86%);
 }
 .name-portrait::after {
   content: ""; position: absolute; inset: 0;
@@ -551,7 +565,9 @@ table.stats.side-table-red .radar-cell { color: var(--red-main); }
 /* The number is the dominant element in a cell; the bar under it is support.
    Tabular figures so columns line up down the page. */
 .stat-val { font-weight: 800; font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums;
-  letter-spacing: -0.2px; }
+  letter-spacing: -0.2px; position: relative; z-index: 2;
+  /* Guarantees legibility even if artwork ever sits behind a value again. */
+  text-shadow: 0 1px 3px rgba(4,7,14,0.9), 0 0 10px rgba(4,7,14,0.65); }
 .stat-bar { width: 42px; height: 3px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 5px; }
 /* Gradient along the bar's own length (dark at the base, bright at the tip)
    rather than a flat fill -- the same treatment used on the GRAPHS cards, and
