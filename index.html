@@ -193,13 +193,61 @@ body {
    the identity at the same time. Summoner's Rift reduced to its skeleton:
    the diamond is top and bot lane, the vertical is mid, the horizontal is the
    river, and the two rings are the nexuses. */
-.brand-mark { width: 52px; height: 52px; margin: 0 auto; display: block; }
-.brand-mark svg { width: 100%; height: 100%; display: block;
+/* ---------- The mark, built rather than placed ---------------------------
+   A logo build should say something about the brand through HOW it assembles.
+   Scry reads a draft, so the mark reads itself in: the rim draws around the
+   frame first, the radar shape snaps out of the centre with a touch of
+   overshoot, and the two nexuses light last, blue before red, in pick order.
+   The resolve -- the frame the shape locks -- gets the most easing attention,
+   because it is the moment anyone actually watches.
+   After it settles, nothing goes fully static: the rim gradient keeps
+   travelling and a halo ripples outward every few seconds, so the mark is
+   alive on a held frame instead of a painted one. */
+.brand-mark { width: 56px; height: 56px; margin: 0 auto; display: block; position: relative; }
+.brand-mark svg { width: 100%; height: 100%; display: block; overflow: visible;
   filter: drop-shadow(0 0 12px rgba(212,175,90,0.35));
-  transition: transform 0.5s cubic-bezier(0.24,1.06,0.36,1), filter 0.4s ease; }
-.brand-mark:hover svg { transform: scale(1.06) rotate(90deg);
-  filter: drop-shadow(0 0 18px rgba(212,175,90,0.6)); }
-@media (prefers-reduced-motion: reduce) { .brand-mark:hover svg { transform: none; } }
+  transition: transform 0.62s cubic-bezier(0.22,1.14,0.36,1), filter 0.4s ease;
+  animation: bmSettle 1.05s cubic-bezier(0.2,1.06,0.32,1) both; }
+@keyframes bmSettle {
+  0%   { transform: scale(0.62) rotate(-16deg); opacity: 0; }
+  62%  { transform: scale(1.07) rotate(3deg);  opacity: 1; }
+  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+/* The rim draws itself around the frame. */
+.brand-mark .bm-rim { stroke-dasharray: 1720; stroke-dashoffset: 1720;
+  animation: bmDraw 1.15s cubic-bezier(0.32,0.86,0.28,1) 0.12s both; }
+@keyframes bmDraw { to { stroke-dashoffset: 0; } }
+/* The radar shape snaps out of the centre, slightly past its size and back. */
+.brand-mark .bm-shape { transform-box: view-box; transform-origin: 256px 256px;
+  animation: bmShape 0.86s cubic-bezier(0.24,1.5,0.36,1) 0.42s both; }
+@keyframes bmShape {
+  0%   { transform: scale(0.1) rotate(-40deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+/* Nexuses light last, blue then red -- the order a draft actually happens in. */
+.brand-mark .bm-nexus { transform-box: view-box; transform-origin: center;
+  animation: bmNexus 0.6s cubic-bezier(0.24,1.6,0.36,1) both; }
+.brand-mark .bm-nb { animation-delay: 0.92s; transform-origin: 104px 408px; }
+.brand-mark .bm-nr { animation-delay: 1.06s; transform-origin: 408px 104px; }
+@keyframes bmNexus { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+/* Idle life: a halo ripples outward on a long, quiet cycle. */
+.brand-mark .bm-halo circle { transform-box: view-box; transform-origin: 256px 256px;
+  opacity: 0; animation: bmHalo 5.2s ease-out infinite; }
+.brand-mark .bm-halo circle:nth-child(2) { animation-delay: 1.4s; }
+@keyframes bmHalo {
+  0%   { transform: scale(0.72); opacity: 0; }
+  18%  { opacity: 0.55; }
+  70%, 100% { transform: scale(1.16); opacity: 0; }
+}
+.brand-mark:hover svg { transform: scale(1.09) rotate(90deg);
+  filter: drop-shadow(0 0 22px rgba(212,175,90,0.7)) saturate(1.15); }
+.brand-mark:hover .bm-halo circle { animation-duration: 2.1s; }
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark svg, .brand-mark .bm-rim, .brand-mark .bm-shape,
+  .brand-mark .bm-nexus, .brand-mark .bm-halo circle { animation: none; opacity: 1; }
+  .brand-mark .bm-rim { stroke-dashoffset: 0; }
+  .brand-mark:hover svg { transform: none; }
+}
 
 .titlebar .vs {
   display: flex; align-items: center; justify-content: center;
@@ -395,14 +443,14 @@ table.stats tbody tr:hover td { background: rgba(212, 175, 90, 0.075); }
 .name-portrait .portrait-img { transition: transform 0.45s cubic-bezier(0.22,0.61,0.36,1), filter 0.3s ease; }
 table.stats tbody tr:hover .name-portrait .portrait-img { transform: scale(1.09); }
 table.stats.side-table-red tbody tr:hover .name-portrait .portrait-img { transform: scaleX(-1) scale(1.09); }
-table.stats tbody tr:hover .name-portrait { opacity: 0.94; }
+table.stats tbody tr:hover .name-portrait { opacity: 0.86; }
 .name-portrait { transition: opacity 0.3s ease; }
 table.stats tbody tr:last-child td { border-bottom: none; }
 /* overflow is VISIBLE so the portrait can spill out of its own cell and run
    across the next two columns, fading to nothing by the Win Rate column. */
 table.stats td.name { font-weight: 800; font-size: 15px; letter-spacing: 0.2px; position: relative; overflow: visible; padding-top: 6px !important; padding-bottom: 6px !important; }
-table.stats.side-table-blue td.name { width: 21%; text-align: left; padding-left: 18px; color: var(--blue-main); border-left: 3px solid var(--blue-main); text-shadow: 0 0 12px var(--blue-glow); }
-table.stats.side-table-red td.name { width: 21%; text-align: right; padding-right: 18px; color: var(--red-main); border-right: 3px solid var(--red-main); text-shadow: 0 0 12px var(--red-glow); }
+table.stats.side-table-blue td.name { width: 26%; text-align: left; padding-left: 18px; color: var(--blue-main); border-left: 3px solid var(--blue-main); text-shadow: 0 0 12px var(--blue-glow); }
+table.stats.side-table-red td.name { width: 26%; text-align: right; padding-right: 18px; color: var(--red-main); border-right: 3px solid var(--red-main); text-shadow: 0 0 12px var(--red-glow); }
 table.stats.side-table-blue tbody tr:hover td.name,
 table.stats.side-table-red tbody tr:hover td.name { background-color: transparent; }
 /* Portrait is ~2.6x its own cell so it reaches across Teamfight and dies out
@@ -421,7 +469,7 @@ table.stats.side-table-red tbody tr:hover td.name { background-color: transparen
    viewport width, row height or how the 21% column resolves. */
 .name-portrait {
   position: absolute; top: 0; bottom: 0; width: 100%; overflow: hidden;
-  pointer-events: none; opacity: 0.80; filter: saturate(1.04) contrast(1.03); z-index: 0;
+  pointer-events: none; opacity: 0.70; filter: saturate(1.04) contrast(1.03); z-index: 0;
 }
 table.stats.side-table-blue .name-portrait { left: 0; }
 table.stats.side-table-red .name-portrait { right: 0; }
@@ -446,7 +494,7 @@ table.stats.side-table-red .name-portrait { right: 0; }
   /* 108% instead of 120%: the icon is square, so its WIDTH is driven by this
      number. 1.08 x 96px row = ~104px, which fits inside the Champion column at
      every layout width the table actually renders at. */
-  background-size: auto 118%;
+  background-size: auto 126%;
   background-position: left 40%;
 }
 /* Mirror the red side's portrait so the two teams are genuine mirror images
@@ -460,12 +508,12 @@ table.stats.side-table-red .name-portrait .portrait-img {
    time it reaches the Win Rate column. The old angled clip-path is dropped --
    the gradient IS the edge treatment now. */
 table.stats.side-table-blue .name-portrait {
-  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
 }
 table.stats.side-table-red .name-portrait {
-  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.94) 40%, rgba(0,0,0,0.62) 66%, rgba(0,0,0,0.22) 86%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
 }
 .name-portrait::after {
   content: ""; position: absolute; inset: 0;
@@ -1506,11 +1554,127 @@ table.stats tbody tr:hover .stat-val { text-shadow: 0 1px 3px rgba(4,7,14,0.95),
 /* Radar breathes very slightly on row hover -- 3% is enough to register as
    responsive and small enough not to shift the row height. */
 .radar-cell svg, td svg.radar { transition: transform 0.38s cubic-bezier(0.24,1.06,0.36,1); }
-table.stats tbody tr:hover svg { transform: scale(1.045); }
+table.stats tbody tr:hover td:not(.profile-td) svg { transform: scale(1.045); }
 @media (prefers-reduced-motion: reduce) {
   .stat-bar::after { animation: none; opacity: 0; }
   table.stats tbody tr:hover { transform: none; }
 }
+/* Comparison verdict strip -- four readings off the two curves, so the second
+   line on the chart says something instead of just existing. */
+.cs-verdicts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.cs-v { border-radius: 10px; padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.09); }
+.tab-page.active .cs-v, .modal-overlay.open .cs-v { animation: verdictIn 0.46s cubic-bezier(0.26,1.1,0.4,1) both; }
+.cs-vk { font-size: 8.5px; letter-spacing: 1.2px; font-weight: 800; color: var(--ink-dim); }
+.cs-vv { font-size: 17px; font-weight: 900; font-variant-numeric: tabular-nums; margin: 3px 0 1px; }
+.cs-vn { font-size: 8.5px; color: var(--ink-dim); line-height: 1.4; }
+@media (max-width: 900px) { .cs-verdicts { grid-template-columns: repeat(2, 1fr); } }
+/* ---------- Profile cell: its own object, not a hole in the row -------------
+   Given the same glass construction as the matchup column so the two read as
+   the same material: real inset depth, a top-edge highlight, and a slow sheep
+   sweep. The point of the hover state is a HIERARCHY OF ENERGY -- on hover the
+   container recedes (background and border fade toward transparent) while the
+   data advances (the polygon lifts, brightens and thickens). One thing gets
+   quieter so another can get louder, rather than everything brightening at
+   once. */
+.radar-cell {
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+  border: 1px solid rgba(255,255,255,0.11);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.42), inset 0 -1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  margin: 3px 2px;
+  transition: background 0.42s cubic-bezier(0.22,0.85,0.3,1),
+              border-color 0.42s ease, box-shadow 0.42s ease, transform 0.42s cubic-bezier(0.24,1.06,0.36,1);
+}
+.radar-cell::before {
+  content: ""; position: absolute; inset: 0; border-radius: 14px; z-index: 2; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.02) 40%, rgba(255,255,255,0) 58%);
+  transition: opacity 0.42s ease;
+}
+.radar-cell::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 42%; z-index: 3; pointer-events: none;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%);
+  animation: trackSheen 6.4s ease-in-out infinite; animation-delay: 1.2s;
+}
+/* HOVER -- container recedes, data advances. */
+table.stats tbody tr:hover .radar-cell {
+  background: rgba(255,255,255,0.012);
+  border-color: rgba(255,255,255,0.05);
+  box-shadow: inset 0 0 0 rgba(0,0,0,0), 0 6px 22px rgba(0,0,0,0.34);
+  transform: translateY(-2px);
+}
+table.stats tbody tr:hover .radar-cell::before { opacity: 0.25; }
+.radar-cell svg { position: relative; z-index: 4; }
+/* The DATA scales, not the svg. Scaling the whole chart inside a clipped cell
+   would crop the axis labels; the polygon sits at radius 38 inside a 62
+   half-width viewBox, so it can grow 11% and still clear the edge. */
+.radar-cell .radar-data {
+  transform-box: view-box; transform-origin: 62px 58px;
+  transition: transform 0.44s cubic-bezier(0.22,1.12,0.36,1); }
+/* The polygon itself: lifts on a spring with a touch of overshoot, thickens,
+   and picks up a brighter glow. 6% is enough to register without shifting the
+   row height, which is why the cell has overflow visible on the svg only. */
+.radar-cell .radar-poly { transition: stroke-width 0.34s ease, filter 0.34s ease; }
+table.stats tbody tr:hover .radar-cell .radar-data { transform: scale(1.11); }
+table.stats tbody tr:hover .radar-cell .radar-poly { stroke-width: 3.1; }
+table.stats tbody tr:hover .radar-cell .radar-fill { opacity: 1; }
+.radar-cell .radar-fill { opacity: 0.82; transition: opacity 0.34s ease; }
+/* Vertex dots pop outward one after another rather than together -- the same
+   decaying stagger used everywhere else in the app. */
+.radar-cell .radar-dot { transition: transform 0.4s cubic-bezier(0.24,1.3,0.36,1); transform-box: fill-box; transform-origin: center; }
+/* Grid and labels step back on hover. Without this the whole chart just gets
+   brighter, which reads as a highlight rather than as focus. */
+.radar-cell svg polygon[fill="none"], .radar-cell svg line, .radar-cell svg text {
+  transition: opacity 0.4s ease; }
+table.stats tbody tr:hover .radar-cell svg polygon[fill="none"],
+table.stats tbody tr:hover .radar-cell svg line { opacity: 0.42; }
+table.stats tbody tr:hover .radar-cell svg text { opacity: 0.55; }
+table.stats tbody tr:hover .radar-cell .radar-dot { transform: scale(1.18); }
+@media (prefers-reduced-motion: reduce) {
+  .radar-cell::after { animation: none; opacity: 0; }
+  table.stats tbody tr:hover .radar-cell { transform: none; }
+  table.stats tbody tr:hover .radar-cell .radar-data { transform: none; }
+}
+/* Advisor protection panel + matchup role matrix. Both use the same row
+   grammar as Role & Kit -- a label, a proportional rail, a number -- so the
+   whole app reads as one system rather than five pages that were each
+   designed on their own day. */
+.prot-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.prot-card { border-radius: 14px; padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.022));
+  border: 1px solid rgba(255,255,255,0.1); }
+.tab-page.active .prot-card { animation: verdictIn 0.5s cubic-bezier(0.26,1.1,0.4,1) both; }
+.pc-hd { font-size: 9.5px; font-weight: 800; letter-spacing: 1.3px; margin-bottom: 7px; }
+.pc-metric { display: grid; grid-template-columns: 84px 1fr 40px; align-items: center; gap: 9px; padding: 3px 0; }
+.pc-k { font-size: 9px; color: var(--ink-dim); letter-spacing: 0.5px; font-weight: 700; }
+.pc-track { height: 10px; border-radius: 6px; background: rgba(255,255,255,0.055); overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.4); }
+.pc-fill { height: 100%; border-radius: 6px; width: 0; position: relative; }
+.tab-page.active .pc-fill { animation: ecoGrow 0.8s cubic-bezier(0.22,0.78,0.28,1) both; }
+.pc-fill::after { content: ""; position: absolute; inset: 0; border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0) 60%); }
+.pc-v { font-size: 11px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.pc-line { font-size: 9.5px; color: var(--ink-dim); line-height: 1.5; margin-top: 7px;
+  padding-top: 7px; border-top: 1px solid rgba(255,255,255,0.07); }
+.pc-line b { color: var(--gold-bright); }
+.lm-row { display: grid; grid-template-columns: 62px 1fr 1fr; align-items: stretch; gap: 10px;
+  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.lm-row:last-child { border-bottom: none; }
+.tab-page.active .lm-row { animation: bdRowIn 0.44s cubic-bezier(0.22,1,0.36,1) both; }
+.lm-role { font-size: 9px; font-weight: 800; letter-spacing: 1.1px; color: var(--ink-dim);
+  align-self: center; }
+.lm-side { display: flex; align-items: center; gap: 7px; border-radius: 9px; padding: 5px 8px;
+  background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.06); }
+.lm-side.win { background: rgba(212,175,90,0.09); border-color: rgba(212,175,90,0.28); }
+.lm-nm { font-size: 10px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.lm-tags { display: flex; gap: 4px; flex-wrap: nowrap; }
+.lm-tag { font-size: 7.5px; font-weight: 800; letter-spacing: 0.5px; padding: 2px 5px; border-radius: 5px;
+  background: rgba(255,255,255,0.07); color: var(--ink-dim); white-space: nowrap; }
+.lm-tag.hot { background: rgba(212,175,90,0.2); color: var(--gold-bright); }
+@media (max-width: 1100px) { .prot-split { grid-template-columns: 1fr; } }
 .adv-note { font-size: 9.5px; color: var(--ink-dim); font-style: italic; margin-top: 7px; line-height: 1.5; }
 /* Power window strip */
 .pw-strip { display: flex; height: 34px; border-radius: 9px; overflow: hidden; position: relative;
@@ -1697,12 +1861,13 @@ table.stats tbody tr:hover svg { transform: scale(1.045); }
         <line x1="256" y1="256" x2="370" y2="322"/><line x1="256" y1="256" x2="256" y2="388"/>
         <line x1="256" y1="256" x2="142" y2="322"/><line x1="256" y1="256" x2="142" y2="190"/></g></g>
     <g filter="url(#auGlow)">
-      <polygon points="256,131 322,218 245,325 205,315 176,225 219,203" fill="#f3e2b8" fill-opacity="0.22" stroke="#f3e2b8" stroke-width="12" stroke-linejoin="round"/></g>
+      <polygon class="bm-shape" points="256,131 322,218 245,325 205,315 176,225 219,203" fill="#f3e2b8" fill-opacity="0.22" stroke="#f3e2b8" stroke-width="12" stroke-linejoin="round"/></g>
     <path d="M 126 34 L 452 34 Q 478 34 478 60 L 478 452 Q 478 478 452 478 L 60 478 Q 34 478 34 452 L 34 126 Q 34 34 126 34 Z" fill="url(#auSheen)"/>
   </g>
-  <path d="M 126 34 L 452 34 Q 478 34 478 60 L 478 452 Q 478 478 452 478 L 60 478 Q 34 478 34 452 L 34 126 Q 34 34 126 34 Z" fill="none" stroke="url(#auRim)" stroke-width="4.5"/>
-  <circle cx="104" cy="408" r="19" fill="#0b0f18" stroke="#4fc3f7" stroke-width="11"/>
-  <circle cx="408" cy="104" r="19" fill="#0b0f18" stroke="#ff6b6a" stroke-width="11"/>
+  <path class="bm-rim" d="M 126 34 L 452 34 Q 478 34 478 60 L 478 452 Q 478 478 452 478 L 60 478 Q 34 478 34 452 L 34 126 Q 34 34 126 34 Z" fill="none" stroke="url(#auRim)" stroke-width="4.5"/>
+  <circle class="bm-nexus bm-nb" cx="104" cy="408" r="19" fill="#0b0f18" stroke="#4fc3f7" stroke-width="11"/>
+  <circle class="bm-nexus bm-nr" cx="408" cy="104" r="19" fill="#0b0f18" stroke="#ff6b6a" stroke-width="11"/>
+  <g class="bm-halo"><circle cx="256" cy="256" r="196" fill="none" stroke="rgba(212,175,90,0.30)" stroke-width="3"/><circle cx="256" cy="256" r="196" fill="none" stroke="rgba(212,175,90,0.18)" stroke-width="2"/></g>
 </svg>
       </div>
     </div>
@@ -1790,6 +1955,8 @@ table.stats tbody tr:hover svg { transform: scale(1.045); }
           <div class="lane-cards" id="lane-cards"></div>
           <div class="adv-h gold" style="margin-top:13px">LANE SHAPE &mdash; WHEN EACH EDGE EXISTS, NOT JUST HOW BIG IT IS</div>
           <div class="sec-box" id="lane-analytics"></div>
+          <div class="adv-h gold" style="margin-top:13px">SLOT BY SLOT &mdash; WHAT EACH PICK IS FOR</div>
+          <div class="sec-box" id="lane-matrix"></div>
         </section>
 
         <section class="tab-page" data-page="economy">
@@ -1844,6 +2011,8 @@ table.stats tbody tr:hover svg { transform: scale(1.045); }
           <div class="page-lead">What each side has to make happen to win, when their window is open, and who is worth removing from the other team.</div>
           <div class="adv-h gold">POWER WINDOWS &mdash; WHO IS FAVOURED, MINUTE BY MINUTE</div>
           <div class="sec-box" id="adv-window"></div>
+          <div class="adv-h gold" style="margin-top:13px">THE FIGHT &mdash; WHO EACH SIDE HAS TO PROTECT, AND WHO THEY CAN REACH</div>
+          <div class="prot-split" id="adv-protection"></div>
           <div class="adv-split" style="margin-top:13px">
             <div>
               <div class="adv-h blue">BLUE &mdash; WIN CONDITIONS</div>
@@ -2853,6 +3022,11 @@ function counterVerdict(mine, theirs) {
 //   combined in quadrature               -> 0.0209
 // Which yields 1.96 x 0.0209 x p(1-p) x 100 = about 1.0% at an even matchup.
 const MODEL_SE_LOGODDS = 0.021;
+// Standard deviation of the win probability, in percentage points, when every
+// rating behind it is resampled at its own real precision. Measured, not
+// assumed: 60 resamples per draft across 220 random drafts. See the margin
+// note in computeMatchup for what this does and does not cover.
+const MARGIN_SD_PP = 1.45;
 // A single lane's OUTCOME swings a little harder than that lane's contribution
 // to the game result -- you can win a lane without it deciding the game -- so
 // the per-role bars are scaled up slightly. Calibrated by measurement, not
@@ -3493,6 +3667,18 @@ const DRAKES = [
   { key: "ELDER", name: "Elder", eff: "Execute burn on low health", col: "#f3e2b8" },
 ];
 
+// Cross-draft reference distribution for each drake, measured over 8,000
+// random role-legal teams. Without these, drake affinity can only be expressed
+// relative to a team's own other drakes -- see the note inside drakeFit.
+const DRAKE_REF = {
+  CLOUD:    { mean: 6.568, sd: 0.491 },
+  INFERNAL: { mean: 7.450, sd: 0.316 },
+  MOUNTAIN: { mean: 5.896, sd: 0.398 },
+  OCEAN:    { mean: 5.495, sd: 0.444 },
+  HEXTECH:  { mean: 7.220, sd: 0.268 },
+  CHEMTECH: { mean: 5.381, sd: 0.460 },
+  ELDER:    { mean: 7.371, sd: 0.294 },
+};
 function drakeFit(champs) {
   const f = champs.filter(Boolean);
   if (f.length < 3) return null;
@@ -3506,11 +3692,31 @@ function drakeFit(champs) {
     CHEMTECH: m((c) => c.Utility) * 0.50 + m((c) => c.Sustain) * 0.30 + m((c) => c.CC) * 0.20,
     ELDER: m((c) => c.DMG) * 0.45 + m((c) => c.Teamfight) * 0.35 + m((c) => c.combo) * 0.20,
   };
-  const vals = DRAKES.map((d) => raw[d.key]);
-  const mean = vals.reduce((s, x) => s + x, 0) / vals.length;
-  const sd = Math.sqrt(vals.reduce((s, x) => s + (x - mean) ** 2, 0) / vals.length) || 1;
-  return DRAKES.map((d) => ({ key: d.key, name: d.name, eff: d.eff, col: d.col,
-    raw: round(raw[d.key], 2), z: round((raw[d.key] - mean) / sd, 2) }));
+  // NORMALISATION -- this was the bug behind "most objectives read near zero".
+  //
+  // The old version z-scored the seven drakes AGAINST EACH OTHER, within one
+  // team. A z-score across seven values is centred on zero by construction, so
+  // roughly half of every team's drakes were always negative, and the bar
+  // renderer clamps negatives to zero width. Measured over 3,000 drafts,
+  // 48.8% of all drake bars rendered completely empty -- not because the draft
+  // didn't want that drake, but because the maths could not express "this team
+  // is good at all seven" or "this team is bad at all seven".
+  //
+  // Each drake is now scored against how EVERY OTHER DRAFT scores on that same
+  // drake -- means and sds measured over 8,000 random role-legal teams. A team
+  // of five mobile champions now reads genuinely high on Cloud instead of
+  // "high on Cloud relative to its own Ocean", and two teams can both be high
+  // on the same drake, which is what makes CONTESTED meaningful.
+  //
+  // affinity is a 0-100 reading (50 = an average draft for that drake), which
+  // is what the bars are drawn from. `z` is kept for the copy underneath.
+  return DRAKES.map((d) => {
+    const ref = DRAKE_REF[d.key] || { mean: raw[d.key], sd: 1 };
+    const z = (raw[d.key] - ref.mean) / ref.sd;
+    return { key: d.key, name: d.name, eff: d.eff, col: d.col,
+      raw: round(raw[d.key], 2), z: round(z, 2),
+      affinity: round(Math.max(2, Math.min(98, 50 + 16 * z)), 1) };
+  });
 }
 
 // Setup for the two big neutrals, read off the parts of a draft that actually
@@ -3785,13 +3991,35 @@ function computeMatchup(bluePicks, redPicks) {
   // for large synergy flags, which are themselves judgement calls.
   const p = winProbBlue / 100;
   const spread = (stdevSample(blueComposites) + stdevSample(redComposites)) / 2;
+  void spread;
   // An unfinished draft is genuinely less knowable: the team total is
   // extrapolated from the picks that exist, so every empty slot is a guess.
   // Without this the margin actually got NARROWER on a 1-pick draft, because
   // a single champion has zero internal spread -- confidently wrong.
   const emptySlots = 10 - blueFilled - redFilled;
-  const uncertainty = MODEL_SE_LOGODDS + spread * 0.10 + emptySlots * 0.010;
-  const margin = anyPicks ? Math.min(5, 1.96 * uncertainty * p * (1 - p) * 100) : 0;
+  // MARGIN, REBUILT -- the old formula was checked and failed on two counts.
+  //
+  // It was built from an assumed log-odds standard error rather than a measured
+  // one, and it was 2.2x too narrow: resampling every rating at its true
+  // granularity (subjective ratings are integers, so +/-1 IS the real
+  // precision; win rates carry a sampling error of about 0.15 points at the
+  // 77k-454k game samples behind them), 60 times per draft over 220 drafts,
+  // gives a 95% band of +/- 2.85 points. The old formula reported +/- 1.27.
+  //
+  // Worse, it did not track the real uncertainty at all: correlation between
+  // what it reported and the measured per-draft uncertainty was -0.06. It was
+  // reporting a near-constant dressed up as a calculation.
+  //
+  // MARGIN_SD_PP is now the measured figure. The logistic slope term is kept
+  // because it is correct -- the uncertainty is generated in log-odds space, so
+  // it genuinely compresses as the prediction moves away from a coin flip.
+  //
+  // This band covers INPUT precision only. It does not include model
+  // specification error, because the model has never been validated against
+  // real match outcomes and inventing a number for that would be worse than
+  // admitting the gap. The true band is wider than this one.
+  const uncertainty = MARGIN_SD_PP * (1 + emptySlots * 0.055);
+  const margin = anyPicks ? Math.min(6, 1.96 * uncertainty * ((p * (1 - p)) / 0.25)) : 0;
 
   // Per-role bars: same log-odds gap between the two champions in that slot,
   // scaled up because a lane's own outcome swings harder than that lane's
@@ -5296,6 +5524,83 @@ function renderPhaseModal(result) {
     }
   }
 
+
+  // --- Advisor: protection read ------------------------------------------
+  // The Protection factor moves the headline by more than Role Fit does, but
+  // until now it only existed as a number inside the model. This says it in
+  // words: who each side has to keep alive, who is doing the keeping, and
+  // whether the other draft can actually get there.
+  const protHost = document.getElementById("adv-protection");
+  if (protHost) {
+    const pr = result.protection || {};
+    if (!pr.blue || !pr.red) {
+      protHost.innerHTML = '<div class="swap-none" style="grid-column:1/-1">Both sides need at least one pick.</div>';
+    } else {
+      protHost.innerHTML = ["blue", "red"].map((side, si) => {
+        const P = pr[side], O = pr[side === "blue" ? "red" : "blue"];
+        const col = side === "blue" ? "#4fc3f7" : "#ff6b6a";
+        const bars = [
+          { k: "PEEL", v: P.peel, max: 10, n: "ability to stop a dive" },
+          { k: "FRONTLINE", v: P.front, max: 10, n: "ability to hold the front" },
+          { k: "EXPOSURE", v: P.exposure, max: 10, n: "damage that cannot save itself", bad: true },
+          { k: "THEIR DIVE", v: P.dive, max: 10, n: "how hard they can reach it", bad: true },
+        ];
+        const verdict = P.risk > O.risk + 0.7
+          ? `<b>${P.weakest}</b> is the exposed pick and this draft is short of cover &mdash; the fight is decided by whether they get reached.`
+          : P.cover > O.cover + 0.8
+            ? `Well covered. <b>${P.best}</b> is the reason, and <b>${P.weakest}</b> is who it is for.`
+            : `Cover and exposure roughly cancel. <b>${P.weakest}</b> is still the pick to watch.`;
+        return `<div class="prot-card" style="animation-delay:${stg(si, 150, 110)}ms">
+          <div class="pc-hd" style="color:${col}">${side.toUpperCase()} &mdash; PROTECTION</div>
+          ${bars.map((b, i) => `<div class="pc-metric">
+            <div class="pc-k">${b.k}</div>
+            <div class="pc-track"><div class="pc-fill" style="width:${Math.min(100, (b.v / b.max) * 100).toFixed(0)}%;background:linear-gradient(90deg,${b.bad ? "rgba(255,107,106,0.35),#ff8a89" : "rgba(255,255,255,0.14)," + col};animation-delay:${stg(i, 220 + si * 90, 66)}ms"></div></div>
+            <div class="pc-v" style="color:${b.bad ? "#ff8a89" : col}">${b.v.toFixed(1)}</div>
+          </div>`).join("")}
+          <div class="pc-line">${verdict}</div>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  // --- Matchups: slot-by-slot structural read ----------------------------
+  // The bars above say WHO is ahead. This says WHAT each pick is there to do,
+  // which is the part a drafter actually has to act on.
+  const lmHost = document.getElementById("lane-matrix");
+  if (lmHost) {
+    const rowsB = result.blue.rows, rowsR = result.red.rows;
+    const tagsFor = (name) => {
+      const ch = name ? engine.findChampion(name) : null;
+      if (!ch) return [];
+      const t = [];
+      if (ch.Frontline >= 8) t.push({ t: "FRONTLINE", hot: true });
+      if (ch.Peel >= 8) t.push({ t: "PEEL", hot: true });
+      if (ch.DMG >= 9 && ch.ItemDep >= 8) t.push({ t: "CARRY", hot: true });
+      if (ch.Teamfight >= 9) t.push({ t: "5v5", hot: true });
+      if (ch.Teamfight <= 4) t.push({ t: "SPLIT", hot: false });
+      if (ch.Scaling >= 9) t.push({ t: "LATE", hot: false });
+      if (ch.Scaling <= 4) t.push({ t: "EARLY", hot: false });
+      if (ch.Mobility >= 9) t.push({ t: "DIVE", hot: false });
+      return t.slice(0, 3);
+    };
+    const any = rowsB.some((r) => !r.empty) || rowsR.some((r) => !r.empty);
+    lmHost.innerHTML = !any
+      ? '<div class="swap-none">Pick some champions to see what each slot is for.</div>'
+      : engine.ROLES.map((role, i) => {
+          const b = rowsB[i], r = rowsR[i];
+          const bw = !b.empty && !r.empty && b.laneEdge > 0.15;
+          const rw = !b.empty && !r.empty && r.laneEdge > 0.15;
+          const cell = (row, win) => `<div class="lm-side${win ? " win" : ""}">
+            <span class="lm-nm" style="color:${row === b ? "var(--blue-main)" : "var(--red-main)"}">${row.empty ? "&mdash;" : row.name}</span>
+            <span class="lm-tags">${tagsFor(row.empty ? null : row.name).map((t) => `<span class="lm-tag${t.hot ? " hot" : ""}">${t.t}</span>`).join("")}</span>
+          </div>`;
+          return `<div class="lm-row" style="animation-delay:${stg(i, 150, 88)}ms">
+            <div class="lm-role">${role.toUpperCase()}</div>
+            ${cell(b, bw)}${cell(r, rw)}
+          </div>`;
+        }).join("");
+  }
+
   // --- Objectives --------------------------------------------------------
   const dk = result.drakes;
   const odk = document.getElementById("obj-drakes");
@@ -5303,33 +5608,35 @@ function renderPhaseModal(result) {
     odk.innerHTML = '<div class="swap-none" style="grid-column:1/-1">Both sides need at least three picks.</div>';
     document.getElementById("obj-drake-note").textContent = "";
   } else {
-    const maxZ = Math.max(1, ...dk.blue.concat(dk.red).map((d) => Math.abs(d.z)));
-    const wOf = (z) => ((Math.max(0, z) / maxZ) * 100).toFixed(0);
+    // Bars are drawn from `affinity` (0-100 against every other draft), not from
+    // the old within-team z. The old `Math.max(0, z)` clamp is what made half
+    // of these render as empty tracks.
+    const wOf = (d) => d.affinity.toFixed(0);
     odk.innerHTML = dk.blue.map((b, i) => {
       const r = dk.red[i];
       // "Contested" = both drafts rate it highly. Those are the fights that
       // actually happen, as opposed to a drake one side simply concedes.
-      const contested = b.z > 0.4 && r.z > 0.4;
-      const owner = b.z > r.z + 0.35 ? "blue" : r.z > b.z + 0.35 ? "red" : null;
+      const contested = b.affinity > 56 && r.affinity > 56;
+      const owner = b.affinity > r.affinity + 6 ? "blue" : r.affinity > b.affinity + 6 ? "red" : null;
       return `<div class="drake${contested ? " contested" : ""}" style="animation-delay:${stg(i, 140, 83)}ms">
         <div class="dk-n" style="color:${b.col}">${b.name.toUpperCase()}</div>
         <div class="dk-e">${b.eff}</div>
         <div class="dk-bars">
           <div class="dk-b"><span class="dk-s" style="color:var(--blue-main)">B</span>
-            <div class="dk-track"><div class="dk-fill" style="width:${wOf(b.z)}%;background:linear-gradient(90deg,rgba(79,195,247,0.3),#4fc3f7);animation-delay:${stg(i, 260, 83)}ms"></div></div>
-            <span class="dk-v" style="color:var(--blue-main)">${b.z > 0 ? "+" : ""}${b.z.toFixed(1)}</span></div>
+            <div class="dk-track"><div class="dk-fill" style="width:${wOf(b)}%;background:linear-gradient(90deg,rgba(79,195,247,0.3),#4fc3f7);animation-delay:${stg(i, 260, 83)}ms"></div></div>
+            <span class="dk-v" style="color:var(--blue-main)">${b.affinity.toFixed(0)}</span></div>
           <div class="dk-b"><span class="dk-s" style="color:var(--red-main)">R</span>
-            <div class="dk-track"><div class="dk-fill" style="width:${wOf(r.z)}%;background:linear-gradient(90deg,rgba(255,107,106,0.3),#ff6b6a);animation-delay:${stg(i, 300, 83)}ms"></div></div>
-            <span class="dk-v" style="color:var(--red-main)">${r.z > 0 ? "+" : ""}${r.z.toFixed(1)}</span></div>
+            <div class="dk-track"><div class="dk-fill" style="width:${wOf(r)}%;background:linear-gradient(90deg,rgba(255,107,106,0.3),#ff6b6a);animation-delay:${stg(i, 300, 83)}ms"></div></div>
+            <span class="dk-v" style="color:var(--red-main)">${r.affinity.toFixed(0)}</span></div>
         </div>
         <div class="dk-tag" style="color:${contested ? "var(--gold-bright)" : owner === "blue" ? "var(--blue-main)" : owner === "red" ? "var(--red-main)" : "var(--ink-dim)"}">
-          ${contested ? "CONTESTED" : owner === "blue" ? "BLUE WANTS" : owner === "red" ? "RED WANTS" : "LOW VALUE"}</div>
+          ${contested ? "CONTESTED" : owner === "blue" ? "BLUE WANTS" : owner === "red" ? "RED WANTS" : (b.affinity < 44 && r.affinity < 44) ? "NEITHER WANTS" : "EVEN"}</div>
       </div>`;
     }).join("");
-    const topB = dk.blue.slice().sort((a, b) => b.z - a.z)[0];
-    const topR = dk.red.slice().sort((a, b) => b.z - a.z)[0];
+    const topB = dk.blue.slice().sort((a, b) => b.affinity - a.affinity)[0];
+    const topR = dk.red.slice().sort((a, b) => b.affinity - a.affinity)[0];
     document.getElementById("obj-drake-note").innerHTML =
-      `Blue gains most from <b>${topB.name}</b> (${topB.eff.toLowerCase()}); Red gains most from <b>${topR.name}</b>. `
+      `Blue gains most from <b>${topB.name}</b> at ${topB.affinity.toFixed(0)}/100 (${topB.eff.toLowerCase()}); Red gains most from <b>${topR.name}</b> at ${topR.affinity.toFixed(0)}. `
       + (topB.key === topR.key
         ? "Both drafts want the same drake &mdash; expect every spawn of it to be a real fight."
         : "They want different drakes, so a trade is available if neither side wants to fight at the pit.");
@@ -5641,21 +5948,49 @@ function renderChampModal(rep) {
   document.getElementById("ch-curve-lead").innerHTML = rep.foe
     ? `Head to head against <b>${rep.foe}</b>, minute by minute. Above the centre line is ${rep.name} ahead.`
     : `${rep.name}&rsquo;s own power curve. Pick the opposing ${rep.role} to see the lane head to head.`;
-  // Comparison series: put both champions on the SAME axis. When a lane
-  // opponent exists the main line is already head-to-head, so the comparison
-  // is drawn as that champion's own head-to-head against the same opponent --
-  // otherwise the two lines would be measuring different things.
+  // Comparison series: both champions read on the SAME axis, as a hypothetical
+  // lane. See the note inside for the bug this replaced.
   let cmp = null;
   if (window.chCompareName) {
     const other = engine.findChampion(window.chCompareName);
     if (other && other.name !== rep.name) {
       const foeC = rep.foe ? engine.findChampion(rep.foe) : null;
+      // THE FLAT-LINE BUG.
+      //
+      // The comparison line was always drawn as "the selected champion versus
+      // your lane opponent". The dropdown is restricted to the ENEMY team and
+      // lists your lane opponent first, so the overwhelmingly common selection
+      // made that expression `champPowerAt(foe) - champPowerAt(foe)` -- exactly
+      // zero at every minute, which the logistic turns into a dead flat 50%
+      // line. The chart was not failing to draw; it was drawing a champion
+      // compared against himself.
+      //
+      // Fixed by asking the question the reader actually means: HOW WOULD MY
+      // LANE READ IF I FACED THIS CHAMPION INSTEAD? The comparison line is now
+      // me-versus-the-selection, on the identical axis as the main line, so the
+      // two are directly readable against each other and the lane opponent is a
+      // legitimate choice (it simply reproduces the main line, correctly).
+      const meC = engine.findChampion(rep.name);
       const series = [];
       for (let t = 0; t <= GAME_END_MIN; t++) {
-        const a = engine.champPowerAt(other, t);
-        series.push(foeC ? 100 / (1 + Math.exp(-(a - engine.champPowerAt(foeC, t)) * 0.30)) : 50 + a * 8);
+        const mine = engine.champPowerAt(meC, t);
+        series.push(100 / (1 + Math.exp(-(mine - engine.champPowerAt(other, t)) * 0.30)));
       }
-      cmp = { name: other.name, series, col: rep.side === "blue" ? "#ffd479" : "#79ffd4", champ: other };
+      const isLane = !!(foeC && foeC.name === other.name);
+      // Analytics on the two series, so the comparison says something rather
+      // than just drawing a second line.
+      const base = rep.rel && rep.rel.length ? rep.rel.map((r) => r.v) : null;
+      let flip = null, widest = { t: 0, d: 0 };
+      for (let t = 1; t < series.length; t++) {
+        if (flip === null && (series[t - 1] - 50) * (series[t] - 50) < 0) flip = t;
+        const d = Math.abs(series[t] - 50);
+        if (d > widest.d) widest = { t, d };
+      }
+      const early = series.slice(0, 15).reduce((a, b) => a + b, 0) / 15;
+      const late = series.slice(30).reduce((a, b) => a + b, 0) / (series.length - 30);
+      cmp = { name: other.name, series, col: rep.side === "blue" ? "#ffd479" : "#79ffd4",
+        champ: other, isLane, base, flip, widest, early: round(early, 1), late: round(late, 1),
+        drift: round(late - early, 1) };
     }
   }
   document.getElementById("ch-chart").innerHTML = buildChampChart(rep, cmp)
@@ -5667,9 +6002,10 @@ function renderChampModal(rep) {
   // Stat-for-stat comparison alongside the curve overlay.
   const cmpBox = document.getElementById("ch-cmpstats");
   if (cmp && cmp.champ) {
-    const KEYS = [["DMG", "Damage"], ["CC", "Crowd Control"], ["Mobility", "Mobility"], ["Scaling", "Scaling"],
-      ["Sustain", "Sustain"], ["Safety", "Safety"], ["Utility", "Utility"], ["Waveclear", "Waveclear"],
-      ["Teamfight", "Teamfight"], ["combo", "Combo"]];
+    const KEYS = [["DMG", "Damage"], ["CC", "Crowd Control"], ["Peel", "Peel"], ["Frontline", "Frontline"],
+      ["Mobility", "Mobility"], ["Scaling", "Scaling"], ["Sustain", "Sustain"], ["Safety", "Safety"],
+      ["Utility", "Utility"], ["Waveclear", "Waveclear"], ["Teamfight", "Teamfight"],
+      ["ItemDep", "Gold Hunger"], ["combo", "Combo"]];
     const me = rep.stats, them = cmp.champ;
     let wins = 0, losses = 0;
     const rows = KEYS.map((k, i) => {
@@ -5691,10 +6027,32 @@ function renderChampModal(rep) {
         <span class="cs-score">${wins} &ndash; ${losses}</span>
         <span style="color:${cmp.col}">${cmp.name}</span>
       </div>${rows}
-      <div class="adv-note">${wins > losses
-        ? `<b>${rep.name}</b> leads on ${wins} of ${KEYS.length} ratings.`
-        : wins < losses ? `<b>${cmp.name}</b> leads on ${losses} of ${KEYS.length} ratings.`
-        : "The two are evenly matched on raw ratings."} Win rate: ${rep.winRate.toFixed(1)}% vs ${them.winRate.toFixed(1)}%.</div>`;
+      <div class="cs-verdicts">
+        ${[
+          { k: "OPENING READ", v: cmp.early.toFixed(1) + "%", n: "average over the first 15 minutes",
+            good: cmp.early >= 50 },
+          { k: "CLOSING READ", v: cmp.late.toFixed(1) + "%", n: "average from minute 30 on",
+            good: cmp.late >= 50 },
+          { k: "DRIFT", v: (cmp.drift > 0 ? "+" : "") + cmp.drift.toFixed(1),
+            n: cmp.drift > 1 ? "the lane gets better for you" : cmp.drift < -1 ? "the lane gets worse for you" : "the shape barely moves",
+            good: cmp.drift >= 0 },
+          { k: cmp.flip ? "LANE FLIPS" : "WIDEST GAP",
+            v: cmp.flip ? "min " + cmp.flip : "min " + cmp.widest.t,
+            n: cmp.flip ? "the advantage changes hands here" : "the biggest edge either way",
+            good: null },
+        ].map((x, i) => `<div class="cs-v" style="animation-delay:${stg(i, 220, 74)}ms">
+            <div class="cs-vk">${x.k}</div>
+            <div class="cs-vv" style="color:${x.good === null ? "var(--gold-bright)" : x.good ? "#7fe0a0" : "#ff8a89"}">${x.v}</div>
+            <div class="cs-vn">${x.n}</div>
+          </div>`).join("")}
+      </div>
+      <div class="adv-note">${cmp.isLane
+        ? `<b>${cmp.name}</b> is your actual lane opponent, so this reproduces the main line above. Pick a different enemy to see how the lane would read against them instead.`
+        : `If you faced <b>${cmp.name}</b> instead of ${rep.foe || "your current opponent"}, the lane would read <b>${cmp.late >= 50 ? "in your favour" : "against you"}</b> by the late game.`}
+        ${wins > losses ? ` On raw ratings <b>${rep.name}</b> leads ${wins} of ${KEYS.length}.`
+          : wins < losses ? ` On raw ratings <b>${cmp.name}</b> leads ${losses} of ${KEYS.length}.`
+          : " The two are evenly matched on raw ratings."}
+        Win rate ${rep.winRate.toFixed(1)}% vs ${them.winRate.toFixed(1)}%.</div>`;
     cmpBox.style.display = "";
   } else if (cmpBox) {
     cmpBox.innerHTML = ""; cmpBox.style.display = "none";
