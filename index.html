@@ -102,10 +102,11 @@ body {
 
 .app {
   /* 2000px let the table stretch the full width of a wide monitor, which is
-     what made it feel like a spreadsheet rather than a product. 1560 is wide
-     enough for eight columns a side without the eye having to travel, and
-     leaves real margin either side. */
-  max-width: 1560px;
+     what made it feel like a spreadsheet rather than a product. 1760 buys the
+     width the doubled Champion column needs without letting the numeric
+     columns sprawl -- the six stat columns stay on their own min-widths, so
+     every pixel added here goes to the portrait, not to whitespace. */
+  max-width: 1820px;
   width: 100%;
   margin: 0 auto;
   padding: 0 26px;
@@ -392,7 +393,7 @@ table.stats {
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 table.stats td { box-sizing: border-box; }
-table.stats tbody tr { height: 96px; }
+table.stats tbody tr { height: 104px; }
 /* Rows arrive with rhythm rather than all at once. Delays are set per row in
    renderRow so lanes group naturally instead of ticking on a fixed interval. */
 @keyframes rowIn {
@@ -430,7 +431,7 @@ table.stats th::after {
 }
 table.stats th:hover::after { transform: scaleX(1); }
 table.stats td {
-  padding: 3px 6px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 3px 5px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.04);
   color: var(--ink);
 }
 /* A barely-there stripe. Enough to track a row across eight columns, far short
@@ -441,16 +442,17 @@ table.stats tbody tr:hover td { background: rgba(212, 175, 90, 0.075); }
 /* Portrait breathes slightly on row hover -- ties the row together as one
    object instead of 8 independent cells lighting up. */
 .name-portrait .portrait-img { transition: transform 0.45s cubic-bezier(0.22,0.61,0.36,1), filter 0.3s ease; }
-table.stats tbody tr:hover .name-portrait .portrait-img { transform: scale(1.09); }
-table.stats.side-table-red tbody tr:hover .name-portrait .portrait-img { transform: scaleX(-1) scale(1.09); }
+table.stats tbody tr:hover .name-portrait .portrait-img { transform: scale(1.06); }
+table.stats.side-table-blue tbody tr:hover .name-portrait .portrait-img { transform: scaleX(-1) scale(1.06); }
+table.stats.side-table-red tbody tr:hover .name-portrait .portrait-img { transform: scale(1.06); }
 table.stats tbody tr:hover .name-portrait { opacity: 0.86; }
 .name-portrait { transition: opacity 0.3s ease; }
 table.stats tbody tr:last-child td { border-bottom: none; }
-/* overflow is VISIBLE so the portrait can spill out of its own cell and run
-   across the next two columns, fading to nothing by the Win Rate column. */
-table.stats td.name { font-weight: 800; font-size: 15px; letter-spacing: 0.2px; position: relative; overflow: visible; padding-top: 6px !important; padding-bottom: 6px !important; }
-table.stats.side-table-blue td.name { width: 26%; text-align: left; padding-left: 18px; color: var(--blue-main); border-left: 3px solid var(--blue-main); text-shadow: 0 0 12px var(--blue-glow); }
-table.stats.side-table-red td.name { width: 26%; text-align: right; padding-right: 18px; color: var(--red-main); border-right: 3px solid var(--red-main); text-shadow: 0 0 12px var(--red-glow); }
+/* overflow is HIDDEN and padding is zero: the artwork IS the cell now, edge to
+   edge, so anything spilling out would just be a crop artefact. */
+table.stats td.name { font-weight: 800; font-size: 15px; letter-spacing: 0.2px; position: relative; overflow: hidden; padding: 0 !important; }
+table.stats.side-table-blue td.name { width: 46%; text-align: left; padding: 0 !important; color: var(--blue-main); border-left: none; text-shadow: 0 0 12px var(--blue-glow); }
+table.stats.side-table-red td.name { width: 46%; text-align: right; padding: 0 !important; color: var(--red-main); border-right: none; text-shadow: 0 0 12px var(--red-glow); }
 table.stats.side-table-blue tbody tr:hover td.name,
 table.stats.side-table-red tbody tr:hover td.name { background-color: transparent; }
 /* Portrait is ~2.6x its own cell so it reaches across Teamfight and dies out
@@ -467,9 +469,12 @@ table.stats.side-table-red tbody tr:hover td.name { background-color: transparen
    FINAL RULE: the box is exactly 100% of td.name. No bleed at all. The artwork
    is physically incapable of reaching another column's value, regardless of
    viewport width, row height or how the 21% column resolves. */
+/* Full bleed. The box is the whole cell -- top, bottom and both edges -- with
+   no border and no padding, so the artwork is the row rather than something
+   sitting inside it. */
 .name-portrait {
-  position: absolute; top: 0; bottom: 0; width: 100%; overflow: hidden;
-  pointer-events: none; opacity: 0.70; filter: saturate(1.04) contrast(1.03); z-index: 0;
+  position: absolute; inset: 0; width: 100%; overflow: hidden;
+  pointer-events: none; opacity: 0.70; filter: saturate(1.06) contrast(1.04); z-index: 0;
 }
 table.stats.side-table-blue .name-portrait { left: 0; }
 table.stats.side-table-red .name-portrait { right: 0; }
@@ -489,54 +494,63 @@ table.stats.side-table-red .name-portrait { right: 0; }
    which lands the EYES on the row's centre line rather than the middle of the
    head (eyes sit above centre in a portrait, so a plain centre crop reads
    slightly high). */
+/* `cover` on landscape splash art, anchored on the upper third where the face
+   almost always sits. The old square icon could not do this: filling a 3.6:1
+   cell from a 1:1 source means discarding three quarters of the image height,
+   which is precisely how a champion ends up cropped at the neck. */
 .name-portrait .portrait-img {
   position: absolute; inset: 0; background-repeat: no-repeat;
-  /* 108% instead of 120%: the icon is square, so its WIDTH is driven by this
-     number. 1.08 x 96px row = ~104px, which fits inside the Champion column at
-     every layout width the table actually renders at. */
-  background-size: auto 126%;
-  background-position: left 40%;
+  background-size: cover;
+  background-position: center 32%;
 }
-/* Mirror the red side's portrait so the two teams are genuine mirror images
-   of each other -- without this, blue and red show the pixel-identical crop
-   and always read as "facing the same way," no matter what shape the
-   surrounding cell is cut into. */
-table.stats.side-table-red .name-portrait .portrait-img {
+/* FACING.
+   Blue's table is on the left of the screen and red's on the right, so for the
+   two teams to look AT each other, blue must face right and red must face left.
+   Riot's splash art is composed with the champion facing the viewer's left far
+   more often than not, so red is left alone and BLUE is the side that gets
+   mirrored -- the opposite of what was here before, which mirrored red and left
+   both teams looking the same way.
+   If a future Riot art refresh flips that convention, swapping which of these
+   two selectors carries the transform is the whole fix. */
+table.stats.side-table-blue .name-portrait .portrait-img {
   transform: scaleX(-1);
+}
+table.stats.side-table-red .name-portrait .portrait-img {
+  transform: none;
 }
 /* Outside -> inside fade. Solid against the table's outer edge, gone by the
    time it reaches the Win Rate column. The old angled clip-path is dropped --
    the gradient IS the edge treatment now. */
 table.stats.side-table-blue .name-portrait {
-  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 26%, rgba(0,0,0,0.82) 46%, rgba(0,0,0,0.48) 64%, rgba(0,0,0,0.20) 80%, rgba(0,0,0,0.04) 92%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 26%, rgba(0,0,0,0.82) 46%, rgba(0,0,0,0.48) 64%, rgba(0,0,0,0.20) 80%, rgba(0,0,0,0.04) 92%, rgba(0,0,0,0) 100%);
 }
 table.stats.side-table-red .name-portrait {
-  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
-  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.96) 34%, rgba(0,0,0,0.70) 58%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.10) 90%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 26%, rgba(0,0,0,0.82) 46%, rgba(0,0,0,0.48) 64%, rgba(0,0,0,0.20) 80%, rgba(0,0,0,0.04) 92%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 26%, rgba(0,0,0,0.82) 46%, rgba(0,0,0,0.48) 64%, rgba(0,0,0,0.20) 80%, rgba(0,0,0,0.04) 92%, rgba(0,0,0,0) 100%);
 }
 .name-portrait::after {
   content: ""; position: absolute; inset: 0;
 }
 table.stats.side-table-blue .name-portrait::after {
-  background: linear-gradient(to right, rgba(6,9,17,0.0) 0%, rgba(6,9,17,0.14) 100%);
+  background: linear-gradient(to right, rgba(6,9,17,0.0) 0%, rgba(6,9,17,0.10) 55%, rgba(6,9,17,0.30) 100%);
 }
 table.stats.side-table-red .name-portrait::after {
-  background: linear-gradient(to left, rgba(6,9,17,0.0) 0%, rgba(6,9,17,0.14) 100%);
+  background: linear-gradient(to left, rgba(6,9,17,0.0) 0%, rgba(6,9,17,0.10) 55%, rgba(6,9,17,0.30) 100%);
 }
 .name-text {
   position: relative; z-index: 1;
   text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 10px rgba(0,0,0,0.6);
 }
 
-.stat-cell { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; min-width: 48px; position: relative; z-index: 1; }
+.stat-cell { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; min-width: 44px; position: relative; z-index: 1; }
 /* Breathing room between the portrait and the first number, so the artwork is
    not crowded by the stat sitting on top of it. */
 table.stats.side-table-blue tbody td.name + td { padding-left: 16px; }
 table.stats.side-table-red tbody td:has(+ td.name) { padding-right: 16px; }
 .radar-cell {
   display: flex; align-items: center; justify-content: center;
-  min-width: 116px; height: 105px; overflow: hidden;
+  min-width: 112px; height: 105px; overflow: hidden;
   position: relative;
 }
 
@@ -970,13 +984,46 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
   border: 1px solid rgba(212,175,90,0.5);
   box-shadow: 0 0 16px rgba(212,175,90,0.24), inset 0 1px 0 rgba(255,255,255,0.12);
   transition: left 0.42s cubic-bezier(0.34, 1.12, 0.4, 1), width 0.42s cubic-bezier(0.34, 1.12, 0.4, 1); }
+/* ---- Tabs ---------------------------------------------------------------
+   A tab bar is the most-used control in the app and was doing the least work
+   for it: colour change on hover, nothing else. Three additions, each with a
+   job rather than as decoration.
+     RISE     hovering lifts the label 1px and lights a short gold arc beneath
+              it, so the pointer is answered before the click lands.
+     PRESS    the active state compresses slightly and darkens, the way a real
+              button does under a finger. A control that scales UP and gets
+              LIGHTER on press is the single fastest way to make an interface
+              feel like a sticker being tapped rather than a button.
+     TRAVEL   the sliding ink pill picks up a directional sheen while it moves,
+              so the eye follows the movement across instead of losing the
+              highlight and re-finding it. */
 .tab { position: relative; z-index: 1; background: none; border: none; cursor: pointer;
-  padding: 8px 4px; border-radius: 9px; color: var(--ink-dim);
+  padding: 8px 4px 9px; border-radius: 9px; color: var(--ink-dim);
   font-size: 10.5px; font-weight: 800; letter-spacing: 1.3px;
-  transition: color 0.28s ease, transform 0.16s ease; }
-.tab:hover { color: var(--ink); }
-.tab.active { color: var(--gold-bright); }
-.tab:active { transform: scale(0.97); }
+  transition: color 0.26s ease, transform 0.2s cubic-bezier(0.24,1.1,0.36,1),
+              filter 0.2s ease, text-shadow 0.26s ease; }
+.tab::after {
+  content: ""; position: absolute; left: 50%; right: 50%; bottom: 3px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, rgba(212,175,90,0), var(--gold-bright), rgba(212,175,90,0));
+  opacity: 0; transition: left 0.3s cubic-bezier(0.24,1.06,0.36,1), right 0.3s cubic-bezier(0.24,1.06,0.36,1), opacity 0.24s ease; }
+.tab:hover { color: var(--ink); transform: translateY(-1px); }
+.tab:hover::after { left: 22%; right: 22%; opacity: 0.75; }
+.tab.active { color: var(--gold-bright); text-shadow: 0 0 14px rgba(212,175,90,0.45); }
+.tab.active::after { opacity: 0; }
+/* Pressed: compress and darken. */
+.tab:active { transform: translateY(0) scale(0.955); filter: brightness(0.82); }
+.tab:focus-visible { outline: none; color: var(--gold-bright); }
+.tab:focus-visible::after { left: 16%; right: 16%; opacity: 1; }
+/* The travelling ink pill catches light while it moves. */
+.tab-ink::after {
+  content: ""; position: absolute; inset: 0; border-radius: 9px; pointer-events: none;
+  background: linear-gradient(110deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0) 80%);
+  opacity: 0; transition: opacity 0.2s ease; }
+.tabbar.moving .tab-ink::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .tab, .tab::after, .tab-ink::after { transition: none; }
+  .tab:hover { transform: none; }
+}
 
 /* overflow-x is clipped so the horizontal page-slide animation never spills
    sideways, but overflow-y MUST stay visible. It was `overflow: hidden`, which
@@ -1675,6 +1722,195 @@ table.stats tbody tr:hover .radar-cell .radar-dot { transform: scale(1.18); }
   background: rgba(255,255,255,0.07); color: var(--ink-dim); white-space: nowrap; }
 .lm-tag.hot { background: rgba(212,175,90,0.2); color: var(--gold-bright); }
 @media (max-width: 1100px) { .prot-split { grid-template-columns: 1fr; } }
+/* ---- Table radar: interaction states ------------------------------------
+   The focus state is subtractive. Hovering an axis does not add a highlight on
+   top of everything else -- it DIMS the five axes you are not asking about, so
+   the one you are reads as the only thing in the chart. Adding brightness to
+   one of six equally bright things barely registers; taking it away from five
+   is unmissable. */
+.rd-hit { cursor: crosshair; }
+.rd-ghost { opacity: 0; transition: opacity 0.36s ease; }
+table.stats tbody tr:hover .rd-ghost { opacity: 0.85; }
+.radar-cell svg .rd-lab { transition: fill 0.24s ease, opacity 0.24s ease, font-size 0.2s ease; }
+.radar-cell svg.axis-focus .rd-lab { opacity: 0.26; }
+.radar-cell svg.axis-focus .rd-lab.on { opacity: 1; fill: var(--gold-bright); font-size: 9px; }
+.radar-cell svg.axis-focus .radar-fill { opacity: 0.34; }
+.radar-cell svg.axis-focus .radar-poly { opacity: 0.55; }
+.radar-cell svg.axis-focus .rd-ghost { opacity: 0.3; }
+.rd-read { pointer-events: none; }
+.rd-rv, .rd-rk { transition: fill 0.2s ease; }
+.radar-cell svg.axis-focus .rd-rv { fill: var(--gold-bright); }
+/* The centre readout only appears once there is room for it -- on a resting
+   chart it would sit on top of the polygon's own centre. */
+.rd-read { opacity: 0; transition: opacity 0.3s ease; }
+table.stats tbody tr:hover .rd-read { opacity: 1; }
+.radar-cell svg.axis-focus .rd-read { opacity: 1; }
+/* ---------- RIFT MAP -----------------------------------------------------
+   The one page in the app that is a picture rather than a chart. Everything on
+   it is data: lane stroke colour is that lane's control at the scrubbed
+   minute, jungle quadrant fill is jungle influence there, pit glow is drake
+   affinity. Nothing is decoration except the terrain itself. */
+/* The map was taking the full width of the modal and dwarfing the reading it
+   exists to support. Capped at 430px: large enough that the lanes are clearly
+   separate objects, small enough that the panel beside it is the thing you
+   actually read. */
+.rift-wrap { display: grid; grid-template-columns: minmax(300px, 430px) 1fr; gap: 16px; align-items: start; }
+.rift-stage { padding: 8px !important; }
+.rift-stage svg { display: block; width: 100%; max-width: 414px; margin: 0 auto; height: auto; border-radius: 10px; }
+.rift-side { display: flex; flex-direction: column; }
+.rift-read { min-height: 108px; }
+.rr-hd { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.rr-t { font-size: 12px; font-weight: 900; letter-spacing: 1.2px; color: var(--gold-bright); }
+.rr-sub { font-size: 9px; color: var(--ink-dim); letter-spacing: 0.5px; }
+.rr-vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 7px 0 5px; }
+.rr-nm { font-size: 12px; font-weight: 800; }
+.rr-nm.r { text-align: right; }
+.rr-pill { font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;
+  background: rgba(212,175,90,0.16); border: 1px solid rgba(212,175,90,0.4); color: var(--gold-bright);
+  font-variant-numeric: tabular-nums; }
+.rr-body { font-size: 9.5px; color: var(--ink-dim); line-height: 1.55; }
+.rr-body b { color: var(--ink); }
+.rc-row { display: grid; grid-template-columns: 54px 1fr 44px; align-items: center; gap: 8px; padding: 3px 0; }
+.rc-k { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; color: var(--ink-dim); }
+.rc-track { height: 12px; border-radius: 6px; overflow: hidden; display: flex;
+  background: rgba(255,255,255,0.05); box-shadow: inset 0 1px 3px rgba(0,0,0,0.45); }
+.rc-b { background: linear-gradient(90deg, rgba(79,195,247,0.35), #4fc3f7); transition: width 0.5s cubic-bezier(0.22,0.8,0.3,1); }
+.rc-r { background: linear-gradient(270deg, rgba(255,107,106,0.35), #ff6b6a); transition: width 0.5s cubic-bezier(0.22,0.8,0.3,1); }
+.rc-v { font-size: 10px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.rift-verdict { font-size: 9.5px; color: var(--ink-dim); line-height: 1.6; }
+.rift-verdict b { color: var(--gold-bright); }
+.rift-scrub { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 9px 14px !important; }
+.rs-lab { font-size: 9px; font-weight: 800; letter-spacing: 1.3px; color: var(--ink-dim); }
+.rs-range { flex: 1; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(79,195,247,0.4), rgba(212,175,90,0.5), rgba(255,107,106,0.4));
+  outline: none; cursor: pointer; }
+.rs-range::-webkit-slider-thumb { -webkit-appearance: none; width: 17px; height: 17px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--gold)); border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 0 12px rgba(212,175,90,0.75); cursor: grab; transition: transform 0.18s ease; }
+.rs-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.rs-range::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--gold);
+  border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 0 12px rgba(212,175,90,0.75); cursor: grab; }
+.rs-t { font-size: 13px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+.rs-play { font-size: 9px; font-weight: 800; letter-spacing: 1px; padding: 5px 11px; border-radius: 8px;
+  background: rgba(212,175,90,0.14); border: 1px solid rgba(212,175,90,0.42); color: var(--gold-bright);
+  cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
+.rs-play:hover { background: rgba(212,175,90,0.26); transform: translateY(-1px); }
+/* Map elements */
+.rf-lane { cursor: pointer; transition: stroke-width 0.3s ease, filter 0.3s ease, opacity 0.3s ease; }
+.rf-lane-hit { cursor: pointer; }
+.rift-stage svg.focus .rf-lane, .rift-stage svg.focus .rf-pit, .rift-stage svg.focus .rf-mk { opacity: 0.32; }
+.rift-stage svg.focus .rf-lane.on, .rift-stage svg.focus .rf-pit.on { opacity: 1; }
+.rf-mk { transition: opacity 0.3s ease; }
+.rf-lane.on { stroke-width: 13; filter: drop-shadow(0 0 10px rgba(212,175,90,0.7)); }
+.rf-jg { cursor: pointer; }
+.rf-jg.on { fill: rgba(212,175,90,0.10); stroke: rgba(212,175,90,0.5); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.rf-pit { cursor: pointer; transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.24,1.3,0.36,1); transform-box: fill-box; transform-origin: center; }
+.rf-pit.on { transform: scale(1.18); }
+.rf-tur { transition: opacity 0.4s ease; }
+.tab-page.active .rf-lane { animation: rfDraw 1.1s cubic-bezier(0.3,0.85,0.28,1) both; }
+@keyframes rfDraw { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
+.tab-page.active .rf-pit, .tab-page.active .rf-nexus { animation: verdictIn 0.55s cubic-bezier(0.26,1.15,0.4,1) both; }
+@media (max-width: 1180px) { .rift-wrap { grid-template-columns: 1fr; } }
+.rf-heat { pointer-events: none; transition: opacity 0.4s ease; }
+.rift-stage svg.focus .rf-heat { opacity: 0.35; }
+.rf-legend { pointer-events: none; }
+.tab-page.active .rf-heat { animation: heatIn 0.9s ease both; }
+@keyframes heatIn { from { opacity: 0; } to { opacity: 1; } }
+/* Timeline: the map strip. The chart says who is winning; this says WHERE, at
+   the same minute, without leaving the page. */
+.fr-lanes { margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+.fr-lk { font-size: 8.5px; font-weight: 800; letter-spacing: 1.2px; color: var(--ink-dim); margin-bottom: 6px; }
+.fr-lrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.fr-lane { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.fr-ll { font-size: 8px; font-weight: 800; letter-spacing: 0.8px; color: var(--ink-dim); }
+.fr-lt { width: 100%; height: 38px; border-radius: 6px; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,107,106,0.28), rgba(255,107,106,0.10));
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.45); }
+.fr-lb { position: absolute; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, #4fc3f7, rgba(79,195,247,0.45));
+  transition: height 0.42s cubic-bezier(0.22,0.85,0.3,1); }
+.fr-lb::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: rgba(255,255,255,0.75); box-shadow: 0 0 7px rgba(255,255,255,0.6); }
+.fr-lv { font-size: 9px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fr-ln { font-size: 8.5px; color: var(--ink-dim); font-style: italic; margin-top: 6px; line-height: 1.45; }
+.ph-pinned #ph-hover { opacity: 1 !important; }
+.fr-pin { color: var(--gold-bright); font-style: normal; }
+/* ==========================================================================
+   MOTION IDENTITY
+   One easing vocabulary for the whole app, so every surface moves like it
+   belongs to the same product. Three curves, each with a job:
+     --ease-settle  arrives and stops. Most entrances.
+     --ease-spring  arrives, overshoots ~7%, settles. Anything that should feel
+                    alive under the pointer.
+     --ease-exit    leaves fast. Nothing should linger on the way out.
+   Durations are on a scale too (120/220/380/620ms) rather than picked per
+   element, which is what stops a UI reading as five different people's work.
+   ========================================================================== */
+:root {
+  --ease-settle: cubic-bezier(0.22, 0.85, 0.28, 1);
+  --ease-spring: cubic-bezier(0.24, 1.16, 0.34, 1);
+  --ease-exit:   cubic-bezier(0.55, 0, 0.85, 0.35);
+  --dur-1: 120ms; --dur-2: 220ms; --dur-3: 380ms; --dur-4: 620ms;
+}
+/* Interactive surfaces answer the pointer before the click lands. */
+.sec-box, .mini-card, .eco-card, .prot-card, .drake, .obj-card, .cs-v, .fr-cell {
+  transition: transform var(--dur-3) var(--ease-spring),
+              box-shadow var(--dur-3) var(--ease-settle),
+              border-color var(--dur-2) linear; }
+.sec-box:hover, .mini-card:hover, .eco-card:hover, .prot-card:hover,
+.drake:hover, .obj-card:hover, .cs-v:hover, .fr-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.34);
+  border-color: rgba(212,175,90,0.26); }
+/* Pressed states compress and darken -- a control that grows and brightens
+   under a click reads as a sticker being tapped, not a button. */
+.graphs-btn:active, .rs-play:active, .reset-btn:active { transform: scale(0.965); filter: brightness(0.86); }
+/* Numbers settle rather than snap. */
+.stat-val, .mc-v, .ec-b, .ec-r, .rr-pill, .fr-v {
+  transition: color var(--dur-3) var(--ease-settle), transform var(--dur-2) var(--ease-spring); }
+/* Nothing on a settled page is completely static: the gold accents breathe on
+   a long, near-imperceptible cycle so held frames stay alive. */
+@keyframes idleBreathe { 0%, 100% { opacity: 0.86; } 50% { opacity: 1; } }
+.adv-h.gold, .winprob-label { animation: idleBreathe 7.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sec-box, .mini-card, .eco-card, .prot-card, .drake, .obj-card, .cs-v, .fr-cell { transition: none; }
+  .sec-box:hover, .mini-card:hover, .eco-card:hover, .prot-card:hover,
+  .drake:hover, .obj-card:hover, .cs-v:hover, .fr-cell:hover { transform: none; }
+  .adv-h.gold, .winprob-label { animation: none; }
+}
+/* ---- Radar magnifier -----------------------------------------------------
+   Fixed to the viewport, so nothing in the table can clip it. */
+#radar-pop {
+  position: fixed; top: 0; left: 0; z-index: 9999; width: 300px; pointer-events: none;
+  padding: 12px 13px 11px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(16,22,34,0.985), rgba(9,13,21,0.985));
+  border: 1px solid rgba(212,175,90,0.34);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.045),
+              inset 0 1px 0 rgba(255,255,255,0.07);
+  backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
+  opacity: 0; transform-origin: left center;
+  transition: opacity 0.18s ease; }
+#radar-pop.on { opacity: 1; }
+#radar-pop .rp-hd { font-size: 14px; font-weight: 900; letter-spacing: 0.4px; display: flex;
+  align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+#radar-pop .rp-role { font-size: 8.5px; font-weight: 800; letter-spacing: 1.2px; color: var(--ink-dim); }
+#radar-pop .rp-chart { display: flex; justify-content: center; margin: -4px 0 4px; }
+#radar-pop .rp-chart svg { width: 246px; height: auto; }
+#radar-pop .rp-chart .rd-read, #radar-pop .rp-chart .rd-ghost { opacity: 1; }
+#radar-pop .rp-row { display: grid; grid-template-columns: 40px 1fr 28px 72px; align-items: center;
+  gap: 7px; padding: 2px 0; }
+#radar-pop .rp-k { font-size: 8.5px; font-weight: 800; letter-spacing: 0.8px; color: var(--ink-dim); }
+#radar-pop .rp-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.07); overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+#radar-pop .rp-bar i { display: block; height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(24,52,92,0.9), #d4af5a 62%, #ff9a5c); }
+#radar-pop .rp-v { font-size: 11px; font-weight: 900; text-align: right; font-variant-numeric: tabular-nums; }
+#radar-pop .rp-p { font-size: 8px; color: var(--ink-dim); text-align: right; white-space: nowrap; }
+/* Heat sectors sit under the outline; they dim when one axis is being read. */
+.rd-heatg { transition: opacity 0.3s ease; }
+.radar-cell svg.axis-focus .rd-heatg { opacity: 0.4; }
+.radar-cell svg.axis-focus .rd-heat.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #radar-pop { transition: none; } }
 .adv-note { font-size: 9.5px; color: var(--ink-dim); font-style: italic; margin-top: 7px; line-height: 1.5; }
 /* Power window strip */
 .pw-strip { display: flex; height: 34px; border-radius: 9px; overflow: hidden; position: relative;
@@ -1811,7 +2047,7 @@ table.stats tbody tr:hover .radar-cell .radar-dot { transform: scale(1.18); }
   .titlebar, .picker-row, .tables-wrap, .winprob-wrap { grid-template-columns: 1fr; }
   .spacer-cell { display: none; }
   .titlebar .logo { padding: 14px; }
-  table.stats.side-table-red td.name { text-align: left; padding-left: 18px; padding-right: 6px; border-right: none; border-left: 3px solid var(--red-main); }
+  table.stats.side-table-red td.name { text-align: left; padding: 0; border-right: none; border-left: none; }
 }
 
 
@@ -1923,6 +2159,7 @@ table.stats tbody tr:hover .radar-cell .radar-dot { transform: scale(1.18); }
       <div class="tabbar" id="tabbar">
         <div class="tab-ink" id="tab-ink"></div>
         <button class="tab" data-tab="timeline">TIMELINE</button>
+        <button class="tab" data-tab="rift">RIFT</button>
         <button class="tab" data-tab="breakdown">BREAKDOWN</button>
         <button class="tab" data-tab="lanes">MATCHUPS</button>
         <button class="tab" data-tab="economy">ECONOMY</button>
@@ -1938,6 +2175,26 @@ table.stats tbody tr:hover .radar-cell .radar-dot { transform: scale(1.18); }
           <div class="sec-box" id="phase-chart"></div>
           <div class="sec-box fr-box" id="phase-readout"></div>
           <div class="phase-cards" id="phase-cards"></div>
+        </section>
+
+        <section class="tab-page" data-page="rift">
+          <div class="page-lead">The draft laid on the map it will be played on. Lane colour is who owns that lane at the selected minute &mdash; drag the scrubber to watch control move. Hover any lane, jungle quadrant or pit for the detail behind it.</div>
+          <div class="rift-wrap">
+            <div class="rift-stage sec-box" id="rift-stage"></div>
+            <div class="rift-side">
+              <div class="sec-box rift-read" id="rift-read"></div>
+              <div class="adv-h gold" style="margin-top:11px">MAP CONTROL AT THIS MINUTE</div>
+              <div class="sec-box" id="rift-control"></div>
+              <div class="adv-h gold" style="margin-top:11px">WHAT THE MAP SAYS</div>
+              <div class="sec-box rift-verdict" id="rift-verdict"></div>
+            </div>
+          </div>
+          <div class="rift-scrub sec-box">
+            <span class="rs-lab">MINUTE</span>
+            <input type="range" id="rift-time" min="0" max="40" step="1" value="15" class="rs-range">
+            <span class="rs-t" id="rift-tval">15:00</span>
+            <button type="button" class="rs-play" id="rift-play" title="Play the game through">&#9654; PLAY</button>
+          </div>
         </section>
 
         <section class="tab-page" data-page="breakdown">
@@ -2124,6 +2381,15 @@ const CHAMP_DATA = {"champions":[{"name":"Aatrox","role":"Top","winRate":49.1,"c
 const DDRAGON_VER = "16.17.1";
 const champIconUrl = (splashId) =>
   `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VER}/img/champion/${splashId}.png`;
+// Landscape splash art, for the table row banner. The square icon was the right
+// call when the Champion cell was ~170px wide and roughly square; now that the
+// cell is 350x96 -- an aspect ratio of about 3.6:1 -- filling it with a square
+// source would have to crop away three quarters of the image height, which is
+// how faces end up out of frame. Splash art is 1215x717 and is the asset Riot
+// actually intends for a wide banner crop, so it is the correct source at this
+// shape. The square icon is still used everywhere the frame IS square.
+const champSplashUrl = (splashId) =>
+  `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${splashId}_0.jpg`;
 
 const ROLES = ["Top", "Jungle", "Mid", "ADC", "Support"];
 
@@ -2984,7 +3250,7 @@ const COUNTER_LOGODDS = 0.035;
 // constant is the same approach already used for tempoZ and engageZ.
 const ECON_LOGODDS_PER_SD    = 0.030;
 const PROTECT_LOGODDS_PER_SD = 0.038;
-const ECON_REF    = { mean: 6.8714, sd: 0.3597 };  // 30,000 role-legal drafts
+const ECON_REF    = { mean: 8.1203, sd: 0.6838 };  // 30,000 role-legal drafts, re-measured after aim became a correlation
 const PROTECT_REF = { mean: 3.1153, sd: 0.9131 };  // 30,000 role-legal drafts
 const COUNTERS = {"Mordekaiser":["Yone","Yorick","Nasus"],"Garen":["Tryndamere","Teemo","Sett"],"Sett":["Illaoi","Nasus","Malphite"],"Darius":["Sett","Teemo","Nasus"],"Teemo":["Yorick","Nasus","Malphite"],"Nasus":["Illaoi","Garen"],"Malphite":["Dr. Mundo","Nasus","Mordekaiser"],"Aatrox":["Garen","Mordekaiser","Yone"],"Jax":["Garen","Nasus","Sett"],"Renekton":["Nasus","Garen","Mordekaiser"],"Dr. Mundo":["Nasus","Yone","Garen"],"Yorick":["Yone","Nasus","Tryndamere"],"Illaoi":["Teemo","Yorick","Mordekaiser"],"Tryndamere":["Nasus","Malphite","Teemo"],"Gangplank":["Sett","Garen","Mordekaiser"],"Volibear":["Jax","Nasus","Garen"],"Gwen":["Garen","Sett","Mordekaiser"],"Irelia":["Sett","Garen","Darius"],"Viego":["Warwick","Shyvana","Briar"],"Lee Sin":["Nocturne","Kayn","Graves"],"Graves":["Shyvana","Wukong","Naafiri"],"Kayn":["Briar","Nocturne","Warwick"],"Master Yi":["Warwick","Viego","Nocturne"],"Nocturne":["Shyvana","Wukong","Amumu"],"Warwick":["Rammus","Karthus","Amumu"],"Briar":["Wukong","Amumu","Jax"],"Shyvana":["Sylas","Trundle","Tryndamere"],"Shaco":["Graves","Kayn","Nocturne"],"Vi":["Nocturne","Warwick","Kayn"],"Wukong":["Amumu","Lillia","Warwick"],"Bel'Veth":["Vi","Jarvan IV","Wukong"],"Jarvan IV":["Amumu","Shyvana","Lillia"],"Kha'Zix":["Nocturne","Graves","Kayn"],"Lillia":["Teemo","Shyvana","Briar"],"Naafiri":["Nocturne","Briar","Kayn"],"Xin Zhao":["Shyvana","Kayn","Warwick"],"Yasuo":["Malzahar","Veigar","Yone"],"Yone":["Veigar","Ahri","Akali"],"Ahri":["Veigar","Viktor","Yasuo"],"Zed":["Fizz","Malzahar","Sylas"],"Sylas":["Yasuo","Viktor","Yone"],"Veigar":["Xerath","Katarina","Fizz"],"Malzahar":["Xerath","Hwei","Smolder"],"Viktor":["Xerath","Vel'Koz","Hwei"],"Akali":["Galio","Ahri","Yasuo"],"Katarina":["Fizz","Yasuo","Malzahar"],"Fizz":["Lissandra","Sylas","Viktor"],"Syndra":["Fizz","Katarina","Zed"],"Locke":["Yasuo","Yone","Ahri"],"Galio":["Yone","Ahri","Yasuo"],"Xerath":["Fizz","Katarina","Diana"],"Vex":["Veigar","Syndra","Viktor"],"Diana":["Yasuo","Ahri","Yone"],"Lissandra":["Viktor","Syndra","Ahri"],"Hwei":["Fizz","Yasuo","Syndra"],"Caitlyn":["Ziggs","Jinx","Twitch"],"Kai'Sa":["Jinx","Xayah","Ashe"],"Miss Fortune":["Smolder","Twitch","Jinx"],"Jhin":["Tristana","Jinx","Kai'Sa"],"Jinx":["Twitch","Xerath","Ziggs"],"Ezreal":["Kai'Sa","Jhin","Caitlyn"],"Ashe":["Jinx","Tristana","Miss Fortune"],"Tristana":["Veigar","Aphelios","Samira"],"Lucian":["Miss Fortune","Caitlyn","Jhin"],"Samira":["Jinx","Yunara","Xayah"],"Yunara":["Tristana","Jinx","Caitlyn"],"Vayne":["Twitch","Jinx","Zeri"],"Twitch":["Nilah","Yasuo","Viktor"],"Smolder":["Twitch","Jinx","Veigar"],"Xayah":["Twitch","Jinx","Smolder"],"Aphelios":["Jinx","Samira","Miss Fortune"],"Ziggs":["Vayne","Twitch","Kai'Sa"],"Sivir":["Twitch","Jinx","Xayah"],"Draven":["Jinx","Caitlyn","Miss Fortune"],"Lux":["Leona","Nautilus","Blitzcrank"],"Seraphine":["Milio","Zyra","Xerath"],"Thresh":["Morgana","Seraphine","Leona"],"Nautilus":["Leona","Seraphine","Thresh"],"Leona":["Soraka","Milio","Morgana"],"Morgana":["Milio","Senna","Brand"],"Pyke":["Nautilus","Thresh","Seraphine"],"Blitzcrank":["Leona","Nautilus","Morgana"],"Lulu":["Seraphine","Thresh","Nautilus"],"Pantheon":["Leona","Thresh","Lulu"],"Nami":["Leona","Hwei","Amumu"],"Senna":["Blitzcrank","Nautilus","Lux"],"Yuumi":["Nautilus","Thresh","Lux"],"Swain":["Morgana","Lulu","Seraphine"],"Brand":["Nami","Vel'Koz","Xerath"],"Milio":["Braum","Blitzcrank","Teemo"],"Karma":["Nautilus","Thresh","Seraphine"],"Soraka":["Sona","Nami","Rell"],"Camille":["Nautilus","Thresh","Seraphine"]};
 
@@ -3226,8 +3492,36 @@ function economyReport(champs) {
   const tot = rawShare.reduce((a, b) => a + b, 0) || 1;
   const share = rawShare.map((v) => v / tot);
 
-  // AIM: gold-weighted item dependence, on the champions' own 1-10 scale.
-  const aim = filled.reduce((s, c, i) => s + share[i] * (c.ItemDep || 5), 0);
+  // AIM -- rewritten. The first version was `SUM(share_i x ItemDep_i)`, a
+  // gold-weighted average dependence, and it was degenerate in a way that only
+  // showed up when the numbers were traced by hand: it is maximised by simply
+  // stacking item-hungry champions in every slot. Measured directly, a comp of
+  // five hyper-carries scored 8.92 -- the highest of any comp tested, higher
+  // than a balanced professional draft at 6.37 -- because nothing in the
+  // formula asked whether the gold was going anywhere sensible. It also barely
+  // separated a gold-hungry ADC from a gold-hungry SUPPORT, even though the
+  // support receives about 9% of team income and the ADC about 25%.
+  //
+  // Coherence is a CORRELATION, not a sum: do the slots that receive the most
+  // gold hold the champions that convert it best? That is the actual question,
+  // it cannot be gamed by adding more carries, and it correctly reads a
+  // hungry-support comp as negative (-0.47 measured) rather than as merely
+  // slightly worse. The absolute level of item dependence across a roster is a
+  // style, not an economic virtue -- and the real cost of an all-carry draft
+  // (no frontline, no early game) is already priced by Protection and by the
+  // power curves, so charging for it again here would be double-counting.
+  const _mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+  const _corr = (a, b) => {
+    if (a.length < 2) return 0;
+    const ma = _mean(a), mb = _mean(b);
+    const num = a.reduce((s, v, i) => s + (v - ma) * (b[i] - mb), 0);
+    const den = Math.sqrt(a.reduce((s, v) => s + (v - ma) ** 2, 0) * b.reduce((s, v) => s + (v - mb) ** 2, 0));
+    return den ? num / den : 0;
+  };
+  const coherence = _corr(share, filled.map((c) => c.ItemDep || 5));
+  // Reported on the same 0-10 scale the other readings use, so the Economy page
+  // stays readable: 5 is "gold allocation is uncorrelated with who needs it".
+  const aim = round(5 + 5 * coherence, 2);
   // SECURITY: how reliably this draft converts map time into gold.
   const security = filled.reduce((s, c) => s + (c.Waveclear * 0.58 + c.Sustain * 0.42), 0) / filled.length;
   // CONCENTRATION: Herfindahl index of the gold split. 0.20 is a perfectly even
@@ -3248,8 +3542,9 @@ function economyReport(champs) {
     }),
   }));
   return {
-    aim: round(aim, 2), security: round(security, 2), hhi: round(hhi, 4),
+    aim, security: round(security, 2), hhi: round(hhi, 4),
     waste: round(waste, 2), share, perChamp,
+    coherence: round(coherence, 3),
     index: aim * 0.68 + security * 0.32,
     // team gold curve, for the chart
     curve: Array.from({ length: 41 }, (_, t) =>
@@ -4164,7 +4459,7 @@ const COLUMNS = [
   { key: "laneEdge", label: "Lane<br/>Edge", title: "How many percentage points of team win probability you gain or lose from this slot specifically, against the champion directly opposite. Includes the measured counter database. This is the number to judge a matchup by." },
   { key: "teamfight", label: "Teamfight<br/>5v5", title: "FEEDS WIN PROBABILITY. Combo quality: the best fight-starter among your four teammates, multiplied by how well THIS champion cashes in on it. Win rate cannot contain this -- it is measured alongside random teammates -- so it is genuinely new evidence." },
   { key: "champPower", label: "Draft<br/>Power", title: "Summary of this pick's strength in this slot (mean 50, 15 points = 1 standard deviation). Decides the MVP. Lane counters and combo quality are folded into the win probability behind the scenes rather than shown as their own columns." },
-  { key: "profile", label: "Profile", title: "5-stat radar: Damage, Control, Mobility, Growth, Survivability" },
+  { key: "profile", label: "Profile", title: "5-stat radar: Damage, Control, Mobility, Growth, Survivability. The enemy in this slot is ghosted behind it; hover an axis for the value and its roster percentile." },
 ];
 
 // The 5 axes shown on each champion's radar chart -- simple, independent raw
@@ -4367,7 +4662,34 @@ function cellValue(row, key) {
 // they must also be STABLE across re-renders, otherwise every recompute
 // invalidates the browser's paint cache for every radar at once.
 function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
-function buildRadarSVG(champ, colorHex) {
+// Roster percentile for one rating, so a raw "8" can be shown as "top 12%".
+// Cached: this runs five times per axis per row on every recompute.
+const _pctCache = new Map();
+function ratingPercentile(key, v) {
+  const ck = key + "|" + v;
+  if (_pctCache.has(ck)) return _pctCache.get(ck);
+  const all = engine.CHAMPIONS().map((x) => (key === "__survival" ? (x.Sustain + x.Safety) / 2 : x[key]));
+  const below = all.filter((a) => a < v).length, eq = all.filter((a) => a === v).length;
+  const pct = Math.round(((below + eq * 0.5) / all.length) * 100);
+  _pctCache.set(ck, pct);
+  return pct;
+}
+
+// The table radar, rebuilt as something you can actually interrogate.
+//
+// Three things were added, in order of how much they change the chart:
+//   GHOST      the champion directly opposite in the same slot is drawn as a
+//              dashed outline behind the main shape. This is the comparison a
+//              drafter is making anyway -- "am I bigger than him on the axis
+//              that matters" -- and it was previously only answerable by
+//              looking at two rows several hundred pixels apart.
+//   AXIS HIT   a transparent wedge per axis. Hovering one dims the other five,
+//              lights that spoke and its two vertices, and writes the value
+//              and its roster percentile into the middle of the chart.
+//   READOUT    with nothing hovered the centre shows the champion's single
+//              highest axis, so the chart says something at a glance instead
+//              of needing to be decoded.
+function buildRadarSVG(champ, colorHex, ghost, ghostCol) {
   const cx = 62, cy = 58, maxR = 38;
   const n = RADAR_AXES.length;
   const angleStep = (Math.PI * 2) / n;
@@ -4401,9 +4723,64 @@ function buildRadarSVG(champ, colorHex) {
   }).join("");
   const labels = RADAR_AXES.map((ax, i) => {
     const [x, y] = pt(i, maxR + 16);
-    return `<text x="${x}" y="${y}" font-size="8" font-weight="700" letter-spacing="0.1"
+    return `<text class="rd-lab" data-ax="${i}" x="${x}" y="${y}" font-size="8" font-weight="700" letter-spacing="0.1"
       fill="rgba(255,255,255,0.78)" text-anchor="middle" dominant-baseline="middle">${ax.label}</text>`;
   }).join("");
+  // Ghost: the champion in the same slot on the other side.
+  const ghostPoly = ghost ? `<polygon class="rd-ghost" points="${RADAR_AXES.map((ax, i) => {
+      const v = Math.max(0, Math.min(10, radarValue(ghost, ax.key)));
+      return pt(i, (v / 10) * maxR).join(",");
+    }).join(" ")}" fill="none" stroke="${ghostCol || "rgba(255,255,255,0.5)"}" stroke-width="1.6"
+    stroke-dasharray="3.5 3" stroke-linejoin="round"><title>${ghost.name}</title></polygon>` : "";
+  // One transparent wedge per axis, spanning the half-step either side of the
+  // spoke, so the whole pie slice is hoverable rather than only the thin line.
+  const hits = RADAR_AXES.map((ax, i) => {
+    const a1 = startAngle + (i - 0.5) * angleStep, a2 = startAngle + (i + 0.5) * angleStep;
+    const R = maxR + 20;
+    const p1 = [cx + R * Math.cos(a1), cy + R * Math.sin(a1)];
+    const p2 = [cx + R * Math.cos(a2), cy + R * Math.sin(a2)];
+    const v = roundDP(radarValue(champ, ax.key), 1);
+    const gv = ghost ? roundDP(radarValue(ghost, ax.key), 1) : null;
+    return `<path class="rd-hit" data-ax="${i}" data-lab="${ax.label}" data-v="${v}"
+      data-pct="${ratingPercentile(ax.key, radarValue(champ, ax.key))}"
+      data-g="${gv == null ? "" : gv}"
+      d="M ${cx} ${cy} L ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} A ${R} ${R} 0 0 1 ${p2[0].toFixed(1)} ${p2[1].toFixed(1)} Z" fill="transparent"/>`;
+  }).join("");
+  // Default centre readout: the champion's strongest axis.
+  let topAx = RADAR_AXES[0], topV = -1;
+  RADAR_AXES.forEach((ax) => { const v = radarValue(champ, ax.key); if (v > topV) { topV = v; topAx = ax; } });
+  const readout = `<g class="rd-read">
+      <text class="rd-rv" x="${cx}" y="${cy - 2}" text-anchor="middle" dominant-baseline="middle"
+        font-size="13" font-weight="900" fill="${colorHex}">${roundDP(topV, 1)}</text>
+      <text class="rd-rk" x="${cx}" y="${cy + 10}" text-anchor="middle" dominant-baseline="middle"
+        font-size="6.5" font-weight="800" letter-spacing="0.7" fill="rgba(255,255,255,0.5)">${topAx.label}</text>
+    </g>`;
+  // ---- HEAT FILL --------------------------------------------------------
+  // The shape is split into one triangle per pair of adjacent axes and each
+  // triangle is coloured by the value of those two axes. A single flat tint
+  // says "here is the shape"; this says WHICH PART of the shape is hot, which
+  // is the thing you actually want from a five-axis chart at 112px. A champion
+  // strong on damage and mobility and weak everywhere else now reads at a
+  // glance instead of needing the outline traced by eye.
+  const heatOf = (v) => {
+    // cold navy -> team gold -> hot orange, mapped over the 1-10 rating scale
+    const stops = [[0, 24, 52, 92], [4.5, 62, 96, 140], [6.5, 212, 175, 90], [8.2, 255, 154, 92], [10, 255, 92, 70]];
+    const x = Math.max(0, Math.min(10, v));
+    let a = stops[0], b = stops[stops.length - 1];
+    for (let i = 0; i < stops.length - 1; i++) if (x >= stops[i][0] && x <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; break; }
+    const f = b[0] === a[0] ? 0 : (x - a[0]) / (b[0] - a[0]);
+    return `rgb(${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)},${Math.round(a[3] + (b[3] - a[3]) * f)})`;
+  };
+  const heatSectors = RADAR_AXES.map((ax, i) => {
+    const j = (i + 1) % n;
+    const v1 = Math.max(0, Math.min(10, radarValue(champ, ax.key)));
+    const v2 = Math.max(0, Math.min(10, radarValue(champ, RADAR_AXES[j].key)));
+    const p1 = pt(i, (v1 / 10) * maxR), p2 = pt(j, (v2 / 10) * maxR);
+    const mid = (v1 + v2) / 2;
+    return `<polygon class="rd-heat" data-ax="${i}" points="${cx},${cy} ${p1.join(",")} ${p2.join(",")}"
+      fill="${heatOf(mid)}" fill-opacity="${(0.30 + (mid / 10) * 0.45).toFixed(2)}" stroke="none"/>`;
+  }).join("");
+
   // Fill and stroke are separate elements so they can animate independently:
   // the fill blooms outward from the centre while the outline draws itself
   // around the shape, then a ring pulses out through it and the vertex dots
@@ -4426,6 +4803,9 @@ function buildRadarSVG(champ, colorHex) {
           <stop offset="0" stop-color="${colorHex}" stop-opacity="0.20"/>
           <stop offset="1" stop-color="${colorHex}" stop-opacity="0"/>
         </radialGradient>
+        <filter id="${uid}s" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2.4"/>
+        </filter>
         <filter id="${uid}b" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur stdDeviation="2.1" result="bl"/>
           <feMerge><feMergeNode in="bl"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -4433,14 +4813,584 @@ function buildRadarSVG(champ, colorHex) {
       </defs>
       <circle cx="${cx}" cy="${cy}" r="${maxR}" fill="url(#${uid}g)"/>
       ${rings}${spokes}
+      ${ghostPoly}
       <circle class="radar-pulse" cx="${cx}" cy="${cy}" r="${maxR}" fill="none" stroke="${colorHex}" stroke-width="1.6"/>
       <g class="radar-data">
+        <g class="rd-heatg" filter="url(#${uid}s)">${heatSectors}</g>
         <polygon class="radar-fill" points="${dataPts}" fill="url(#${uid}f)" stroke="none"/>
         <polygon class="radar-poly" points="${dataPts}" fill="none" stroke="${colorHex}" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round" filter="url(#${uid}b)"/>
         ${dots}
       </g>
-      ${labels}
+      ${labels}${readout}${hits}
     </svg>`;
+}
+// Radar axis interaction. One delegated listener for the entire table rather
+// than 10 charts x 5 wedges of their own -- the rows are rebuilt on every
+// recompute, so per-element listeners would leak on each pick.
+function wireRadarAxes() {
+  if (window.__radarWired) return;
+  window.__radarWired = true;
+  const enter = (hit) => {
+    const svg = hit.ownerSVGElement;
+    if (!svg) return;
+    const i = hit.dataset.ax;
+    svg.classList.add("axis-focus");
+    svg.querySelectorAll("[data-ax]").forEach((el) => el.classList.toggle("on", el.dataset.ax === i));
+    const rv = svg.querySelector(".rd-rv"), rk = svg.querySelector(".rd-rk");
+    if (rv && rk) {
+      if (!svg.dataset.defV) { svg.dataset.defV = rv.textContent; svg.dataset.defK = rk.textContent; }
+      rv.textContent = hit.dataset.g ? hit.dataset.v + " / " + hit.dataset.g : hit.dataset.v;
+      rk.textContent = hit.dataset.g
+        ? hit.dataset.lab + " \u00b7 vs foe"
+        : hit.dataset.lab + " \u00b7 top " + Math.max(1, 100 - +hit.dataset.pct) + "%";
+    }
+  };
+  const leave = (svg) => {
+    if (!svg) return;
+    svg.classList.remove("axis-focus");
+    svg.querySelectorAll("[data-ax]").forEach((el) => el.classList.remove("on"));
+    const rv = svg.querySelector(".rd-rv"), rk = svg.querySelector(".rd-rk");
+    if (rv && svg.dataset.defV) { rv.textContent = svg.dataset.defV; rk.textContent = svg.dataset.defK; }
+  };
+  document.addEventListener("mouseover", (ev) => {
+    const hit = ev.target.closest && ev.target.closest(".rd-hit");
+    if (hit) enter(hit);
+  });
+  document.addEventListener("mouseout", (ev) => {
+    const hit = ev.target.closest && ev.target.closest(".rd-hit");
+    if (hit && !(ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest(".rd-hit"))) {
+      leave(hit.ownerSVGElement);
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// THE RIFT
+//
+// Every other page in this app is a chart. This one is the map the game is
+// actually played on, with the draft laid onto it -- because "Blue is +1.8 in
+// bot lane" and "Blue owns the bottom half of the map, which is where four of
+// the seven drakes spawn" are the same fact, and only one of them is a plan.
+//
+// Nothing here is decoration except the terrain. Lane stroke colour is that
+// lane's control AT THE SCRUBBED MINUTE, computed from the two champions' own
+// power curves rather than from a static lane edge -- which is the point of
+// the scrubber: a lane that is blue at 8 minutes and red at 30 is a completely
+// different draft problem from one that is blue all game, and the flat
+// "Lane Edge" number cannot tell those apart.
+// ---------------------------------------------------------------------------
+const RIFT_GEO = {
+  // Blue base bottom-left, red base top-right, mid on the main diagonal and the
+  // river on the anti-diagonal -- Baron in the upper river, Drake in the lower.
+  lanes: {
+    Top: "M 74 452 L 74 116 Q 74 74 116 74 L 452 74",
+    Mid: "M 128 472 L 472 128",
+    ADC: "M 148 526 L 484 526 Q 526 526 526 484 L 526 148",
+  },
+  river: "M 470 470 L 130 130",
+  jungle: {
+    blueTop: { d: "M 96 430 L 96 150 L 300 150 L 150 300 L 150 430 Z", cx: 168, cy: 300, side: "blue", half: "top" },
+    blueBot: { d: "M 130 452 L 300 452 L 452 300 L 452 504 L 172 504 Z", cx: 300, cy: 432, side: "blue", half: "bot" },
+    redTop:  { d: "M 148 96 L 428 96 L 428 172 L 300 172 L 172 300 Z", cx: 300, cy: 168, side: "red", half: "top" },
+    redBot:  { d: "M 450 148 L 504 148 L 504 428 L 300 428 L 450 300 Z", cx: 432, cy: 300, side: "red", half: "bot" },
+  },
+  baron: { x: 212, y: 212 },
+  drake: { x: 388, y: 388 },
+  nexusBlue: { x: 68, y: 532 },
+  nexusRed: { x: 532, y: 68 },
+  // three turrets per lane per side, as a fraction along the lane path
+  turretT: [0.18, 0.33, 0.45, 0.55, 0.67, 0.82],
+};
+const RIFT_LANE_LABEL = { Top: "TOP", Mid: "MID", ADC: "BOT" };
+// Three sample points along each lane, used as heat-field anchors. Taken from
+// the lane paths themselves so they stay on the lane if the geometry changes.
+const RIFT_ANCHORS = {
+  Top: [[74, 360], [74, 150], [230, 74]],
+  Mid: [[190, 410], [300, 300], [410, 190]],
+  ADC: [[240, 526], [470, 526], [526, 260]],
+};
+
+// Control in one lane at one minute: the two champions' own power curves,
+// pushed through the same logistic the rest of the app uses. 0 = red owns it,
+// 100 = blue owns it.
+function riftLaneControl(blueChamps, redChamps, slot, t) {
+  const b = blueChamps[slot], r = redChamps[slot];
+  if (!b && !r) return 50;
+  if (!b) return 22;
+  if (!r) return 78;
+  const d = engine.champPowerAt(b, t) - engine.champPowerAt(r, t);
+  return 100 / (1 + Math.exp(-d * 0.30));
+}
+// Jungle influence on a half of the map: the jungler's own control, pulled
+// toward the two lanes that half actually touches, because a jungler's
+// presence bottom is worth little if both bottom lanes are lost.
+function riftJungleControl(blueChamps, redChamps, half, t) {
+  const jg = riftLaneControl(blueChamps, redChamps, 1, t);
+  const lanes = half === "top"
+    ? [riftLaneControl(blueChamps, redChamps, 0, t), riftLaneControl(blueChamps, redChamps, 2, t)]
+    : [riftLaneControl(blueChamps, redChamps, 3, t), riftLaneControl(blueChamps, redChamps, 4, t)];
+  return jg * 0.55 + ((lanes[0] + lanes[1]) / 2) * 0.45;
+}
+const riftTint = (v) => {
+  // v is 0-100 blue-ness. Kept deliberately desaturated in the middle so a
+  // genuinely even lane reads as neutral terrain rather than as a weak colour.
+  const k = (v - 50) / 50;
+  return k > 0
+    ? `rgba(79,195,247,${(0.30 + Math.abs(k) * 0.62).toFixed(2)})`
+    : `rgba(255,107,106,${(0.30 + Math.abs(k) * 0.62).toFixed(2)})`;
+};
+
+function buildRiftSVG(result, t) {
+  const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
+  const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
+  const G = RIFT_GEO;
+  let out = `<svg viewBox="0 0 600 600" id="rift-svg">
+    <defs>
+      <radialGradient id="rfBg" cx="0.5" cy="0.5" r="0.72">
+        <stop offset="0" stop-color="#0e1420"/><stop offset="1" stop-color="#070a11"/>
+      </radialGradient>
+      <linearGradient id="rfRiver" x1="470" y1="470" x2="130" y2="130" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="rgba(120,190,220,0.20)"/>
+        <stop offset="0.5" stop-color="rgba(150,215,240,0.30)"/>
+        <stop offset="1" stop-color="rgba(120,190,220,0.20)"/>
+      </linearGradient>
+      <linearGradient id="rfScale" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ff6b6a"/><stop offset="0.5" stop-color="rgba(255,255,255,0.25)"/><stop offset="1" stop-color="#4fc3f7"/>
+      </linearGradient>
+      <filter id="rfHeat" x="-15%" y="-15%" width="130%" height="130%">
+        <feGaussianBlur stdDeviation="26"/>
+      </filter>
+      <filter id="rfGlow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <rect x="0" y="0" width="600" height="600" rx="14" fill="url(#rfBg)"/>
+    <g opacity="0.10">${Array.from({ length: 11 }, (_, i) => {
+      const v = 54.5 * (i + 1);
+      return `<line x1="${v}" y1="0" x2="${v}" y2="600" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>`
+           + `<line x1="0" y1="${v}" x2="600" y2="${v}" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>`;
+    }).join("")}</g>`;
+
+  // ---- HEAT FIELD ------------------------------------------------------
+  // A real interpolated field, not a decorative gradient. Control is known at a
+  // handful of anchor points -- three points along each lane, the four jungle
+  // quadrant centres, and the two objective pits -- and every cell of a 16x16
+  // grid takes an inverse-square-distance weighted average of those anchors.
+  // The result is then blurred, so what you see is where each team's control is
+  // CONCENTRATED rather than five disconnected coloured lines. Alpha carries
+  // certainty: a cell that reads 50/50 is nearly transparent, so the map only
+  // shows colour where the draft actually says something.
+  const anchors = [];
+  ["Top", "Mid", "ADC"].forEach((lane) => {
+    const slot = lane === "Top" ? 0 : lane === "Mid" ? 2 : 3;
+    const v = riftLaneControl(bC, rC, slot, t);
+    (RIFT_ANCHORS[lane] || []).forEach((pnt) => anchors.push({ x: pnt[0], y: pnt[1], v, w: 1 }));
+  });
+  Object.values(G.jungle).forEach((q) => {
+    anchors.push({ x: q.cx, y: q.cy, v: riftJungleControl(bC, rC, q.half, t), w: 1.15 });
+  });
+  anchors.push({ x: G.baron.x, y: G.baron.y, v: riftJungleControl(bC, rC, "top", t), w: 1.3 });
+  anchors.push({ x: G.drake.x, y: G.drake.y, v: riftJungleControl(bC, rC, "bot", t), w: 1.3 });
+  // bases are unambiguously owned -- without them the corners read as neutral
+  anchors.push({ x: G.nexusBlue.x, y: G.nexusBlue.y, v: 88, w: 1.5 });
+  anchors.push({ x: G.nexusRed.x, y: G.nexusRed.y, v: 12, w: 1.5 });
+
+  const N = 22, cell = 600 / N;
+  let heat = `<g class="rf-heat" filter="url(#rfHeat)">`;
+  for (let gy = 0; gy < N; gy++) {
+    for (let gx = 0; gx < N; gx++) {
+      const px = gx * cell + cell / 2, py = gy * cell + cell / 2;
+      let num = 0, den = 0;
+      for (const a of anchors) {
+        const d2 = (a.x - px) ** 2 + (a.y - py) ** 2;
+        const wgt = a.w / (d2 + 6400);
+        num += a.v * wgt; den += wgt;
+      }
+      const v = den ? num / den : 50;
+      const k = Math.abs(v - 50) / 50;
+      if (k < 0.02) continue;
+      const col = v > 50 ? "79,195,247" : "255,107,106";
+      heat += `<rect x="${(gx * cell).toFixed(1)}" y="${(gy * cell).toFixed(1)}" width="${cell.toFixed(1)}" height="${cell.toFixed(1)}" fill="rgba(${col},${(k * 0.55).toFixed(3)})"/>`;
+    }
+  }
+  heat += `</g>`;
+  out += heat;
+
+  // Jungle: hover targets only. These used to be drawn polygons, and that was
+  // the single worst thing on the map -- four hand-cut shapes that overlapped
+  // each other and the lanes, reading as opaque slabs laid over the terrain.
+  // The heat field already shows jungle control far better than a flat fill
+  // could, so all these have to be now is somewhere to point.
+  Object.entries(G.jungle).forEach(([k, q]) => {
+    out += `<circle class="rf-jg" data-kind="jg" data-key="${k}" cx="${q.cx}" cy="${q.cy}" r="52"
+      fill="transparent" stroke="none"><title>${q.side} ${q.half} jungle</title></circle>`;
+  });
+  // river
+  out += `<path d="${G.river}" fill="none" stroke="url(#rfRiver)" stroke-width="34" stroke-linecap="round"/>`;
+  out += `<path d="${G.river}" fill="none" stroke="rgba(180,225,245,0.16)" stroke-width="1.5" stroke-dasharray="6 9"/>`;
+
+  // lanes
+  ["Top", "Mid", "ADC"].forEach((lane, li) => {
+    const slot = lane === "Top" ? 0 : lane === "Mid" ? 2 : 3;
+    const v = riftLaneControl(bC, rC, slot, t);
+    out += `<path class="rf-lane" data-kind="lane" data-slot="${slot}" data-lane="${lane}" d="${G.lanes[lane]}"
+      fill="none" stroke="${riftTint(v)}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"
+      stroke-dasharray="900" style="animation-delay:${stg(li, 140, 100)}ms"/>`;
+    out += `<path class="rf-lane-hit" data-kind="lane" data-slot="${slot}" data-lane="${lane}" d="${G.lanes[lane]}"
+      fill="none" stroke="transparent" stroke-width="30" stroke-linecap="round"/>`;
+  });
+  // turrets, drawn on the lane paths by walking each path
+  out += `<g class="rf-tur">`;
+  ["Top", "Mid", "ADC"].forEach((lane) => {
+    const slot = lane === "Top" ? 0 : lane === "Mid" ? 2 : 3;
+    const v = riftLaneControl(bC, rC, slot, t);
+    G.turretT.forEach((f, i) => {
+      const owner = i < 3 ? "blue" : "red";
+      // a turret is "pressured" when the other side owns that lane right now
+      const pressured = owner === "blue" ? v < 42 : v > 58;
+      const col = owner === "blue" ? "#4fc3f7" : "#ff6b6a";
+      out += `<circle class="rf-t" data-lane="${lane}" data-f="${f}" r="${pressured ? 5.5 : 4}"
+        fill="${pressured ? col : "rgba(10,14,22,0.9)"}" stroke="${col}" stroke-width="1.6"
+        opacity="${pressured ? 1 : 0.62}"/>`;
+    });
+  });
+  out += `</g>`;
+
+  // objective pits
+  const dkB = result.drakes && result.drakes.blue, dkR = result.drakes && result.drakes.red;
+  const soul = dkB ? dkB.slice().sort((a, b) => b.affinity - a.affinity)[0] : null;
+  const drakeCtl = riftJungleControl(bC, rC, "bot", t);
+  const baronCtl = riftJungleControl(bC, rC, "top", t);
+  const pit = (o, label, ctl, key) => `<g class="rf-pit" data-kind="pit" data-key="${key}">
+      <circle cx="${o.x}" cy="${o.y}" r="26" fill="${riftTint(ctl)}" fill-opacity="0.28" filter="url(#rfGlow)"/>
+      <circle cx="${o.x}" cy="${o.y}" r="19" fill="rgba(8,12,20,0.85)" stroke="${riftTint(ctl)}" stroke-width="2.4"/>
+      <text x="${o.x}" y="${o.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="8.5"
+        font-weight="900" letter-spacing="0.4" fill="rgba(255,255,255,0.9)">${label}</text>
+      <text x="${o.x}" y="${o.y + 13}" text-anchor="middle" dominant-baseline="middle" font-size="7"
+        font-weight="800" fill="${ctl >= 50 ? "#9bdcff" : "#ffb3b2"}">${ctl.toFixed(0)}%</text>
+    </g>`;
+  out += pit(G.baron, "BARON", baronCtl, "baron");
+  out += pit(G.drake, "DRAKE", drakeCtl, "drake");
+
+  // nexuses
+  [[G.nexusBlue, "#4fc3f7", "blue"], [G.nexusRed, "#ff6b6a", "red"]].forEach(([o, col, side]) => {
+    out += `<g class="rf-nexus"><circle cx="${o.x}" cy="${o.y}" r="30" fill="${col}" opacity="0.14" filter="url(#rfGlow)"/>
+      <circle cx="${o.x}" cy="${o.y}" r="17" fill="rgba(8,12,20,0.9)" stroke="${col}" stroke-width="2.6"/>
+      <circle cx="${o.x}" cy="${o.y}" r="7" fill="${col}" opacity="0.85"/></g>`;
+  });
+  // Champion markers, placed where that role actually stands rather than
+  // evenly around the frame -- top on the top lane, the bot duo together at the
+  // bottom, junglers in their own half. Positions are chosen to clear the two
+  // objective pits, which is why bot sits inside the lane corner rather than on
+  // the diagonal.
+  const markers = [
+    { slot: 0, x: 74,  y: 318, side: "blue" }, { slot: 0, x: 318, y: 74,  side: "red" },
+    { slot: 1, x: 176, y: 336, side: "blue" }, { slot: 1, x: 424, y: 264, side: "red" },
+    { slot: 2, x: 206, y: 394, side: "blue" }, { slot: 2, x: 394, y: 206, side: "red" },
+    { slot: 3, x: 286, y: 526, side: "blue" }, { slot: 3, x: 526, y: 286, side: "red" },
+    { slot: 4, x: 344, y: 492, side: "blue" }, { slot: 4, x: 492, y: 344, side: "red" },
+  ];
+  markers.forEach((m) => {
+    const ch = (m.side === "blue" ? bC : rC)[m.slot];
+    if (!ch) return;
+    const col = m.side === "blue" ? "#4fc3f7" : "#ff6b6a";
+    const lc = riftLaneControl(bC, rC, m.slot, t);
+    const owns = m.side === "blue" ? lc >= 55 : lc <= 45;
+    out += `<g class="rf-mk" data-kind="champ" data-slot="${m.slot}" data-side="${m.side}" style="cursor:pointer">
+      ${owns ? `<circle cx="${m.x}" cy="${m.y}" r="20" fill="${col}" opacity="0.16"/>` : ""}
+      <circle cx="${m.x}" cy="${m.y}" r="13.5" fill="rgba(7,11,19,0.94)" stroke="${col}" stroke-width="${owns ? 2.4 : 1.5}" opacity="${owns ? 1 : 0.78}"/>
+      <text x="${m.x}" y="${m.y + 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="7.5"
+        font-weight="900" letter-spacing="-0.2" fill="${col}">${ch.name.slice(0, 3).toUpperCase()}</text>
+      <title>${ch.name} - ${ROLES[m.slot]} - ${(m.side === "blue" ? lc : 100 - lc).toFixed(0)}% of this lane</title></g>`;
+  });
+  out += `<rect x="0" y="0" width="600" height="600" rx="14" fill="none" stroke="rgba(212,175,90,0.24)" stroke-width="1.5"/>
+    <g class="rf-legend">
+      <rect x="14" y="14" width="128" height="30" rx="8" fill="rgba(6,10,18,0.72)" stroke="rgba(255,255,255,0.09)"/>
+      <text x="22" y="27" font-size="7.5" font-weight="800" letter-spacing="0.8" fill="rgba(255,255,255,0.5)">MAP CONTROL</text>
+      <rect x="22" y="31" width="112" height="7" rx="3.5" fill="url(#rfScale)"/>
+      <text x="22" y="46" font-size="6.5" font-weight="700" fill="#ff6b6a">RED</text>
+      <text x="134" y="46" font-size="6.5" font-weight="700" fill="#4fc3f7" text-anchor="end">BLUE</text>
+    </g></svg>`;
+  return out;
+}
+
+
+// Rift painting + interaction. Kept out of renderPhaseModal so the scrubber can
+// repaint on its own without recomputing the entire draft 40 times a second.
+function paintRift(t) {
+  const result = window.__riftResult;
+  if (!result) return;
+  window.__riftT = t;
+  const stage = document.getElementById("rift-stage");
+  if (!stage) return;
+  stage.innerHTML = buildRiftSVG(result, t);
+  placeRiftTurrets();
+  const tv = document.getElementById("rift-tval");
+  if (tv) tv.textContent = t + ":00";
+  const rng = document.getElementById("rift-time");
+  if (rng && +rng.value !== t) rng.value = t;
+
+  const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
+  const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
+  const ctl = ROLES.map((role, i) => ({ role, i, v: riftLaneControl(bC, rC, i, t) }));
+  const topHalf = riftJungleControl(bC, rC, "top", t);
+  const botHalf = riftJungleControl(bC, rC, "bot", t);
+
+  document.getElementById("rift-control").innerHTML =
+    ctl.map((x, i) => `<div class="rc-row" style="animation-delay:${stg(i, 120, 60)}ms">
+        <div class="rc-k">${(RIFT_LANE_LABEL[x.role] || x.role).toUpperCase()}</div>
+        <div class="rc-track"><div class="rc-b" style="width:${x.v.toFixed(1)}%"></div><div class="rc-r" style="width:${(100 - x.v).toFixed(1)}%"></div></div>
+        <div class="rc-v" style="color:${x.v >= 50 ? "var(--blue-main)" : "var(--red-main)"}">${x.v.toFixed(0)}%</div>
+      </div>`).join("")
+    + `<div class="rc-row" style="margin-top:5px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">
+        <div class="rc-k" style="color:var(--gold-bright)">TOP&nbsp;½</div>
+        <div class="rc-track"><div class="rc-b" style="width:${topHalf.toFixed(1)}%"></div><div class="rc-r" style="width:${(100 - topHalf).toFixed(1)}%"></div></div>
+        <div class="rc-v" style="color:${topHalf >= 50 ? "var(--blue-main)" : "var(--red-main)"}">${topHalf.toFixed(0)}%</div></div>
+      <div class="rc-row">
+        <div class="rc-k" style="color:var(--gold-bright)">BOT&nbsp;½</div>
+        <div class="rc-track"><div class="rc-b" style="width:${botHalf.toFixed(1)}%"></div><div class="rc-r" style="width:${(100 - botHalf).toFixed(1)}%"></div></div>
+        <div class="rc-v" style="color:${botHalf >= 50 ? "var(--blue-main)" : "var(--red-main)"}">${botHalf.toFixed(0)}%</div></div>`;
+
+  // Verdict: the map's own reading, not a restatement of the win probability.
+  const owned = ctl.filter((x) => x.v > 56).length, lost = ctl.filter((x) => x.v < 44).length;
+  const half = Math.abs(topHalf - botHalf) > 6
+    ? `Control is lopsided: <b>${topHalf > botHalf ? "the top half" : "the bottom half"}</b> is the stronger side of the map at this minute`
+    : "Control is even across both halves of the map";
+  const objLine = botHalf >= 55 ? "Blue should be taking drakes uncontested" : botHalf <= 45 ? "Red should be taking drakes uncontested"
+    : "Every drake is a real fight";
+  const baronLine = topHalf >= 55 ? "Blue can set up Baron vision" : topHalf <= 45 ? "Red can set up Baron vision" : "Neither side owns the Baron approach";
+  const wp = result.curve && result.curve.series ? result.curve.series[Math.min(t, result.curve.series.length - 1)] : null;
+  document.getElementById("rift-verdict").innerHTML =
+    `At minute <b>${t}</b>, Blue holds <b>${owned}</b> of five lanes and is behind in <b>${lost}</b>. ${half}. `
+    + `${objLine}; ${baronLine}. `
+    + (wp != null ? `The model reads the game at <b>${(typeof wp === "number" ? wp : wp.v).toFixed(1)}%</b> for Blue here.` : "");
+
+  if (!document.getElementById("rift-read").innerHTML) riftReadDefault();
+}
+
+// Turrets are positioned by walking the real lane path, so they always sit ON
+// the lane no matter how the geometry is edited later.
+function placeRiftTurrets() {
+  const svg = document.getElementById("rift-svg");
+  if (!svg || !svg.querySelector) return;
+  const paths = {};
+  svg.querySelectorAll(".rf-lane").forEach((p) => { paths[p.dataset.lane] = p; });
+  svg.querySelectorAll(".rf-t").forEach((t) => {
+    const p = paths[t.dataset.lane];
+    if (!p || !p.getTotalLength) return;
+    let L = 0;
+    try { L = p.getTotalLength(); } catch (e) { return; }
+    if (!L) return;
+    const pt = p.getPointAtLength(L * parseFloat(t.dataset.f));
+    t.setAttribute("cx", pt.x); t.setAttribute("cy", pt.y);
+  });
+}
+
+function riftReadDefault() {
+  const el = document.getElementById("rift-read");
+  if (!el) return;
+  el.innerHTML = `<div class="rr-hd"><span class="rr-t">THE MAP</span><span class="rr-sub">hover a lane, jungle or pit</span></div>
+    <div class="rr-body">Lane colour is who owns that lane at the scrubbed minute, computed from both champions&rsquo; own power curves &mdash; not from a flat lane-edge number. A lane that is blue at minute 8 and red at minute 30 is a different draft problem from one that is blue all game, and this is where that shows.</div>`;
+}
+
+function wireRift() {
+  const stage = document.getElementById("rift-stage");
+  if (!stage || stage.dataset.wired) return;
+  stage.dataset.wired = "1";
+  const read = document.getElementById("rift-read");
+  const focus = (el, on) => {
+    const svg = document.getElementById("rift-svg");
+    if (!svg) return;
+    svg.classList.toggle("focus", on);
+    svg.querySelectorAll(".rf-lane, .rf-jg, .rf-pit").forEach((n) => n.classList.remove("on"));
+    if (!on || !el) return;
+    if (el.dataset.kind === "lane") {
+      svg.querySelectorAll(`.rf-lane[data-lane="${el.dataset.lane}"]`).forEach((n) => n.classList.add("on"));
+    } else if (el.dataset.kind === "jg") {
+      svg.querySelector(`.rf-jg[data-key="${el.dataset.key}"]`).classList.add("on");
+    } else if (el.dataset.kind === "pit") {
+      svg.querySelector(`.rf-pit[data-key="${el.dataset.key}"]`).classList.add("on");
+    }
+  };
+  stage.addEventListener("mouseover", (ev) => {
+    const el = ev.target.closest && ev.target.closest("[data-kind]");
+    if (!el) return;
+    focus(el, true);
+    read.innerHTML = riftDetail(el, window.__riftT == null ? 15 : window.__riftT);
+  });
+  stage.addEventListener("mouseleave", () => { focus(null, false); riftReadDefault(); });
+
+  const rng = document.getElementById("rift-time");
+  if (rng && !rng.dataset.wired) {
+    rng.dataset.wired = "1";
+    rng.addEventListener("input", () => paintRift(+rng.value));
+  }
+  const play = document.getElementById("rift-play");
+  if (play && !play.dataset.wired) {
+    play.dataset.wired = "1";
+    play.addEventListener("click", () => {
+      if (window.__riftTimer) { clearInterval(window.__riftTimer); window.__riftTimer = null; play.innerHTML = "&#9654; PLAY"; return; }
+      play.innerHTML = "&#10074;&#10074; STOP";
+      let t = 0;
+      window.__riftTimer = setInterval(() => {
+        paintRift(t);
+        t += 1;
+        if (t > 40) { clearInterval(window.__riftTimer); window.__riftTimer = null; play.innerHTML = "&#9654; PLAY"; }
+      }, 130);
+    });
+  }
+}
+
+function riftDetail(el, t) {
+  const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
+  const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
+  const result = window.__riftResult;
+  const kind = el.dataset.kind;
+  if (kind === "lane" || kind === "champ") {
+    const slot = +el.dataset.slot;
+    const b = bC[slot], r = rC[slot];
+    const v = riftLaneControl(bC, rC, slot, t);
+    // when does this lane change hands?
+    let flip = null, best = { t: 0, v: 50 };
+    for (let m = 0; m <= 40; m++) {
+      const x = riftLaneControl(bC, rC, slot, m);
+      if (flip === null && m > 0 && (riftLaneControl(bC, rC, slot, m - 1) - 50) * (x - 50) < 0) flip = m;
+      if (Math.abs(x - 50) > Math.abs(best.v - 50)) best = { t: m, v: x };
+    }
+    const row = result && result.blue.rows[slot];
+    return `<div class="rr-hd"><span class="rr-t">${(RIFT_LANE_LABEL[ROLES[slot]] || ROLES[slot]).toUpperCase()} LANE</span>
+        <span class="rr-sub">minute ${t}</span></div>
+      <div class="rr-vs">
+        <span class="rr-nm" style="color:var(--blue-main)">${b ? b.name : "&mdash;"}</span>
+        <span class="rr-pill">${v.toFixed(0)}% &ndash; ${(100 - v).toFixed(0)}%</span>
+        <span class="rr-nm r" style="color:var(--red-main)">${r ? r.name : "&mdash;"}</span>
+      </div>
+      <div class="rr-body">
+        ${b && r ? `Strongest for <b>${best.v >= 50 ? (b ? b.name : "Blue") : (r ? r.name : "Red")}</b> at minute <b>${best.t}</b> (${Math.abs(best.v - 50).toFixed(0)} points clear).
+        ${flip ? `The lane changes hands at <b>minute ${flip}</b>.` : "It never changes hands."}` : "Both sides need a pick in this slot."}
+        ${row && !row.empty ? ` Lane edge <b>${row.laneEdge > 0 ? "+" : ""}${row.laneEdge.toFixed(1)}</b> points of team win probability.` : ""}
+      </div>`;
+  }
+  if (kind === "jg") {
+    const q = RIFT_GEO.jungle[el.dataset.key];
+    const v = riftJungleControl(bC, rC, q.half, t);
+    const jb = bC[1], jr = rC[1];
+    return `<div class="rr-hd"><span class="rr-t">${q.side.toUpperCase()} ${q.half.toUpperCase()} JUNGLE</span><span class="rr-sub">minute ${t}</span></div>
+      <div class="rr-vs">
+        <span class="rr-nm" style="color:var(--blue-main)">${jb ? jb.name : "&mdash;"}</span>
+        <span class="rr-pill">${v.toFixed(0)}%</span>
+        <span class="rr-nm r" style="color:var(--red-main)">${jr ? jr.name : "&mdash;"}</span>
+      </div>
+      <div class="rr-body">Jungle control here is the jungler&rsquo;s own read weighted 55/45 against the two lanes this half of the map touches &mdash; a jungler winning his matchup is worth little on a half where both lanes are losing.
+        ${v >= 56 ? " Blue should be taking this side&rsquo;s camps and vision." : v <= 44 ? " Red should be taking this side&rsquo;s camps and vision." : " Neither side owns it; expect it to be contested."}</div>`;
+  }
+  if (kind === "pit") {
+    const isBaron = el.dataset.key === "baron";
+    const v = riftJungleControl(bC, rC, isBaron ? "top" : "bot", t);
+    const dk = result && result.drakes;
+    const topB = dk && dk.blue ? dk.blue.slice().sort((a, b) => b.affinity - a.affinity)[0] : null;
+    const topR = dk && dk.red ? dk.red.slice().sort((a, b) => b.affinity - a.affinity)[0] : null;
+    return `<div class="rr-hd"><span class="rr-t">${isBaron ? "BARON PIT" : "DRAKE PIT"}</span><span class="rr-sub">minute ${t}</span></div>
+      <div class="rr-vs">
+        <span class="rr-nm" style="color:var(--blue-main)">BLUE</span>
+        <span class="rr-pill">${v.toFixed(0)}% &ndash; ${(100 - v).toFixed(0)}%</span>
+        <span class="rr-nm r" style="color:var(--red-main)">RED</span>
+      </div>
+      <div class="rr-body">${isBaron
+        ? `Baron is decided by the top half of the map, and it spawns at 20:00. ${t < 20 ? `Still <b>${20 - t} minutes</b> away.` : v >= 55 ? "Blue owns the approach." : v <= 45 ? "Red owns the approach." : "The approach is contested &mdash; expect a fight rather than a free take."}`
+        : `Four of the seven drakes decide the soul. ${topB && topR ? `Blue gains most from <b>${topB.name}</b>, Red from <b>${topR.name}</b>.` : ""} ${v >= 55 ? " Blue can take them uncontested." : v <= 45 ? " Red can take them uncontested." : " Every spawn is a real fight."}`}</div>`;
+  }
+  return "";
+}
+
+// Tab bars gain arrow-key navigation and a transient `moving` class so the ink
+// pill can catch light while it travels. Delegated once for both bars.
+function wireTabExtras() {
+  if (window.__tabExtras) return;
+  window.__tabExtras = true;
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    const bar = document.activeElement && document.activeElement.closest && document.activeElement.closest(".tabbar");
+    if (!bar) return;
+    const tabs = [...bar.querySelectorAll(".tab")];
+    const i = tabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    ev.preventDefault();
+    const next = tabs[(i + (ev.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    next.focus(); next.click();
+  });
+  document.querySelectorAll(".tabbar").forEach((bar) => {
+    bar.addEventListener("click", () => {
+      bar.classList.add("moving");
+      clearTimeout(bar.__mv);
+      bar.__mv = setTimeout(() => bar.classList.remove("moving"), 440);
+    });
+    bar.querySelectorAll(".tab").forEach((t) => { if (!t.hasAttribute("tabindex")) t.setAttribute("tabindex", "0"); });
+  });
+}
+// Radar magnifier.
+//
+// The obvious way to "make it bigger on hover" is to scale the cell, and it
+// does not work: the table clips at its own rounded border and the row clips at
+// the cell, so a scaled chart gets cut off on two sides. A floating copy has no
+// container to fight -- it renders at 300px with the axis values written out,
+// which is more useful than a scaled 112px chart would have been anyway.
+function radarMagnifier() {
+  if (window.__magWired) return;
+  window.__magWired = true;
+  const pop = document.createElement("div");
+  pop.id = "radar-pop";
+  pop.setAttribute("aria-hidden", "true");
+  document.body.appendChild(pop);
+  let raf = 0;
+  const place = (ev) => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const w = pop.offsetWidth || 320, h = pop.offsetHeight || 340;
+      let x = ev.clientX + 22, y = ev.clientY - h / 2;
+      if (x + w > window.innerWidth - 12) x = ev.clientX - w - 22;
+      y = Math.max(12, Math.min(window.innerHeight - h - 12, y));
+      pop.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  };
+  document.addEventListener("mouseover", (ev) => {
+    const cell = ev.target.closest && ev.target.closest(".radar-cell");
+    if (!cell) return;
+    const tr = cell.closest("tr");
+    const tbl = cell.closest("table");
+    if (!tr || !tbl) return;
+    const side = tbl.classList.contains("side-table-red") ? "red" : "blue";
+    const idx = [...tr.parentNode.children].indexOf(tr);
+    const name = (side === "blue" ? state.blue : state.red)[idx];
+    const ch = name ? engine.findChampion(name) : null;
+    if (!ch) return;
+    const foeName = (side === "blue" ? state.red : state.blue)[idx];
+    const foe = foeName ? engine.findChampion(foeName) : null;
+    const col = side === "blue" ? "#4fc3f7" : "#ff6b6a";
+    pop.innerHTML = `<div class="rp-hd" style="color:${col}">${ch.name}
+        <span class="rp-role">${ch.role.toUpperCase()}</span></div>
+      <div class="rp-chart">${buildRadarSVG(ch, col, foe, side === "blue" ? "rgba(255,107,106,0.7)" : "rgba(79,195,247,0.7)")}</div>
+      <div class="rp-rows">${RADAR_AXES.map((ax) => {
+        const v = radarValue(ch, ax.key), fv = foe ? radarValue(foe, ax.key) : null;
+        const pct = ratingPercentile(ax.key, v);
+        return `<div class="rp-row">
+          <span class="rp-k">${ax.label}</span>
+          <span class="rp-bar"><i style="width:${(v / 10 * 100).toFixed(0)}%"></i></span>
+          <span class="rp-v" style="color:${col}">${roundDP(v, 1)}</span>
+          <span class="rp-p">${fv == null ? "top " + Math.max(1, 100 - pct) + "%" : (v > fv ? "+" : "") + roundDP(v - fv, 1) + " vs " + foe.name.slice(0, 8)}</span>
+        </div>`;
+      }).join("")}</div>`;
+    pop.classList.add("on");
+    place(ev);
+  });
+  document.addEventListener("mousemove", (ev) => { if (pop.classList.contains("on")) place(ev); });
+  document.addEventListener("mouseout", (ev) => {
+    const cell = ev.target.closest && ev.target.closest(".radar-cell");
+    if (cell && !(ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest(".radar-cell"))) {
+      pop.classList.remove("on");
+    }
+  });
 }
 function radarTooltip(champ) {
   return RADAR_AXES.map((ax) => `${ax.label} ${roundDP(radarValue(champ, ax.key), 1)}`).join("  ·  ");
@@ -4475,7 +5425,7 @@ function renderRow(tbody, side, row, changed, opts) {
         portrait.className = "name-portrait";
         const img = document.createElement("div");
         img.className = "portrait-img";
-        img.style.backgroundImage = `url(${champIconUrl(row.splashId)})`;
+        img.style.backgroundImage = `url(${champSplashUrl(row.splashId)})`;
         portrait.appendChild(img);
         td.appendChild(portrait);
         // Off-role flag: the model scores Role Fit against the SLOT
@@ -4501,14 +5451,15 @@ function renderRow(tbody, side, row, changed, opts) {
       td.className = "profile-td";
       const wrap = document.createElement("div");
       wrap.className = "radar-cell" + (changed && champ ? " chart-pop" : "");
-      if (!row.empty) {
-        if (champ) {
-          const colorHex = side === "blue" ? "#4fc3f7" : "#ff6b6a";
-          wrap.innerHTML = buildRadarSVG(champ, colorHex);
-          wrap.title = radarTooltip(champ);
-        }
-      } else {
-        wrap.innerHTML = '<span class="radar-empty">-</span>';
+      if (!row.empty && champ) {
+        const colorHex = side === "blue" ? "#4fc3f7" : "#ff6b6a";
+        // The champion directly opposite in this slot, drawn as a ghost outline
+        // behind the shape -- the comparison a drafter is making anyway.
+        const foeName = (side === "blue" ? state.red : state.blue)[ROLES.indexOf(row.role)];
+        const foeCh = foeName ? engine.findChampion(foeName) : null;
+        wrap.innerHTML = buildRadarSVG(champ, colorHex, foeCh,
+          side === "blue" ? "rgba(255,107,106,0.62)" : "rgba(79,195,247,0.62)");
+        wrap.title = radarTooltip(champ);
       }
       td.appendChild(wrap);
     } else {
@@ -4580,6 +5531,9 @@ function renderTotalRow(side, totals, mvp) {
 let prevPickState = { blue: ["", "", "", "", ""], red: ["", "", "", "", ""] };
 
 function recompute() {
+  wireRadarAxes();
+  radarMagnifier();
+  wireTabExtras();
   const result = engine.computeMatchup(state.blue, state.red);
 
   renderHeader("blue");
@@ -5047,7 +6001,24 @@ function renderFightReadout(fc, curve, t) {
           }).join("")
         : `<div class="fr-ev quiet"><span class="fr-en">Nothing scheduled at this minute &mdash; farm, reset, and set up the next objective.</span></div>`}
     </div>
-    <div class="fr-foot">Fight pressure is a model of game rhythm from objective timers, level and item spikes, and how much these two drafts can commit to a fight. It is not a prediction of a specific game.</div>`;
+    <div class="fr-lanes">
+      <div class="fr-lk">MAP AT MINUTE ${t}</div>
+      <div class="fr-lrow">${(function () {
+        const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
+        const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
+        return ROLES.map((role, i) => {
+          const v = riftLaneControl(bC, rC, i, t);
+          const lab = { Top: "TOP", Jungle: "JG", Mid: "MID", ADC: "BOT", Support: "SUP" }[role] || role;
+          return `<div class="fr-lane" title="${role}: ${v.toFixed(0)}% Blue">
+            <div class="fr-ll">${lab}</div>
+            <div class="fr-lt"><div class="fr-lb" style="height:${v.toFixed(0)}%"></div></div>
+            <div class="fr-lv" style="color:${v >= 50 ? "#9bdcff" : "#ffb3b2"}">${v.toFixed(0)}</div>
+          </div>`;
+        }).join("");
+      })()}</div>
+      <div class="fr-ln">Each column is who owns that lane at this exact minute, from both champions&rsquo; own power curves. Blue fills from the bottom.</div>
+    </div>
+    <div class="fr-foot">Fight pressure is a model of game rhythm from objective timers, level and item spikes, and how much these two drafts can commit to a fight. It is not a prediction of a specific game. <b id="fr-pin-note"></b></div>`;
 }
 
 // Hover readout. Attached after the SVG is in the DOM; converts pointer x back
@@ -5055,6 +6026,7 @@ function renderFightReadout(fc, curve, t) {
 function attachPhaseHover(curve, fc) {
   const svg = document.getElementById("phase-svg");
   if (!svg || !curve) return;
+
   const hit = svg.querySelector("#ph-hit"), grp = svg.querySelector("#ph-hover");
   const hx = svg.querySelector("#ph-hx"), hd = svg.querySelector("#ph-hd");
   const bg = svg.querySelector("#ph-hbg"), t1 = svg.querySelector("#ph-ht1"), t2 = svg.querySelector("#ph-ht2");
@@ -5069,6 +6041,7 @@ function attachPhaseHover(curve, fc) {
 
   function move(ev) {
     const r = svg.getBoundingClientRect();
+    if (!r.width) return;
     const sx = (ev.clientX - r.left) * (1420 / r.width);
     const t = Math.max(0, Math.min(GAME_END_MIN, Math.round(((sx - x0) / w) * GAME_END_MIN)));
     const p = P[t];
@@ -5087,13 +6060,34 @@ function attachPhaseHover(curve, fc) {
     grp.style.opacity = "1";
     if (fc) renderFightReadout(fc, curve, t);
   }
-  hit.addEventListener("mousemove", move);
-  hit.addEventListener("mouseleave", () => { grp.style.opacity = "0"; });
+  // Minute under the pointer, in the chart's own coordinate space.
+  function minuteAt(ev) {
+    const r = svg.getBoundingClientRect();
+    if (!r.width) return 0;
+    const sx = (ev.clientX - r.left) * (1420 / r.width);
+    return Math.max(0, Math.min(GAME_END_MIN, Math.round(((sx - x0) / w) * GAME_END_MIN)));
+  }
+  // PIN. A hover-only readout on a 1420-unit-wide chart means holding the
+  // pointer perfectly still to read anything, and losing it the moment you look
+  // away. Clicking locks the minute; clicking again releases it.
+  function pinAt(ev) {
+    if (!svg.getBoundingClientRect().width) return;
+    const t = minuteAt(ev);
+    if (window.__phPin === t) { window.__phPin = null; svg.classList.remove("ph-pinned"); }
+    else { window.__phPin = t; svg.classList.add("ph-pinned"); move(ev); }
+    const n = document.getElementById("fr-pin-note");
+    if (n) n.innerHTML = window.__phPin != null
+      ? ` <span class="fr-pin">Pinned at minute ${window.__phPin} &mdash; click the chart again to release.</span>` : "";
+  }
+  hit.addEventListener("click", pinAt);
+  hit.addEventListener("mousemove", (ev) => { if (window.__phPin == null) move(ev); });
+  hit.addEventListener("mouseleave", () => { if (window.__phPin == null) grp.style.opacity = "0"; });
   // The ribbon gets its own hit area so scrubbing along it works too.
   const hit2 = svg.querySelector("#ph-hit2");
+  if (hit2) hit2.addEventListener("click", pinAt);
   if (hit2) {
-    hit2.addEventListener("mousemove", move);
-    hit2.addEventListener("mouseleave", () => { grp.style.opacity = "0"; });
+    hit2.addEventListener("mousemove", (ev) => { if (window.__phPin == null) move(ev); });
+    hit2.addEventListener("mouseleave", () => { if (window.__phPin == null) grp.style.opacity = "0"; });
   }
 }
 
@@ -5601,6 +6595,23 @@ function renderPhaseModal(result) {
         }).join("");
   }
 
+
+  // --- Rift map ----------------------------------------------------------
+  const riftStage = document.getElementById("rift-stage");
+  if (riftStage) {
+    window.__riftResult = result;
+    const anyPick = state.blue.some(Boolean) || state.red.some(Boolean);
+    if (!anyPick) {
+      riftStage.innerHTML = '<div class="swap-none" style="padding:60px 0">Pick some champions to see the draft on the map.</div>';
+      document.getElementById("rift-read").innerHTML = "";
+      document.getElementById("rift-control").innerHTML = "";
+      document.getElementById("rift-verdict").innerHTML = "";
+    } else {
+      paintRift(window.__riftT == null ? 15 : window.__riftT);
+      wireRift();
+    }
+  }
+
   // --- Objectives --------------------------------------------------------
   const dk = result.drakes;
   const odk = document.getElementById("obj-drakes");
@@ -5951,8 +6962,15 @@ function renderChampModal(rep) {
   // Comparison series: both champions read on the SAME axis, as a hypothetical
   // lane. See the note inside for the bug this replaced.
   let cmp = null;
+  let cmpNote = "";
   if (window.chCompareName) {
     const other = engine.findChampion(window.chCompareName);
+    // Mirror pick: the same champion is drafted on both sides. Comparing a
+    // champion against himself is 50% at every minute, so there is nothing to
+    // draw -- but saying so beats a dropdown that silently does nothing.
+    if (other && other.name === rep.name) {
+      cmpNote = `<b>${other.name}</b> is drafted on both sides, so there is no comparison to draw &mdash; a champion mirrors himself at exactly 50% every minute. Pick a different enemy.`;
+    }
     if (other && other.name !== rep.name) {
       const foeC = rep.foe ? engine.findChampion(rep.foe) : null;
       // THE FLAT-LINE BUG.
@@ -6001,7 +7019,10 @@ function renderChampModal(rep) {
 
   // Stat-for-stat comparison alongside the curve overlay.
   const cmpBox = document.getElementById("ch-cmpstats");
-  if (cmp && cmp.champ) {
+  if (cmpNote && cmpBox) {
+    cmpBox.innerHTML = `<div class="adv-note" style="margin:0">${cmpNote}</div>`;
+    cmpBox.style.display = "";
+  } else if (cmp && cmp.champ) {
     const KEYS = [["DMG", "Damage"], ["CC", "Crowd Control"], ["Peel", "Peel"], ["Frontline", "Frontline"],
       ["Mobility", "Mobility"], ["Scaling", "Scaling"], ["Sustain", "Sustain"], ["Safety", "Safety"],
       ["Utility", "Utility"], ["Waveclear", "Waveclear"], ["Teamfight", "Teamfight"],
