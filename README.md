@@ -25,7 +25,7 @@ Enter a draft and you get eight columns per side:
 
 | Column | What it means |
 |---|---|
-| **Win Rate** | Real measured win rate for that champion *in that role*, patch 26.16 |
+| **Win Rate** | Real measured win rate for that champion *in that role*, patch 26.17 |
 | **Role Fit** | How well the kit suits the slot it's actually in |
 | **Impact** | Win-probability points this pick adds over a replacement-level champion in the same slot |
 | **Lane Edge** | Points won or lost in the direct lane matchup |
@@ -35,11 +35,12 @@ Enter a draft and you get eight columns per side:
 
 Click **GRAPHS** for the full draft read, or click any champion's row for that champion alone.
 
-### GRAPHS — seven pages
+### GRAPHS — eight pages
 
 - **Timeline** — win probability every minute from 0 to 50, with a fight-pressure ribbon underneath. Hover any minute for expected kills, who wins a 5v5 right then, and what's happening — objective spawns, power spikes, advantage flips
 - **Breakdown** — every factor's share of the gap, summing exactly to the headline, plus how *solid* that read is: whether the edge is broad or resting on one factor, whether the factors agree, and how it compares to the model's own margin
 - **Matchups** — lane by lane, including when each edge exists rather than just how big it is: average read, volatility, whether it grows or fades, and the minute a lane changes hands
+- **Economy** — where each side's gold actually goes, and whether it goes to picks that can spend it: gold aim, farm security, concentration, wasted share, and the minute every pick completes its first three items
 - **Profile** — eight-axis team radar with live hover, next to every champion's own power curve
 - **Objectives** — all seven drakes and what each is worth to each side, plus win probability at every neutral spawn
 - **Game Plan** — what kind of draft each side is and how it wins: archetype fit, control budget, damage share
@@ -64,11 +65,37 @@ Two things matter about this:
 
 **Inputs are normalised before they're weighted.** Combining a 46–54 win rate with a 1–10 subjective rating by simple addition lets whichever has the wider raw range dominate regardless of intent. Everything is converted to standard deviations first, so the stated weights are the actual weights.
 
-The resulting signal is roughly **two thirds measured win rate, one third subjective ratings.**
+Six factors feed the headline, and the Breakdown page shows exactly what each contributed:
+
+| Factor | Typical size | What it is |
+|---|---|---|
+| **Win Rate** | 3.0 pts | measured per-champion, per-role performance |
+| **Protection** | 1.1 pts | peel and frontline against the *enemy's* dive threat |
+| **Role Fit** | 1.1 pts | kit suited to the slot it was put in |
+| **Economy** | 0.9 pts | is the gold aimed at picks that convert it |
+| **Combo** | 0.7 pts | how the five picks chain together |
+| **Counters** | 0.6 pts | measured lane counter data |
+
+(mean absolute contribution over 4,000 random drafts)
+
+### Economy
+
+Every team gets the same minions, so raw income is not what separates two drafts — **who the gold lands on** is. A team is economically coherent when the picks that convert gold into power most efficiently are also the picks that receive the most of it. A Jinx in the ADC slot sits on a quarter of team income and turns every coin into damage; a Malzahar in the same slot is most of a Malzahar at level 6 with one item, so that quarter is largely wasted.
+
+Two components: **aim** (gold-weighted item dependence) and **security** (can the draft actually collect it — waveclear and sustain). Raw "gold generated" is deliberately excluded: income differences in a real game come from winning fights, which is the thing being predicted, so feeding it back in would be circular.
+
+### Peel and Frontline
+
+Stored per champion but scored as an interaction, because neither is worth anything in isolation — five points of peel matter enormously in front of a Jinx and not at all in front of a Tryndamere. The model asks: how much of this team's damage sits on picks that can't save themselves, is anyone stopping that, and can the enemy actually reach it?
+
+Peel and Frontline are kept as separate ratings on purpose. They correlate only **+0.28** across the roster: Sion is elite frontline and near-zero peel, Braum is the reverse. A single merged "defence" number would hide exactly the gap that decides fights.
+
+The resulting signal is roughly **two thirds measured win rate, one third structural ratings.**
 
 ### Data
 
-- 173 champions, patch **26.16**
+- 173 champions, patch **26.17**
+- Win rates validated against live aggregator data for 65 champion-role pairs: mean difference **+0.10**, sd 0.82, 52 of 65 within one point
 - Win rates measured per champion *per role*, from samples of 77K–454K games
 - 278 counter relationships across 93 champions
 - Champion art from Riot's Data Dragon
@@ -83,9 +110,7 @@ Please read this before trusting a number.
 
 **Elite drafts sit near even, and that's correct.** Two well-constructed comps should read close to 50/50. If you're expecting one side to show 70%, the model is disagreeing with you on purpose.
 
-**The Scaling rating doesn't discriminate well.** 127 of 173 champions sit at 7 or 8, and only one is below 6. As a result some lane bullies that fall off hard — Draven, Talon, Lucian, Jayce, Rengar — are modelled as peaking very late. This affects power curves, the timeline and phase analysis. It's a known issue, not a mystery.
-
-**Camille is listed as Support.** She's primarily a Top laner; this distorts her role fit.
+**The subjective ratings are judgement, not measurement.** Scaling, Peel, Frontline and item dependence are assigned from champion class and resource curve, not fitted to outcome data. They are defensible and they discriminate — Scaling now spreads across seven values instead of clustering 73% of the roster on two — but a different analyst would place individual champions differently.
 
 **Fight pressure is a model of game rhythm, not a prediction.** It's built from objective timers, fixed level and item spikes, and how much the two drafts can commit to a fight. The per-minute kill figures are scaled so the total matches a realistic combined-kills-per-minute for the whole game — the aggregate is anchored, individual minutes are indicative.
 
