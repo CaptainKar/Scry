@@ -5916,34 +5916,50 @@ function initImport() {
       //    would rather nothing left their machine.
       const relayLog = [];
       if (!d || (!d.ok && !d.blue)) {
-        // Several relays, because any one of them can be down, rate-limited, or
-        // blocked on a given network. Each failure is RECORDED rather than
-        // swallowed -- "could not reach that page" with no detail is impossible
-        // to act on, and the cause is usually specific and fixable.
+        // Relays are RACED, not queued. Tried one after another, a service that
+        // hangs for its full timeout eats the whole budget before the next one
+        // is even attempted -- which is exactly what happened: two timed out in
+        // sequence and the working one never got a fair chance. Started
+        // together, the first to return a readable page wins and the slow ones
+        // are simply ignored.
         const relays = [
-          ["allorigins", (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)],
-          ["codetabs",   (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u)],
-          ["corsproxy",  (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u)],
-          ["isomorphic", (u) => "https://cors.isomorphic-git.org/" + u.replace(/^https?:\/\//, "")],
+          ["allorigins", (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u), "text"],
+          ["allorigins2", (u) => "https://api.allorigins.win/get?url=" + encodeURIComponent(u), "json"],
+          ["codetabs",   (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u), "text"],
+          ["thingproxy", (u) => "https://thingproxy.freeboard.io/fetch/" + u, "text"],
+          ["isomorphic", (u) => "https://cors.isomorphic-git.org/" + u.replace(/^https?:\/\//, ""), "text"],
+          ["whateverorigin", (u) => "https://www.whateverorigin.org/get?url=" + encodeURIComponent(u), "json"],
         ];
-        for (let i = 0; i < relays.length; i++) {
-          const [name, build] = relays[i];
-          try {
-            say(`Fetching that page&hellip; <span style="opacity:.6">(${name})</span>`);
-            const ctl = typeof AbortController === "function" ? new AbortController() : null;
-            const timer = ctl ? setTimeout(() => ctl.abort(), 12000) : null;
-            const r = await fetch(build(url), ctl ? { signal: ctl.signal, redirect: "follow" } : {});
-            if (timer) clearTimeout(timer);
-            if (!r.ok) { relayLog.push(name + " " + r.status); continue; }
-            const html = await r.text();
-            const parsed = readGolggSource(html);
-            if (parsed.ok) { d = parsed; d.source = "gol.gg"; break; }
-            relayLog.push(name + " " + (html.length < 400 ? "empty reply" : "no scoreboard"));
-            d = parsed;
-          } catch (e) {
-            relayLog.push(name + " " + (e && e.name === "AbortError" ? "timed out" : "blocked"));
-          }
-        }
+        say(`Fetching that page&hellip; <span style="opacity:.6">(trying ${relays.length} relays at once)</span>`);
+
+        const attempt = ([name, build, kind]) => new Promise((resolve, reject) => {
+          const ctl = typeof AbortController === "function" ? new AbortController() : null;
+          const timer = setTimeout(() => { if (ctl) ctl.abort(); reject(name + " timed out"); }, 28000);
+          fetch(build(url), ctl ? { signal: ctl.signal } : {})
+            .then((r) => {
+              if (!r.ok) throw new Error(r.status);
+              return kind === "json" ? r.json().then((j) => j.contents || j.body || "") : r.text();
+            })
+            .then((html) => {
+              clearTimeout(timer);
+              const parsed = readGolggSource(String(html || ""));
+              if (parsed.ok) { parsed.source = "gol.gg"; resolve(parsed); }
+              else reject(name + " " + (String(html || "").length < 400 ? "empty reply" : "no scoreboard"));
+            })
+            .catch((e) => {
+              clearTimeout(timer);
+              reject(name + " " + (e && e.message && /^\d+$/.test(e.message) ? e.message : "blocked"));
+            });
+        });
+
+        // Promise.any semantics, written out because it is not everywhere yet.
+        d = await new Promise((resolve) => {
+          let left = relays.length, done = false;
+          relays.forEach((rl) => attempt(rl).then(
+            (good) => { if (!done) { done = true; resolve(good); } },
+            (why) => { relayLog.push(why); if (--left === 0 && !done) { done = true; resolve(null); } }
+          ));
+        });
       }
       go.disabled = false;
       if (!d) {
