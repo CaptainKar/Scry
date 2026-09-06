@@ -5930,11 +5930,22 @@ function initImport() {
           ["isomorphic", (u) => "https://cors.isomorphic-git.org/" + u.replace(/^https?:\/\//, ""), "text"],
           ["whateverorigin", (u) => "https://www.whateverorigin.org/get?url=" + encodeURIComponent(u), "json"],
         ];
-        say(`Fetching that page&hellip; <span style="opacity:.6">(trying ${relays.length} relays at once)</span>`);
+        // A cold relay fetch of a gol.gg page takes 10-25 seconds -- the relay has
+        // to go and get the page itself. Without a visible clock that looks
+        // exactly like a hang, which is what made the earlier 12-second timeout
+        // seem like the right call when the real answer was "wait longer".
+        let secs = 0;
+        const tick = setInterval(() => {
+          secs++;
+          say(`Fetching that page&hellip; <b>${secs}s</b>`
+            + `<span style="opacity:.55"> &mdash; a cold fetch usually takes 10-25 seconds. `
+            + `${relays.length} relays are racing; the first to answer wins.</span>`);
+        }, 1000);
+        say(`Fetching that page&hellip; <span style="opacity:.6">(${relays.length} relays racing)</span>`);
 
         const attempt = ([name, build, kind]) => new Promise((resolve, reject) => {
           const ctl = typeof AbortController === "function" ? new AbortController() : null;
-          const timer = setTimeout(() => { if (ctl) ctl.abort(); reject(name + " timed out"); }, 28000);
+          const timer = setTimeout(() => { if (ctl) ctl.abort(); reject(name + " timed out"); }, 40000);
           fetch(build(url), ctl ? { signal: ctl.signal } : {})
             .then((r) => {
               if (!r.ok) throw new Error(r.status);
@@ -5960,6 +5971,7 @@ function initImport() {
             (why) => { relayLog.push(why); if (--left === 0 && !done) { done = true; resolve(null); } }
           ));
         });
+        clearInterval(tick);
       }
       go.disabled = false;
       if (!d) {
@@ -5975,9 +5987,8 @@ function initImport() {
                 + "&mdash; or run <b>Scry Live.bat</b> and use <b>http://localhost:8777</b>."
               : "<b>The relays could not fetch that page.</b> "
                 + "<span style=\"opacity:.7\">" + (relayLog.join(", ") || "no response") + "</span>"
-                + "<br>gol.gg blocks these free relay services, so this works only when one of them "
-                + "happens to have the page cached &mdash; which is why one link succeeded and the "
-                + "next did not. It is not your link and not your network."
+                + "<br>These are free shared services, so they are sometimes slow or rate-limited. "
+                + "Waiting a moment and pressing IMPORT again often works."
                 + "<br><b>For any page, every time:</b> double-click <b>Scry Live.bat</b> in your "
                 + "lol-analyzer-site folder and use <b>http://localhost:8777</b>. It fetches gol.gg "
                 + "straight from your PC with no relay in the way, and it now starts minimised "
