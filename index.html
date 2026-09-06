@@ -2443,7 +2443,7 @@ textarea.imp-input:focus { height: 30px; }
 
   <div class="import-bar" id="import-bar">
     <textarea id="import-url" class="imp-input" spellcheck="false" rows="1"
-      placeholder="Paste a gol.gg match link and press Enter — or the page source (Ctrl+U) if opened from a file"></textarea>
+      placeholder="Paste a gol.gg match link — or, from any other site, select the scoreboard, copy it, and paste it here"></textarea>
     <button type="button" class="imp-go" id="import-go">IMPORT</button>
     <div class="imp-msg" id="import-msg"></div>
     <div class="imp-preview" id="import-preview"></div>
@@ -5774,7 +5774,50 @@ function initImport() {
     return { ok: true, blue: rows.slice(0, 5), red: rows.slice(5), source: "pasted gol.gg source" };
   }
 
-    function whereAmI() {
+    // ---- Reading champion names out of copied text --------------------------
+  // The universal route, and the only one that can ever work on op.gg, u.gg,
+  // your.gg, mobalytics or leagueofgraphs. Those pages cannot be fetched by
+  // anything: the first four assemble themselves in the browser, so the
+  // document a server hands out contains no champions at all, and
+  // leagueofgraphs answers an automated request with a bot challenge. There is
+  // no scoreboard in those files to find -- this is not a matter of trying
+  // harder or finding a better relay.
+  //
+  // What does exist, on every site without exception, is the page already
+  // rendered on screen. Selecting the scoreboard and copying it yields the
+  // champion names as plain text. Reading those is site-independent by
+  // construction: no redesign, framework change or bot check can break it.
+  //
+  // Longest names first, so "Lee Sin" is never read as two separate fragments,
+  // and only on word boundaries, so "Sett" cannot match inside "Settings".
+  // Claimed ranges stop one span being counted twice.
+  function readChampionText(text) {
+    const names = engine.CHAMPIONS().map((ch) => ch.name).sort((a, b) => b.length - a.length);
+    const hits = [], claimed = [];
+    const overlaps = (a, b) => claimed.some((r) => a < r[1] && b > r[0]);
+    for (const nm of names) {
+      const esc = nm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pat = esc.replace(/'/g, "['’]?").replace(/\s+/g, "\\s*");
+      const re = new RegExp("(^|[^A-Za-z])(" + pat + ")([^A-Za-z]|$)", "gi");
+      let m;
+      while ((m = re.exec(text))) {
+        const s = m.index + m[1].length, e = s + m[2].length;
+        if (!overlaps(s, e)) { claimed.push([s, e]); hits.push({ at: s, name: nm }); }
+        re.lastIndex = e;
+      }
+    }
+    hits.sort((a, b) => a.at - b.at);
+    const seq = hits.map((h) => h.name);
+    if (seq.length < 10) {
+      return { ok: false,
+        reason: "only found " + seq.length + " champion name" + (seq.length === 1 ? "" : "s") + " in that text.",
+        hint: "Select the whole scoreboard &mdash; both teams, all ten rows &mdash; and copy that." };
+    }
+    return { ok: true, blue: seq.slice(0, 5), red: seq.slice(5, 10),
+      source: "copied text", extra: seq.length - 10 };
+  }
+
+  function whereAmI() {
     const p = location.protocol, h = location.hostname;
     if (p === "file:") return "file";
     if (h === "localhost" || h === "127.0.0.1") return "local";
@@ -5813,7 +5856,8 @@ function initImport() {
       say("Checking for the local helper&hellip;");
       const helper = await checkHelper();
       if (helper) {
-        say("Paste a <b>gol.gg</b> match link and press Enter.");
+        say("<b>Helper running.</b> Paste a <b>gol.gg</b> match link and press Enter &mdash; or "
+          + "copy the scoreboard off any other site and paste that here.");
         input.focus();
       } else {
         // Opened from disk, a link can never work: the page has no web address,
@@ -5826,15 +5870,19 @@ function initImport() {
             + "<br><b>Open <a href=\"https://captainkar.github.io/Scry/\" target=\"_blank\" "
             + "style=\"color:var(--gold-bright)\">captainkar.github.io/Scry</a> instead</b> and links "
             + "will just work, every time, with nothing running."
-            + "<br><span style=\"opacity:.75\">Or right now, without leaving: open the match page, "
-            + "press <b>Ctrl+U</b>, then <b>Ctrl+A</b> and <b>Ctrl+C</b>, and paste that below.</span>", true);
+            + "<br><span style=\"opacity:.75\">Or right now, without leaving and without any "
+            + "network at all: on the match page select the scoreboard, copy it (<b>Ctrl+C</b>), "
+            + "and paste that below. That reads the names off the text itself, so it works from a "
+            + "file and on every site.</span>", true);
           input.focus();
           return;
         }
-        say("Paste a <b>gol.gg</b> match link and press Enter."
-          + "<br><span style=\"opacity:.7\">op.gg, u.gg, your.gg and mobalytics cannot be read by "
-          + "anything &mdash; they build their pages inside your browser, so the page itself contains "
-          + "no champions.</span>");
+        say("<b>Two ways in.</b> Paste a <b>gol.gg</b> match link and press Enter &mdash; "
+          + "or, on <b>any</b> other site, select the scoreboard with the mouse, copy it "
+          + "(<b>Ctrl+C</b>), and paste that here."
+          + "<br><span style=\"opacity:.7\">op.gg, u.gg, your.gg, mobalytics and leagueofgraphs "
+          + "cannot be read from a link by anything &mdash; they build their pages inside your "
+          + "browser, so the document holds no champions. Copying what you can see always works.</span>");
         input.focus();
       }
     });
@@ -5858,63 +5906,68 @@ function initImport() {
   async function run() {
     const raw = (input.value || "").trim();
     prev.innerHTML = "";
-    if (!raw) { say("Paste a gol.gg match link first.", true); return; }
+    if (!raw) { say("Paste a match link, or the copied scoreboard, first.", true); return; }
 
-    // Pasted source is anything that carries the markers of a real page. It is
-    // tried FIRST, because it needs nothing at all -- no helper, no server, no
-    // network -- and therefore cannot fail for reasons outside this page.
+    // Pasted page source is anything carrying the markers of a real gol.gg
+    // document. Tried FIRST because it needs nothing at all -- no helper, no
+    // server, no network -- and so cannot fail for reasons outside this page.
     const looksLikeSource = /champions_icon\/|player-stats\//i.test(raw);
-    // Sites whose pages are built in the browser: their HTML genuinely has no
-    // champions in it, so neither a relay nor the helper can read them.
-    const JS_ONLY = { "op.gg": 1, "u.gg": 1, "your.gg": 1, "mobalytics.gg": 1, "porofessor.gg": 1 };
-    if (!looksLikeSource) {
-      const host = (raw.match(/^https?:\/\/([^/]+)/i) || [])[1] || "";
-      const bare = host.replace(/^www\./, "").toLowerCase();
-      const hit = Object.keys(JS_ONLY).find((k) => bare.endsWith(k));
-      if (hit) {
-        say("<b>" + hit + " builds its pages inside your browser</b>, so the page itself contains "
-          + "no champions at all &mdash; there is nothing for anything to read. "
-          + "<b>gol.gg</b> match pages work; for your own games, use the live auto-fill instead.", true);
-        return;
-      }
-    }
-    let d;
+    const firstWord = raw.split(/\s+/)[0];
+    const looksLikeUrl = /^https?:\/\//i.test(firstWord);
+    // Sites whose pages are assembled in the browser, or which challenge
+    // automated requests. Their HTML genuinely has no champions in it, so
+    // neither a relay nor the helper can read them -- only copied text can.
+    const JS_ONLY = { "op.gg": 1, "u.gg": 1, "your.gg": 1, "mobalytics.gg": 1,
+                      "porofessor.gg": 1, "leagueofgraphs.com": 1, "deeplol.gg": 1,
+                      "blitz.gg": 1, "tracker.gg": 1 };
+    let d = null;
+
     if (looksLikeSource) {
       go.disabled = true; say("Reading the pasted page&hellip;");
       d = readGolggSource(raw);
       go.disabled = false;
+
+    // Anything pasted that is not a link is treated as text copied off a
+    // rendered match page. This is the route that works everywhere.
+    } else if (!looksLikeUrl) {
+      go.disabled = true; say("Reading the pasted text&hellip;");
+      d = readChampionText(raw);
+      go.disabled = false;
+
     } else {
-      const url = raw.split(/\s+/)[0];
-      // Check the link BEFORE spending half a minute on it. Six relays were
-      // being fired at whatever was in the box -- including, once, the address
-      // of this page itself -- and the only feedback was six failures forty
-      // seconds later. A link that cannot possibly work should be rejected
-      // instantly and by name.
-      const mHost = url.match(/^https?:\/\/([^/]+)/i);
-      const uHost = mHost ? mHost[1].replace(/^www\./, "").toLowerCase() : "";
-      if (uHost && !uHost.endsWith("gol.gg") && !Object.keys(JS_ONLY).some((k) => uHost.endsWith(k))) {
-        const self = uHost === location.hostname.replace(/^www\./, "").toLowerCase();
-        say(self
-          ? "<b>That is the address of this page.</b> Paste the link to the <b>gol.gg match</b> you "
-            + "want to load &mdash; open the game on gol.gg and copy the address from your browser. "
-            + "It looks like <span style=\"opacity:.75\">gol.gg/game/stats/<b>82693</b>/page-game/</span>."
-          : "<b>" + uHost + " is not a match page this can read.</b> Only <b>gol.gg</b> game pages work "
-            + "&mdash; their address ends in <b>/page-game/</b>.", true);
+      const url = firstWord;
+      // Check the link BEFORE spending half a minute on it. Six relays used to
+      // be fired at whatever was in the box -- including, once, the address of
+      // this page itself -- with the only feedback being six failures forty
+      // seconds later. A link that cannot work is rejected instantly, by name.
+      const uHost = ((url.match(/^https?:\/\/([^/]+)/i) || [])[1] || "").replace(/^www\./, "").toLowerCase();
+      const blocked = Object.keys(JS_ONLY).find((k) => uHost.endsWith(k));
+      if (blocked) {
+        say("<b>" + blocked + " cannot be read from a link.</b> It builds its page inside your "
+          + "browser (or blocks automated requests), so the document itself contains no champions "
+          + "&mdash; there is nothing in it for anything to find."
+          + "<br><b>Do this instead:</b> on that page, select the scoreboard with the mouse, copy it "
+          + "(<b>Ctrl+C</b>), and paste it into this box. Reading the names off what you can see "
+          + "works on every site.", true);
         return;
       }
-      if (uHost.endsWith("gol.gg") && !/\/page-game\/?/i.test(url)) {
+      if (uHost && !uHost.endsWith("gol.gg")) {
+        const self = uHost === location.hostname.replace(/^www\./, "").toLowerCase();
+        say(self
+          ? "<b>That is the address of this page.</b> Paste the link to the match you want &mdash; "
+            + "or copy the scoreboard off any site and paste that here instead."
+          : "<b>" + uHost + " cannot be fetched from a link.</b> Only <b>gol.gg</b> game pages can "
+            + "be read from their address. For every other site: select the scoreboard on the page, "
+            + "copy it, and paste that here.", true);
+        return;
+      }
+      if (!/\/page-game\/?/i.test(url)) {
         say("<b>That is a gol.gg link, but not a game page.</b> Open the specific game and copy the "
           + "address then &mdash; it ends in <b>/page-game/</b>. A preview or summary page has no "
           + "scoreboard on it to read.", true);
         return;
       }
-      if (!/^https?:\/\//i.test(url)) {
-        say("That does not look like a link. Copy the address of a <b>gol.gg</b> match page "
-          + "&mdash; it ends in <b>/page-game/</b> &mdash; and paste it here.", true);
-        return;
-      }
       go.disabled = true;
-      d = null;
 
       // 1. the local helper, if this page is being served by it. Fastest and
       //    most private -- the request never leaves the machine except to
@@ -5924,18 +5977,8 @@ function initImport() {
         const r = await fetch("import?url=" + encodeURIComponent(url), { cache: "no-store" });
         const j = await r.json();
         if (j && (j.ok || j.reason)) d = j;
-      } catch (e) { /* no helper here -- fall through */ }
+      } catch (e) { /* no helper here -- the relays below are the normal path */ }
 
-      // 2. a public CORS relay. A browser may not read another site directly,
-      //    but it may read a service that has said "anyone can read me", and
-      //    that service can. This is what makes a plain link work on the hosted
-      //    site with nothing installed.
-      //
-      //    Two are tried because one being down or rate-limited should not end
-      //    the attempt. Only public esports pages are ever sent, and only the
-      //    URL you paste -- but it IS a third party seeing that URL, which is
-      //    why the offline paste route is kept and recommended for anyone who
-      //    would rather nothing left their machine.
       const relayLog = [];
       if (!d || (!d.ok && !d.blue)) {
         // Relays are RACED, not queued. Tried one after another, a service that
@@ -6011,22 +6054,27 @@ function initImport() {
                 + "<span style=\"opacity:.7\">" + (relayLog.join(", ") || "no response") + "</span>"
                 + "<br>These are free shared services, so they are sometimes slow or rate-limited. "
                 + "Waiting a moment and pressing IMPORT again often works."
-                + "<br><b>For any page, every time:</b> double-click <b>Scry Live.bat</b> in your "
-                + "lol-analyzer-site folder and use <b>http://localhost:8777</b>. It fetches gol.gg "
-                + "straight from your PC with no relay in the way, and it now starts minimised "
-                + "&mdash; no window in your face.")
-          + "<br><span style=\"opacity:.8\">Always works, no network needed: open the match page, "
-          + "press <b>Ctrl+U</b>, then <b>Ctrl+A</b> and <b>Ctrl+C</b>, and paste that into this box.</span>", true);
+                + "<br><b>Or skip the relays entirely</b> &mdash; see below.")
+          + "<br><span style=\"opacity:.85\">This always works, on every site: on the match "
+          + "page select the scoreboard with the mouse, copy it (<b>Ctrl+C</b>), and paste that "
+          + "into this box instead of the link.</span>", true);
         return;
       }
     }
-    if (!d.ok) {
-      say("<b>Could not import.</b> " + d.reason + (d.hint ? " " + d.hint : ""), true);
+    if (!d || !d.ok) {
+      say("<b>Could not import.</b> " + ((d && d.reason) || "nothing readable was found.")
+        + (d && d.hint ? " " + d.hint : ""), true);
       return;
     }
     const blue = d.blue.map(resolve), red = d.red.map(resolve);
     const missing = d.blue.concat(d.red).filter((x, i) => !blue.concat(red)[i]);
-    say(`Read <b>10</b> champions from <b>${d.source}</b>. Check them before applying.`);
+    // More than ten names means the selection caught bans, a side panel, or a
+    // second game. The first ten in reading order are almost always the
+    // scoreboard, but that is a guess, so it is said out loud rather than
+    // quietly assumed -- the preview below is what makes it safe.
+    say(`Read <b>10</b> champions from <b>${d.source}</b>. Check them before applying.`
+      + (d.extra ? ` <span style="opacity:.7">(${d.extra} more name${d.extra === 1 ? " was" : "s were"}`
+          + ` in that text &mdash; bans, or another game &mdash; so the order matters here.)</span>` : ""));
     prev.innerHTML = `<div class="imp-card">
       <div class="imp-rows">
         <span class="imp-h"></span><span class="imp-h" style="color:var(--blue-main)">BLUE</span><span class="imp-h" style="color:var(--red-main)">RED</span>
@@ -6037,7 +6085,9 @@ function initImport() {
       <div class="imp-apply">
         <button type="button" class="imp-yes" id="imp-yes">USE THIS DRAFT</button>
         <button type="button" class="imp-no" id="imp-no">CANCEL</button>
-        <span class="imp-note">gol.gg lists blue side first &mdash; swap the sides afterwards if it is the other way round.</span>
+        <span class="imp-note">${d.source === "copied text"
+          ? "Read in the order the names appear on the page &mdash; that is usually the top team first. Swap the sides afterwards if it came out the other way round."
+          : "gol.gg lists blue side first &mdash; swap the sides afterwards if it is the other way round."}</span>
       </div>
     </div>`;
     document.getElementById("imp-yes").onclick = () => {
