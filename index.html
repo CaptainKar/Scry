@@ -92,11 +92,8 @@ body {
 .bg-blob.gold { width: 700px; height: 400px; bottom: -220px; left: 50%; transform: translateX(-50%); background: rgba(212,175,90,0.18); animation: blobDriftGold 27s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .bg-blob { animation: none !important; }
-  .glass::after, .winprob-panel.leading::before, .winprob-panel.leading::after,
-  .winprob-card.leading, table.stats tbody tr.row-in { animation: none !important; }
   tr.mvp-row td.name::after { animation: none; opacity: 0; }
   table.stats tbody tr:hover { transform: none; }
-  .winprob-card.leading { transform: translateY(-2px); }
   table.stats th::after { transition: none; }
 }
 
@@ -114,7 +111,7 @@ body {
   flex-direction: column;
   min-height: 0;
 }
-.titlebar, .picker-row, .winprob-wrap, .footer-note { flex: 0 0 auto; }
+.titlebar, .picker-row, .winprob-wrap, .footer-note, .import-bar { flex: 0 0 auto; }
 .tables-wrap { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
 .tables-wrap::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .tables-wrap::-webkit-scrollbar-thumb { background: rgba(212,175,90,0.35); border-radius: 3px; }
@@ -263,23 +260,6 @@ body {
   box-shadow: 0 0 18px rgba(212,175,90,0.3), inset 0 1px 0 rgba(255,255,255,0.18);
   text-shadow: 0 0 14px rgba(212, 175, 90, 0.9);
 }
-.reset-btn {
-  background: rgba(212, 175, 90, 0.1);
-  border: 1px solid rgba(212, 175, 90, 0.45);
-  color: var(--gold-bright);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 5px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
-}
-.reset-btn:hover {
-  background: rgba(212, 175, 90, 0.22);
-  box-shadow: 0 0 14px rgba(212, 175, 90, 0.35);
-}
-.reset-btn:active { transform: scale(0.94); }
 
 /* ---------- Picker row ---------- */
 .picker-row {
@@ -594,18 +574,6 @@ table.stats.side-table-red .off-role-badge { right: 5px; }
   30%  { opacity: 0.8; }
   100% { transform: scale(1.3); opacity: 0; }
 }
-.radar-cell.chart-pop .radar-data {
-  transform-box: view-box; transform-origin: 62px 58px;
-  animation: radarGrow 1.35s cubic-bezier(0.05, 0.92, 0.14, 1) both;
-}
-.radar-cell.chart-pop .radar-poly {
-  animation: radarStrokeGlow 1.5s ease-out both;
-}
-.radar-cell.chart-pop .radar-pulse {
-  transform-box: view-box; transform-origin: 62px 58px;
-  animation: radarRing 1.4s cubic-bezier(0.05, 0.9, 0.15, 1) 0.25s both;
-}
-.radar-cell .radar-pulse { opacity: 0; }
 /* Gentle idle shimmer on hover once the chart has settled. */
 @keyframes radarIdleShine {
   0%, 100% { filter: drop-shadow(0 0 2px currentColor); }
@@ -727,8 +695,6 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
   100% { transform: translateX(360%); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .winprob-panel::before, .winprob-panel::after { animation: none; }
-  .winprob-panel.leading::after { opacity: 0; }
   .matchup-track::after { animation: none; opacity: 0; }
 }
 .matchup-seg {
@@ -760,11 +726,42 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
   padding: 6px 18px 8px;
   gap: 14px;
 }
+/* The win-probability cards are built from the SAME parts as a table row --
+   an 18px radius, the same 0.028 glass, the same 0.085 hairline, and the same
+   side-coloured edge the Champion column used to carry. They were sitting in
+   their own visual language directly under the table, which is the one place
+   an inconsistency is impossible to miss. */
 .winprob-card {
-  border-radius: 16px; overflow: hidden;
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: var(--shadow-sm);
+  border-radius: 18px; overflow: hidden; position: relative;
+  background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.085);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s var(--ease-spring);
 }
+/* Side edge, matching the table's own team accent. */
+.winprob-card::before {
+  content: ""; position: absolute; top: 14px; bottom: 14px; width: 3px; border-radius: 2px;
+  transition: opacity 0.4s ease, box-shadow 0.4s ease; opacity: 0.55;
+}
+.winprob-wrap > .winprob-card:first-child::before { left: 0; background: var(--blue-main); }
+.winprob-wrap > .winprob-card:last-child::before  { right: 0; background: var(--red-main); }
+/* The leading side lifts and lights its edge, so which one is ahead is legible
+   before the number is read. */
+.winprob-card.ahead { transform: translateY(-2px); border-color: rgba(212,175,90,0.3);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07); }
+.winprob-wrap > .winprob-card.ahead:first-child::before { opacity: 1; box-shadow: 0 0 16px var(--blue-glow); }
+.winprob-wrap > .winprob-card.ahead:last-child::before  { opacity: 1; box-shadow: 0 0 16px var(--red-glow); }
+/* Header row, styled exactly like a table column heading. */
+.winprob-label {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+  text-align: center; padding: 9px 8px 2px; position: relative;
+}
+.winprob-label::after {
+  content: ""; position: absolute; left: 50%; right: 50%; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(212,175,90,0), rgba(212,175,90,0.7), rgba(212,175,90,0));
+  transition: left 0.5s var(--ease-settle), right 0.5s var(--ease-settle); }
+.winprob-card.ahead .winprob-label::after { left: 24%; right: 24%; }
+/* The number carries the same tabular figures as every stat in the table. */
+.winprob-panel { font-variant-numeric: tabular-nums; }
 .synergy-notes {
   display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
   padding: 0 8px 7px;
@@ -778,79 +775,34 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
 .synergy-note.good { background: rgba(110,216,150,0.16); color: #a7e8bd; border: 1px solid rgba(110,216,150,0.35); }
 .synergy-note.info { background: rgba(212,175,90,0.14); color: var(--gold-bright); border: 1px solid rgba(212,175,90,0.32); }
 .winprob-panel {
-  text-align: center; padding: 6px 8px 8px; font-size: 46px; font-weight: 800;
+  text-align: center; padding: 4px 8px 8px; font-size: 48px; font-weight: 800;
   letter-spacing: 0.5px; transition: color 0.2s ease, text-shadow 0.3s ease;
 }
-/* Backdrop for the leading number. The concentric-ring pulse that used to live
-   here was the one piece of motion in the app speaking a different language --
-   nothing else radiates. Everything else (glass panels, matchup tracks, buttons)
-   uses a single directional highlight travelling across a surface, so this now
-   does the same: a slow gradient wash in the team's own hue, plus a gold sheen
-   band on the shared 0%,62%-hold-then-travel cadence used app-wide. */
-.winprob-panel { position: relative; overflow: hidden; }
-/* Layer 1 -- the hue wash. Drifts horizontally under the number so the frame
-   never goes fully static, but never draws attention to itself. */
+/* ---- The leading side ----------------------------------------------------
+   One class, `ahead`, drives everything: the card lifts, its team edge lights,
+   the heading rule opens, and a slow hue wash drifts under the number on the
+   same cadence the glass panels and matchup tracks use. Nothing else on this
+   element sets transform, so there is nothing left to fight over. */
+.winprob-panel { position: relative; }
 .winprob-panel::before {
-  content: ""; position: absolute; inset: -30% -60%; pointer-events: none; z-index: -1;
-  opacity: 0; transition: opacity 0.45s ease;
-  background: radial-gradient(58% 74% at 50% 50%, currentColor 0%, transparent 68%);
-  filter: blur(26px);
+  content: ""; position: absolute; inset: -40% -25%; pointer-events: none; z-index: -1;
+  opacity: 0; transition: opacity 0.5s ease;
+  background: radial-gradient(56% 72% at 50% 50%, currentColor 0%, transparent 70%);
+  filter: blur(30px);
 }
-.winprob-panel.leading::before { opacity: 0.28; animation: wpWash 9s ease-in-out infinite alternate; }
+.winprob-card.ahead .winprob-panel::before {
+  opacity: 0.30; animation: wpWash 9s ease-in-out infinite alternate;
+}
 @keyframes wpWash {
-  0%   { transform: translateX(-7%) scale(1); }
-  100% { transform: translateX(7%) scale(1.06); }
+  0%   { transform: translateX(-6%) scale(1); }
+  100% { transform: translateX(6%) scale(1.05); }
 }
-/* Layer 2 -- the gold sheen, same material and same timing signature as
-   .glass::after and .matchup-track::after. This is what ties the hero element
-   back into the rest of the chrome. */
-.winprob-panel::after {
-  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 42%;
-  pointer-events: none; z-index: -1; opacity: 0;
-  background: linear-gradient(100deg, transparent 0%, rgba(212,175,90,0.20) 46%, rgba(243,226,184,0.10) 56%, transparent 100%);
-}
-.winprob-panel.leading::after { opacity: 1; animation: wpSheen 6.5s ease-in-out infinite; }
-@keyframes wpSheen {
-  0%, 62% { transform: translateX(-150%); }
-  100%    { transform: translateX(330%); }
-}
-/* Very slow breathe on the leading card so the frame is never fully static. */
-@keyframes leadBreathe {
-  0%, 100% { transform: translateY(-2px) scale(1); }
-  50%      { transform: translateY(-3px) scale(1.006); }
-}
-.winprob-card.leading { animation: leadBreathe 6.5s ease-in-out infinite; }
-.winprob-panel.leading.blue { text-shadow: 0 0 46px rgba(79,195,247,0.85), 0 0 14px rgba(79,195,247,0.9); }
-.winprob-panel.leading.red { text-shadow: 0 0 46px rgba(255,107,106,0.85), 0 0 14px rgba(255,107,106,0.9); }
-.winprob-card { position: relative; transition: box-shadow 0.3s ease, transform 0.3s ease; }
-.winprob-card.leading {
-  box-shadow: 0 0 0 2px rgba(212,175,90,0.35), 0 0 28px rgba(212,175,90,0.16), var(--shadow-sm);
-  transform: translateY(-2px);
-}
-/* Gold rail across the top of whichever side is currently favoured -- a
-   second, non-numeric read on "who's ahead" that survives at a glance. */
-.winprob-card::before {
-  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; z-index: 5;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0; transition: opacity 0.35s ease;
-}
-.winprob-card.leading::before { opacity: 1; }
-@keyframes numberPop { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
+.winprob-panel.blue { color: var(--blue-main); text-shadow: 0 0 30px var(--blue-glow); }
+.winprob-panel.red  { color: var(--red-main);  text-shadow: 0 0 30px var(--red-glow); }
+.winprob-card.ahead .winprob-panel.blue { text-shadow: 0 0 44px rgba(79,195,247,0.8), 0 0 13px rgba(79,195,247,0.85); }
+.winprob-card.ahead .winprob-panel.red  { text-shadow: 0 0 44px rgba(255,107,106,0.8), 0 0 13px rgba(255,107,106,0.85); }
+@keyframes numberPop { 0% { transform: scale(1.10); } 100% { transform: scale(1); } }
 .pop { animation: numberPop 0.28s ease; }
-@keyframes cardSurge {
-  0% { box-shadow: 0 0 0 2px rgba(212,175,90,0), var(--shadow-sm); transform: scale(1); }
-  35% { box-shadow: 0 0 26px 3px rgba(212,175,90,0.55), var(--shadow-sm); transform: scale(1.015); }
-  100% { box-shadow: 0 0 0 2px rgba(212,175,90,0), var(--shadow-sm); transform: scale(1); }
-}
-.winprob-card.surge { animation: cardSurge 0.65s ease; }
-.winprob-card.leading.surge { animation: cardSurge 0.65s ease; }
-.winprob-panel.blue { color: var(--blue-main); text-shadow: 0 0 34px var(--blue-glow); background: linear-gradient(180deg, rgba(79,195,247,0.14), rgba(79,195,247,0.02)); }
-.winprob-panel.red { color: var(--red-main); text-shadow: 0 0 34px var(--red-glow); background: linear-gradient(180deg, rgba(255,107,106,0.14), rgba(255,107,106,0.02)); }
-.winprob-label {
-  text-align: center; font-weight: 800; font-style: italic; padding: 5px;
-  background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-size: 12.5px; letter-spacing: 0.9px;
-}
 .winprob-label.blue { color: var(--blue-main); }
 .winprob-label.red { color: var(--red-main); }
 .margin-panel {
@@ -1087,7 +1039,7 @@ table.matchup-table th { font-size: 10.5px; letter-spacing: 0.3px; }
 @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .tab-page.active .bd-bar { transform-box: fill-box; transform-origin: left center; animation: barGrow 0.62s cubic-bezier(0.22,1,0.36,1) both; }
 @keyframes trPolyIn { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
-.tab-page.active .tr-poly { transform-box: view-box; transform-origin: 155px 146px; animation: trPolyIn 0.8s cubic-bezier(0.3,1.15,0.45,1) both; }
+
 @keyframes ringSweep { from { stroke-dashoffset: var(--ring-len); } to { stroke-dashoffset: var(--ring-off); } }
 .hs-ring .ring-fg { animation: ringSweep 1.05s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
 
@@ -1378,13 +1330,13 @@ table.stats.side-table-red tbody tr:hover td.name::before { left: 8px; }
    up from the centre -- so the chart assembles rather than just appearing. */
 @keyframes trRingIn { from { opacity: 0; transform: scale(0.72); } to { opacity: 1; transform: scale(1); } }
 @keyframes trAxisIn { from { opacity: 0; } to { opacity: 1; } }
-.tab-page.active .tr-ring { transform-box: view-box; transform-origin: var(--rc);
+.tab-page.active .tr-ring { transform-box: view-box; transform-origin: var(--ox, 230px) var(--oy, 228px);
   animation: trRingIn 0.6s cubic-bezier(0.24,1.06,0.36,1) both; }
 .tab-page.active .tr-axis { animation: trAxisIn 0.5s ease both; }
 .tab-page.active .tr-lab { animation: trAxisIn 0.55s ease both; }
 /* A slow gold sweep around the rim keeps the chart alive once it settles. */
 @keyframes trSweep { to { transform: rotate(360deg); } }
-.tr-sweep { transform-box: view-box; transform-origin: var(--rc);
+.tr-sweep { transform-box: view-box; transform-origin: var(--ox, 230px) var(--oy, 228px);
   animation: trSweep 18s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .tab-page.active .tr-ring, .tab-page.active .tr-axis, .tab-page.active .tr-lab { animation: none; }
@@ -1659,7 +1611,7 @@ table.stats tbody tr:hover .radar-cell::before { opacity: 0.25; }
    would crop the axis labels; the polygon sits at radius 38 inside a 62
    half-width viewBox, so it can grow 11% and still clear the edge. */
 .radar-cell .radar-data {
-  transform-box: view-box; transform-origin: 62px 58px;
+  transform-box: view-box; transform-origin: var(--ox, 62px) var(--oy, 58px);
   transition: transform 0.44s cubic-bezier(0.22,1.12,0.36,1); }
 /* The polygon itself: lifts on a spring with a touch of overshoot, thickens,
    and picks up a brighter glow. 6% is enough to register without shifting the
@@ -1671,7 +1623,7 @@ table.stats tbody tr:hover .radar-cell .radar-fill { opacity: 1; }
 .radar-cell .radar-fill { opacity: 0.82; transition: opacity 0.34s ease; }
 /* Vertex dots pop outward one after another rather than together -- the same
    decaying stagger used everywhere else in the app. */
-.radar-cell .radar-dot { transition: transform 0.4s cubic-bezier(0.24,1.3,0.36,1); transform-box: fill-box; transform-origin: center; }
+.radar-cell .radar-dot { transition: transform 0.4s cubic-bezier(0.24,1.3,0.36,1); }
 /* Grid and labels step back on hover. Without this the whole chart just gets
    brighter, which reads as a highlight rather than as focus. */
 .radar-cell svg polygon[fill="none"], .radar-cell svg line, .radar-cell svg text {
@@ -1745,94 +1697,8 @@ table.stats tbody tr:hover .rd-ghost { opacity: 0.85; }
 .rd-read { opacity: 0; transition: opacity 0.3s ease; }
 table.stats tbody tr:hover .rd-read { opacity: 1; }
 .radar-cell svg.axis-focus .rd-read { opacity: 1; }
-/* ---------- RIFT MAP -----------------------------------------------------
-   The one page in the app that is a picture rather than a chart. Everything on
-   it is data: lane stroke colour is that lane's control at the scrubbed
-   minute, jungle quadrant fill is jungle influence there, pit glow is drake
-   affinity. Nothing is decoration except the terrain itself. */
-/* The map was taking the full width of the modal and dwarfing the reading it
-   exists to support. Capped at 430px: large enough that the lanes are clearly
-   separate objects, small enough that the panel beside it is the thing you
-   actually read. */
-.rift-wrap { display: grid; grid-template-columns: minmax(300px, 430px) 1fr; gap: 16px; align-items: start; }
-.rift-stage { padding: 8px !important; }
-.rift-stage svg { display: block; width: 100%; max-width: 414px; margin: 0 auto; height: auto; border-radius: 10px; }
-.rift-side { display: flex; flex-direction: column; }
-.rift-read { min-height: 108px; }
-.rr-hd { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
-.rr-t { font-size: 12px; font-weight: 900; letter-spacing: 1.2px; color: var(--gold-bright); }
-.rr-sub { font-size: 9px; color: var(--ink-dim); letter-spacing: 0.5px; }
-.rr-vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 7px 0 5px; }
-.rr-nm { font-size: 12px; font-weight: 800; }
-.rr-nm.r { text-align: right; }
-.rr-pill { font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 999px;
-  background: rgba(212,175,90,0.16); border: 1px solid rgba(212,175,90,0.4); color: var(--gold-bright);
-  font-variant-numeric: tabular-nums; }
-.rr-body { font-size: 9.5px; color: var(--ink-dim); line-height: 1.55; }
-.rr-body b { color: var(--ink); }
-.rc-row { display: grid; grid-template-columns: 54px 1fr 44px; align-items: center; gap: 8px; padding: 3px 0; }
-.rc-k { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; color: var(--ink-dim); }
-.rc-track { height: 12px; border-radius: 6px; overflow: hidden; display: flex;
-  background: rgba(255,255,255,0.05); box-shadow: inset 0 1px 3px rgba(0,0,0,0.45); }
-.rc-b { background: linear-gradient(90deg, rgba(79,195,247,0.35), #4fc3f7); transition: width 0.5s cubic-bezier(0.22,0.8,0.3,1); }
-.rc-r { background: linear-gradient(270deg, rgba(255,107,106,0.35), #ff6b6a); transition: width 0.5s cubic-bezier(0.22,0.8,0.3,1); }
-.rc-v { font-size: 10px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
-.rift-verdict { font-size: 9.5px; color: var(--ink-dim); line-height: 1.6; }
-.rift-verdict b { color: var(--gold-bright); }
-.rift-scrub { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 9px 14px !important; }
-.rs-lab { font-size: 9px; font-weight: 800; letter-spacing: 1.3px; color: var(--ink-dim); }
-.rs-range { flex: 1; -webkit-appearance: none; appearance: none; height: 5px; border-radius: 3px;
-  background: linear-gradient(90deg, rgba(79,195,247,0.4), rgba(212,175,90,0.5), rgba(255,107,106,0.4));
-  outline: none; cursor: pointer; }
-.rs-range::-webkit-slider-thumb { -webkit-appearance: none; width: 17px; height: 17px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, var(--gold)); border: 1px solid rgba(255,255,255,0.6);
-  box-shadow: 0 0 12px rgba(212,175,90,0.75); cursor: grab; transition: transform 0.18s ease; }
-.rs-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
-.rs-range::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--gold);
-  border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 0 12px rgba(212,175,90,0.75); cursor: grab; }
-.rs-t { font-size: 13px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
-.rs-play { font-size: 9px; font-weight: 800; letter-spacing: 1px; padding: 5px 11px; border-radius: 8px;
-  background: rgba(212,175,90,0.14); border: 1px solid rgba(212,175,90,0.42); color: var(--gold-bright);
-  cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
-.rs-play:hover { background: rgba(212,175,90,0.26); transform: translateY(-1px); }
-/* Map elements */
-.rf-lane { cursor: pointer; transition: stroke-width 0.3s ease, filter 0.3s ease, opacity 0.3s ease; }
-.rf-lane-hit { cursor: pointer; }
-.rift-stage svg.focus .rf-lane, .rift-stage svg.focus .rf-pit, .rift-stage svg.focus .rf-mk { opacity: 0.32; }
-.rift-stage svg.focus .rf-lane.on, .rift-stage svg.focus .rf-pit.on { opacity: 1; }
-.rf-mk { transition: opacity 0.3s ease; }
-.rf-lane.on { stroke-width: 13; filter: drop-shadow(0 0 10px rgba(212,175,90,0.7)); }
-.rf-jg { cursor: pointer; }
-.rf-jg.on { fill: rgba(212,175,90,0.10); stroke: rgba(212,175,90,0.5); stroke-width: 1.5; stroke-dasharray: 4 4; }
-.rf-pit { cursor: pointer; transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.24,1.3,0.36,1); transform-box: fill-box; transform-origin: center; }
-.rf-pit.on { transform: scale(1.18); }
-.rf-tur { transition: opacity 0.4s ease; }
-.tab-page.active .rf-lane { animation: rfDraw 1.1s cubic-bezier(0.3,0.85,0.28,1) both; }
-@keyframes rfDraw { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
-.tab-page.active .rf-pit, .tab-page.active .rf-nexus { animation: verdictIn 0.55s cubic-bezier(0.26,1.15,0.4,1) both; }
-@media (max-width: 1180px) { .rift-wrap { grid-template-columns: 1fr; } }
-.rf-heat { pointer-events: none; transition: opacity 0.4s ease; }
-.rift-stage svg.focus .rf-heat { opacity: 0.35; }
-.rf-legend { pointer-events: none; }
-.tab-page.active .rf-heat { animation: heatIn 0.9s ease both; }
+
 @keyframes heatIn { from { opacity: 0; } to { opacity: 1; } }
-/* Timeline: the map strip. The chart says who is winning; this says WHERE, at
-   the same minute, without leaving the page. */
-.fr-lanes { margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); }
-.fr-lk { font-size: 8.5px; font-weight: 800; letter-spacing: 1.2px; color: var(--ink-dim); margin-bottom: 6px; }
-.fr-lrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.fr-lane { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.fr-ll { font-size: 8px; font-weight: 800; letter-spacing: 0.8px; color: var(--ink-dim); }
-.fr-lt { width: 100%; height: 38px; border-radius: 6px; position: relative; overflow: hidden;
-  background: linear-gradient(180deg, rgba(255,107,106,0.28), rgba(255,107,106,0.10));
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.45); }
-.fr-lb { position: absolute; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg, #4fc3f7, rgba(79,195,247,0.45));
-  transition: height 0.42s cubic-bezier(0.22,0.85,0.3,1); }
-.fr-lb::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
-  background: rgba(255,255,255,0.75); box-shadow: 0 0 7px rgba(255,255,255,0.6); }
-.fr-lv { font-size: 9px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.fr-ln { font-size: 8.5px; color: var(--ink-dim); font-style: italic; margin-top: 6px; line-height: 1.45; }
 .ph-pinned #ph-hover { opacity: 1 !important; }
 .fr-pin { color: var(--gold-bright); font-style: normal; }
 /* ==========================================================================
@@ -1909,8 +1775,456 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
 /* Heat sectors sit under the outline; they dim when one axis is being read. */
 .rd-heatg { transition: opacity 0.3s ease; }
 .radar-cell svg.axis-focus .rd-heatg { opacity: 0.4; }
-.radar-cell svg.axis-focus .rd-heat.on { opacity: 1; }
+
 @media (prefers-reduced-motion: reduce) { #radar-pop { transition: none; } }
+/* ---- Radar heat field: motion -------------------------------------------
+   The field blooms outward from the centre on entry rather than fading in, so
+   the chart reads as being drawn rather than switched on, and a highlight
+   orbits the rim afterwards so a settled chart never goes fully dead. */
+.rd-heatg { transform-box: view-box; transform-origin: var(--ox, 62px) var(--oy, 58px); }
+
+@keyframes heatBloom {
+  0%   { transform: scale(0.18); opacity: 0; }
+  55%  { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.rd-sweep { transform-box: view-box; transform-origin: var(--ox, 62px) var(--oy, 58px);
+  animation: rdSweep 6.5s linear infinite; opacity: 0.55; }
+@keyframes rdSweep { to { transform: rotate(360deg); } }
+table.stats tbody tr:hover .rd-sweep { animation-duration: 2.6s; opacity: 0.9; }
+#radar-pop .rd-sweep { animation-duration: 4s; opacity: 0.75; }
+
+.radar-cell svg.axis-focus .rd-sweep { opacity: 0.2; }
+@media (prefers-reduced-motion: reduce) {
+  .rd-sweep { animation: none; opacity: 0.3; }
+  .chart-pop .rd-heatg, #radar-pop .rd-heatg { animation: none; }
+}
+/* ---- Game Plan: the clash strip -----------------------------------------
+   Two archetypes stated separately do not tell you what happens when they
+   meet. This puts both plans on one game-length axis so the overlap -- the
+   minutes where they are BOTH trying to force something -- is visible. */
+.gp-clash { position: relative; height: 76px; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
+  border: 1px solid rgba(255,255,255,0.08); }
+.gc-band { position: absolute; height: 26px; border-radius: 7px; top: 8px;
+  display: flex; align-items: center; padding: 0 9px; font-size: 9px; font-weight: 800;
+  letter-spacing: 0.8px; white-space: nowrap; overflow: hidden;
+  transform-origin: left center; }
+.gp-clash .gc-band { animation: gcGrow 0.85s cubic-bezier(0.22,0.9,0.28,1) both; }
+@keyframes gcGrow { from { transform: scaleX(0.02); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+.gc-band.b { top: 8px;  background: linear-gradient(90deg, rgba(79,195,247,0.55), rgba(79,195,247,0.16));
+  border: 1px solid rgba(79,195,247,0.5); color: #dff4ff; }
+.gc-band.r { top: 42px; background: linear-gradient(90deg, rgba(255,107,106,0.55), rgba(255,107,106,0.16));
+  border: 1px solid rgba(255,107,106,0.5); color: #ffe6e6; }
+.gc-axis { position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+  display: flex; justify-content: space-between; padding: 0 6px;
+  font-size: 7.5px; color: var(--ink-dim); letter-spacing: 0.6px; }
+.gc-tick { position: absolute; top: 0; bottom: 14px; width: 1px; background: rgba(255,255,255,0.07); }
+.gc-clash { position: absolute; top: 0; bottom: 14px; background: rgba(212,175,90,0.14);
+  border-left: 1px dashed rgba(212,175,90,0.55); border-right: 1px dashed rgba(212,175,90,0.55); }
+.gc-lab { position: absolute; top: 2px; font-size: 7.5px; font-weight: 800; letter-spacing: 0.8px;
+  color: var(--gold-bright); white-space: nowrap; }
+/* ---- Advisor: the fight diagram -----------------------------------------
+   A row of five champion chips per side, sized and lit by how exposed or how
+   threatening each one is, with the two most dangerous reaching lines drawn
+   between them. The bars underneath still carry the numbers; this carries the
+   shape of the problem, which is what you actually act on. */
+.fight-wrap { display: grid; grid-template-columns: 1fr 74px 1fr; gap: 10px; align-items: center; }
+.fight-side { display: flex; flex-direction: column; gap: 5px; }
+.fc { display: grid; grid-template-columns: 1fr 46px; align-items: center; gap: 8px;
+  border-radius: 9px; padding: 5px 9px; position: relative; overflow: hidden;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+  transition: transform 0.3s var(--ease-spring), border-color 0.3s ease, background 0.3s ease; }
+.fight-wrap .fc { animation: bdRowIn 0.46s cubic-bezier(0.22,1,0.36,1) both; }
+.fc:hover { transform: translateX(3px); border-color: rgba(212,175,90,0.4); background: rgba(255,255,255,0.06); }
+.fc.exposed { border-color: rgba(255,107,106,0.5); background: linear-gradient(90deg, rgba(255,107,106,0.16), rgba(255,255,255,0.02)); }
+.fc.protector { border-color: rgba(127,224,160,0.45); background: linear-gradient(90deg, rgba(127,224,160,0.14), rgba(255,255,255,0.02)); }
+.fc.threat { border-color: rgba(255,154,92,0.5); background: linear-gradient(90deg, rgba(255,154,92,0.16), rgba(255,255,255,0.02)); }
+.fc-n { font-size: 10px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc-t { font-size: 7.5px; font-weight: 800; letter-spacing: 0.6px; text-align: right; }
+.fc-bar { position: absolute; left: 0; bottom: 0; height: 2px; border-radius: 2px; }
+.fight-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.fm-arrow { font-size: 15px; line-height: 1; color: var(--gold-bright); animation: fmPulse 2.4s ease-in-out infinite; }
+@keyframes fmPulse { 0%,100% { opacity: 0.45; transform: translateX(-2px); } 50% { opacity: 1; transform: translateX(2px); } }
+.fm-lab { font-size: 7px; font-weight: 800; letter-spacing: 0.8px; color: var(--ink-dim); text-align: center; line-height: 1.3; }
+.fight-verdict { font-size: 9.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 9px;
+  padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+.fight-verdict b { color: var(--gold-bright); }
+@media (max-width: 1000px) { .fight-wrap { grid-template-columns: 1fr; } .fm-arrow { transform: rotate(90deg); } }
+/* ---- Timeline: phase ribbon + richer readout ----------------------------- */
+.tl-phases { display: grid; grid-template-columns: 3fr 3fr 4fr; gap: 5px; margin-bottom: 8px; }
+.tl-ph { border-radius: 9px; padding: 7px 10px; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.32s var(--ease-spring), border-color 0.3s ease; }
+.tab-page.active .tl-ph { animation: verdictIn 0.5s cubic-bezier(0.26,1.12,0.4,1) both; }
+.tl-ph:hover { transform: translateY(-2px); border-color: rgba(212,175,90,0.35); }
+.tl-ph.lead::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.tl-ph.lead.b::before { background: var(--blue-main); box-shadow: 0 0 12px var(--blue-glow); }
+.tl-ph.lead.r::before { background: var(--red-main); box-shadow: 0 0 12px var(--red-glow); }
+.tl-pk { font-size: 8px; font-weight: 800; letter-spacing: 1.2px; color: var(--ink-dim); }
+.tl-pv { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; margin: 2px 0 1px; }
+.tl-pn { font-size: 8.5px; color: var(--ink-dim); line-height: 1.4; }
+.tl-spark { height: 16px; margin-top: 4px; display: block; width: 100%; }
+.tl-spark path { stroke-dasharray: 400; stroke-dashoffset: 400; }
+.tab-page.active .tl-spark path { animation: rfDraw 1.1s cubic-bezier(0.3,0.85,0.28,1) 0.25s both; }
+/* ---- General UI: focus, scroll, selection -------------------------------- */
+::selection { background: rgba(212,175,90,0.32); color: #fff; }
+:focus-visible { outline: 2px solid rgba(212,175,90,0.6); outline-offset: 2px; border-radius: 6px; }
+.graphs-btn, .reset-btn, .rs-play, .cmp-clear, .tab { -webkit-tap-highlight-color: transparent; }
+/* A hairline of gold light along the top of the app, so the frame reads as
+   deliberate rather than as where the background happens to stop. */
+.app::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 1px; z-index: 50;
+  background: linear-gradient(90deg, rgba(212,175,90,0) 0%, rgba(212,175,90,0.55) 22%,
+    rgba(243,226,184,0.85) 50%, rgba(212,175,90,0.55) 78%, rgba(212,175,90,0) 100%); }
+/* Section headings get a short rule that grows in, so a page reads as
+   structured rather than as a stack of boxes. */
+.adv-h { position: relative; padding-left: 0; }
+.adv-h::after { content: ""; display: block; height: 1px; margin-top: 4px; width: 0;
+  background: linear-gradient(90deg, currentColor, transparent);
+  opacity: 0.4; transition: width 0.6s var(--ease-settle); }
+.tab-page.active .adv-h::after { width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  .tab-page.active .adv-h::after, .tab-page.active .tl-spark path { animation: none; width: 100%; stroke-dashoffset: 0; }
+  .tl-ph:hover { transform: none; }
+}
+/* ---- Big radar heat: pulse and hover ------------------------------------
+   Same field as the table charts, at the size where it can actually be seen.
+   The whole group breathes on a slow cycle so a settled chart is never dead,
+   and hovering the chart lifts the field's opacity and speeds the breath --
+   the "you are looking at this" response. */
+.tr-heat { transform-box: view-box; transform-origin: var(--ox, 230px) var(--oy, 228px);
+  transition: opacity 0.4s ease, filter 0.4s ease;
+  animation: trHeatBreathe 5.4s ease-in-out infinite; }
+.tr-heat.r { animation-delay: 1.1s; }
+@keyframes trHeatBreathe {
+  0%, 100% { opacity: 0.80; transform: scale(0.985); }
+  50%      { opacity: 1;    transform: scale(1.012); }
+}
+.tab-page.active .tr-heat { animation: trHeatIn 0.9s cubic-bezier(0.22,0.92,0.28,1) both,
+                                       trHeatBreathe 5.4s ease-in-out 0.9s infinite; }
+@keyframes trHeatIn { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.radar-box:hover .tr-heat, .sec-split:hover .tr-heat {
+  animation-duration: 2.1s; filter: saturate(1.35) brightness(1.12); }
+.radar-svg.dim .tr-heat { opacity: 0.4; }
+/* Axis focus: the field steps back so the highlighted spoke is unambiguous. */
+.radar-svg .tr-heat { will-change: transform, opacity; }
+@media (prefers-reduced-motion: reduce) {
+  .tr-heat, .tab-page.active .tr-heat { animation: none; opacity: 0.9; }
+}
+/* ==========================================================================
+   RADAR MOTION -- everything grows from the centre outward.
+   One origin, one direction. Previously the grid faded, the polygon drew
+   itself around its outline, the dots popped in place and the heat scaled --
+   four different ideas about where a chart comes from. A radar has an obvious
+   answer: it is a measurement radiating from a point, so every layer starts at
+   that point and expands. The layers are staggered, not simultaneous, so the
+   chart assembles rather than inflating as one blob.
+   ========================================================================== */
+.radar-cell svg .rd-heatg,
+.radar-cell svg .radar-data,
+.radar-cell svg .radar-fill,
+.radar-cell svg .radar-poly,
+.radar-cell svg .radar-dot,
+.radar-cell svg .rd-rings,
+.radar-cell svg .rd-ring,
+#radar-pop svg .rd-heatg,
+#radar-pop svg .radar-data,
+#radar-pop svg .radar-fill,
+#radar-pop svg .radar-poly,
+#radar-pop svg .radar-dot,
+#radar-pop svg .rd-rings,
+#radar-pop svg .rd-ring {
+  /* transform-box is not optional here. Without it an SVG element's
+     transform-origin resolves against USER SPACE -- the top-left of the
+     viewBox -- so a scale animation grows from the corner. radar-fill and
+     radar-poly were animated with rdGrow and had neither property, which is
+     exactly why the outline and fill appeared to come in from the top left
+     while the heat and dots behaved. */
+  transform-box: view-box; transform-origin: var(--ox, 62px) var(--oy, 58px);
+}
+.radar-cell.chart-pop .rd-heatg { animation: rdGrow 0.78s cubic-bezier(0.20,0.95,0.28,1) both; }
+.radar-cell.chart-pop .radar-fill { animation: rdGrow 0.72s cubic-bezier(0.20,1.02,0.30,1) 0.07s both; }
+.radar-cell.chart-pop .radar-dot  { animation: rdGrow 0.62s cubic-bezier(0.24,1.55,0.34,1) 0.22s both; }
+#radar-pop .rd-heatg   { animation: rdGrow 0.62s cubic-bezier(0.20,0.95,0.28,1) both; }
+#radar-pop .radar-data { animation: rdGrow 0.70s cubic-bezier(0.22,1.24,0.34,1) 0.06s both; }
+@keyframes rdGrow {
+  0%   { transform: scale(0.04); opacity: 0; }
+  55%  { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+/* PULSE -- three rings leaving the centre on a staggered loop, so the chart
+   reads as actively measuring rather than as a settled picture. They ride the
+   heat's own colour by inheriting stroke from the champion tint. */
+.rd-rings { pointer-events: none; }
+.rd-ring { transform-box: view-box; transform-origin: var(--ox, 62px) var(--oy, 58px); opacity: 0;
+  animation: rdPulse 4.2s cubic-bezier(0.16,0.72,0.30,1) infinite; }
+.rd-ring:nth-child(2) { animation-delay: 1.4s; }
+.rd-ring:nth-child(3) { animation-delay: 2.8s; }
+@keyframes rdPulse {
+  0%   { transform: scale(0.10); opacity: 0; }
+  12%  { opacity: 0.55; }
+  70%, 100% { transform: scale(1.16); opacity: 0; }
+}
+table.stats tbody tr:hover .rd-ring { animation-duration: 1.9s; }
+#radar-pop .rd-ring { animation-duration: 3s; }
+/* The big team radar: same rule, its own centre. */
+.radar-svg .tr-heat, .radar-svg .tr-poly, .radar-svg .tr-ring, .radar-svg .tr-vtx {
+  transform-box: view-box; transform-origin: var(--ox, 230px) var(--oy, 228px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-cell.chart-pop .rd-heatg, .radar-cell.chart-pop .radar-fill,
+  .radar-cell.chart-pop .radar-poly, .radar-cell.chart-pop .radar-dot,
+  #radar-pop .rd-heatg, #radar-pop .radar-data,
+  .tab-page.active .radar-svg .tr-heat, .tab-page.active .tr-poly,
+  .tab-page.active .tr-ring, .rd-ring { animation: none; opacity: 1; }
+}
+/* ==========================================================================
+   WIN PROBABILITY -- built from the table's own parts.
+   The previous version shared a border radius with the table and nothing else.
+   This one is assembled the way a table column is: a heading row with the same
+   9.5px uppercase letter-spaced type and the same gold underline that grows
+   from the centre, a value in the same tabular figures the stat cells use, and
+   a rail underneath built from the same glass as the matchup track directly
+   above it -- same inset shadow, same top highlight, same travelling sheen.
+   ========================================================================== */
+.wp-head { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; padding: 8px 14px 5px; position: relative; }
+.wp-th { font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; }
+.wp-th.blue { color: var(--blue-main); } .wp-th.red { color: var(--red-main); }
+.wp-head::after {
+  content: ""; position: absolute; left: 50%; right: 50%; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(212,175,90,0), rgba(212,175,90,0.75), rgba(212,175,90,0));
+  transition: left 0.55s var(--ease-settle), right 0.55s var(--ease-settle); }
+.winprob-card.ahead .wp-head::after { left: 12%; right: 12%; }
+.wp-lead { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; color: var(--gold-bright);
+  opacity: 0; transform: translateY(-3px); transition: opacity 0.4s ease, transform 0.4s var(--ease-spring); }
+.winprob-card.ahead .wp-lead { opacity: 1; transform: translateY(0); }
+.wp-body { padding: 2px 14px 10px; }
+.winprob-panel { padding: 0 !important; line-height: 1.05; font-variant-numeric: tabular-nums; }
+/* ONE scale, spanning the whole footer, instead of two half-rails.
+   Two separate bars asked the eye to compare two lengths that never touch --
+   and a probability is one quantity, not two. This is a single hairline where
+   blue meets red at the actual number, with a marker on the join. It is the
+   same material as the matchup tracks directly above it, at a quarter of their
+   weight, so it reads as the summary of that column rather than as a repeat. */
+.wp-scale { grid-column: 1 / -1; height: 4px; border-radius: 999px; position: relative;
+  overflow: visible; margin: 0 4px 9px; background: rgba(255,107,106,0.55);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.45); }
+.wp-scale-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;
+  background: linear-gradient(90deg, rgba(79,195,247,0.75), #4fc3f7);
+  transition: width 0.8s var(--ease-settle); width: 50%; }
+.wp-scale-mark { position: absolute; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fff, var(--gold));
+  border: 1px solid rgba(255,255,255,0.65); box-shadow: 0 0 12px rgba(212,175,90,0.8);
+  transition: left 0.8s var(--ease-settle); left: 50%; }
+.wp-scale::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px;
+  background: rgba(255,255,255,0.28); }
+/* The red card mirrors, exactly as the red table does. */
+.winprob-wrap > .winprob-card:last-child .wp-body,
+.winprob-wrap > .winprob-card:last-child .winprob-panel { text-align: right; }
+.winprob-wrap > .winprob-card:first-child .wp-body,
+.winprob-wrap > .winprob-card:first-child .winprob-panel { text-align: left; }
+/* The centre stack picks up the matchup column's proportions. */
+.center-stack { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.margin-panel { border-radius: 12px; padding: 5px 6px 6px; text-align: center;
+  background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.085);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+.margin-label { font-size: 8px; font-weight: 800; letter-spacing: 1.4px; color: var(--ink-dim);
+  text-transform: uppercase; }
+#margin-val { font-size: 15px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .wp-rail::after { animation: none; opacity: 0; } }
+/* ---- Big radar: the same instrument at a different size -------------------
+   The Profile tab and the champion modal now use the table chart's exact
+   sequence -- heat, then fill, then outline, then vertices, each growing from
+   the same centre with the same curves and the same offsets. Previously the
+   big chart had its own timing and its own heat opacity, which is why the two
+   read as different charts rather than as one chart at two scales. */
+.radar-svg .tr-heat, .radar-svg .tr-poly, .radar-svg .tr-vtx,
+.radar-svg .tr-ring, .radar-svg .tr-rings, .radar-svg .tr-sweep {
+  transform-box: view-box; transform-origin: var(--ox, 230px) var(--oy, 228px);
+}
+.tab-page.active .radar-svg .tr-heat,
+.modal-overlay.open .radar-svg .tr-heat {
+  animation: rdGrow 0.78s cubic-bezier(0.20,0.95,0.28,1) both,
+             trHeatBreathe 5.4s ease-in-out 0.86s infinite; }
+.tab-page.active .radar-svg .tr-poly,
+.modal-overlay.open .radar-svg .tr-poly {
+  animation: rdGrow 0.80s cubic-bezier(0.22,1.30,0.34,1) 0.11s both; }
+.tab-page.active .radar-svg .tr-vtx,
+.modal-overlay.open .radar-svg .tr-vtx {
+  animation: rdGrow 0.62s cubic-bezier(0.24,1.55,0.34,1) 0.22s both; }
+.tab-page.active .radar-svg .tr-ring,
+.modal-overlay.open .radar-svg .tr-ring {
+  animation: rdGrow 0.60s cubic-bezier(0.24,1.10,0.34,1) both; }
+/* Pulse: same 4.2s stagger as the table charts. */
+.tr-rings { pointer-events: none; }
+.tr-ring-pulse { transform-box: view-box; transform-origin: var(--ox, 230px) var(--oy, 228px); opacity: 0;
+  animation: rdPulse 4.2s cubic-bezier(0.16,0.72,0.30,1) infinite; }
+.radar-box:hover .tr-ring-pulse, .sec-split:hover .tr-ring-pulse { animation-duration: 1.9s; }
+.radar-box:hover .tr-heat, .sec-split:hover .tr-heat {
+  animation-duration: 0.78s, 2.1s; filter: saturate(1.4) brightness(1.15); }
+@media (prefers-reduced-motion: reduce) {
+  .tr-ring-pulse, .tab-page.active .radar-svg .tr-heat, .modal-overlay.open .radar-svg .tr-heat,
+  .tab-page.active .radar-svg .tr-poly, .modal-overlay.open .radar-svg .tr-poly,
+  .tab-page.active .radar-svg .tr-vtx, .modal-overlay.open .radar-svg .tr-vtx {
+    animation: none; opacity: 1; }
+}
+/* The number is the point of this panel. It gets the whole card, centred on
+   both sides -- the mirrored alignment made the red figure look misplaced
+   rather than mirrored -- and the composition flags move to their own row
+   underneath, where they can be as long as they need without squeezing it. */
+.winprob-wrap > .winprob-card:first-child .wp-body,
+.winprob-wrap > .winprob-card:first-child .winprob-panel,
+.winprob-wrap > .winprob-card:last-child .wp-body,
+.winprob-wrap > .winprob-card:last-child .winprob-panel { text-align: center; }
+.winprob-panel { font-size: 60px !important; line-height: 1.0; letter-spacing: -0.5px; }
+.wp-body { padding: 4px 14px 12px !important; }
+.wp-notes { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 132px 1fr;
+  gap: 14px; align-items: start; margin-top: -2px; }
+.wp-notes .synergy-notes { padding: 0 4px; }
+.wp-notes .synergy-notes.side-b { justify-content: flex-start; grid-column: 1; }
+.wp-notes .synergy-notes.side-r { justify-content: flex-end; grid-column: 3; }
+@media (max-width: 1100px) {
+  .winprob-panel { font-size: 42px !important; }
+  .wp-notes { grid-template-columns: 1fr; }
+  .wp-notes .synergy-notes.side-b, .wp-notes .synergy-notes.side-r { grid-column: 1; justify-content: center; }
+}
+/* Additive blending, so neither team's field can hide the other. */
+.tr-heat { mix-blend-mode: screen; }
+.tr-heat.b { opacity: 0.92; }
+.tr-heat.r { opacity: 0.92; }
+.radar-svg.dim .tr-heat { opacity: 0.34; }
+/* Live-game badge. Hidden entirely unless the helper is running, so the hosted
+   site is unchanged for anyone who is not using it. */
+#live-badge {
+  position: fixed; right: 16px; bottom: 14px; z-index: 300;
+  display: none; align-items: center; gap: 7px;
+  padding: 6px 12px 6px 10px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(16,24,36,0.96), rgba(9,14,22,0.96));
+  border: 1px solid rgba(127,224,160,0.45);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.5), 0 0 18px rgba(127,224,160,0.16);
+  font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; color: #a7e8bd;
+  backdrop-filter: blur(14px) saturate(150%);
+}
+#live-badge.on { display: flex; }
+#live-badge .lb-dot { width: 7px; height: 7px; border-radius: 50%; background: #7fe0a0;
+  box-shadow: 0 0 9px #7fe0a0; animation: lbPulse 1.9s ease-in-out infinite; }
+@keyframes lbPulse { 0%,100% { opacity: 0.45; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.15); } }
+#live-badge.flash { animation: lbFlash 0.9s ease; }
+@keyframes lbFlash {
+  0% { border-color: rgba(212,175,90,0.9); box-shadow: 0 0 30px rgba(212,175,90,0.7); transform: scale(1.06); }
+  100% { border-color: rgba(127,224,160,0.45); box-shadow: 0 8px 26px rgba(0,0,0,0.5); transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { #live-badge .lb-dot, #live-badge.flash { animation: none; } }
+/* ---- Match import -------------------------------------------------------
+   Hidden unless scry-live.py is serving the page, because a browser on its own
+   cannot fetch another site and there is no point showing a control that
+   cannot work. Nothing is ever applied without being shown first: this feature
+   has a history of filling in the wrong champions silently, and a preview turns
+   that from a bug into something you can simply not click. */
+/* The bar is collapsed until the IMPORT button is pressed, rather than hidden
+   until the helper is detected. Hiding it meant that on the hosted site -- or
+   on the local file opened directly -- the feature simply did not appear, so
+   there was nothing to click and no way to find out why. It now explains
+   itself instead of being invisible. */
+.import-bar { display: grid; grid-template-columns: 1fr auto; gap: 8px;
+  padding: 0 18px 0; align-items: center;
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height 0.42s var(--ease-settle), opacity 0.3s ease, padding 0.42s var(--ease-settle); }
+.import-bar.on { max-height: 460px; min-height: 44px; opacity: 1; padding: 0 18px 9px; }
+/* ---- IMPORT / RESET, as a pair -------------------------------------------
+   These sit in the one column the eye returns to between every pick, so they
+   are built from the same glass as the matchup tracks either side of them
+   rather than as two loose chips. IMPORT is the primary of the two and reads
+   that way: filled, with a glyph; RESET stays a ghost outline, because
+   wiping the draft should never be the easier thing to hit by accident. */
+.spacer-cell { display: flex; flex-direction: column; align-items: stretch;
+  justify-content: center; gap: 6px; padding: 0 2px; }
+.imp-open {
+  position: relative; overflow: hidden; height: 32px; border-radius: 10px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 1.4px; color: #0f1420;
+  background: linear-gradient(180deg, #f3e2b8, #d4af5a 55%, #b7913f);
+  border: 1px solid rgba(255,255,255,0.32);
+  box-shadow: 0 3px 12px rgba(212,175,90,0.32), inset 0 1px 0 rgba(255,255,255,0.55);
+  transition: transform 0.24s var(--ease-spring), box-shadow 0.24s ease, filter 0.2s ease;
+}
+/* the same travelling highlight every other glass surface in the app carries */
+.imp-open::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 42%; pointer-events: none;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+  animation: trackSheen 6s ease-in-out infinite; }
+.imp-open:hover { transform: translateY(-1.5px);
+  box-shadow: 0 7px 20px rgba(212,175,90,0.5), inset 0 1px 0 rgba(255,255,255,0.6); }
+.imp-open:active { transform: translateY(0) scale(0.965); filter: brightness(0.88); }
+.imp-ico { width: 13px; height: 13px; flex: 0 0 auto; }
+.imp-arrow { transform-box: fill-box; transform-origin: center;
+  transition: transform 0.3s var(--ease-spring); }
+.imp-open:hover .imp-arrow { transform: translateY(1.5px); }
+.imp-lbl { line-height: 1; }
+/* Open state: the fill drops away so the panel below is clearly the live thing,
+   and the arrow turns to point back up at the button that closes it. */
+.imp-open.open { color: var(--gold-bright);
+  background: linear-gradient(180deg, rgba(212,175,90,0.22), rgba(212,175,90,0.10));
+  border-color: rgba(212,175,90,0.55);
+  box-shadow: inset 0 2px 7px rgba(0,0,0,0.4); }
+.imp-open.open::after { animation: none; opacity: 0; }
+.imp-open.open .imp-arrow { transform: rotate(180deg); }
+.reset-btn {
+  height: 26px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  font-size: 9px; font-weight: 800; letter-spacing: 1.3px; color: var(--ink-dim);
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s var(--ease-spring); }
+.reset-btn:hover { color: #ffb3b2; border-color: rgba(255,107,106,0.45);
+  background: rgba(255,107,106,0.10); transform: translateY(-1px); box-shadow: none; }
+.reset-btn:active { transform: scale(0.95); filter: brightness(0.88); }
+@media (prefers-reduced-motion: reduce) {
+  .imp-open::after { animation: none; opacity: 0; }
+  .imp-open:hover, .reset-btn:hover { transform: none; }
+  .imp-open:hover .imp-arrow { transform: none; }
+}
+.imp-input { grid-column: 1; height: 30px; border-radius: 9px; padding: 0 11px;
+  font-size: 11px; color: var(--ink); font-family: inherit;
+  background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease; }
+.imp-input:focus { border-color: rgba(212,175,90,0.5); box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 3px rgba(212,175,90,0.12); }
+.imp-input::placeholder { color: rgba(255,255,255,0.3); }
+.imp-go { grid-column: 2; height: 30px; padding: 0 15px; border-radius: 9px; cursor: pointer;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 1.3px; color: var(--gold-bright);
+  background: rgba(212,175,90,0.14); border: 1px solid rgba(212,175,90,0.42);
+  transition: background 0.2s ease, transform 0.2s var(--ease-spring); }
+.imp-go:hover { background: rgba(212,175,90,0.26); transform: translateY(-1px); }
+.imp-go:active { transform: scale(0.96); filter: brightness(0.85); }
+.imp-go[disabled] { opacity: 0.5; cursor: default; transform: none; }
+.imp-msg { grid-column: 1 / -1; font-size: 9.5px; line-height: 1.5; color: var(--ink-dim); }
+.imp-msg:empty { display: none; }
+.imp-msg b { color: var(--gold-bright); }
+.imp-msg.bad { color: #ffb3b2; }
+.imp-preview { grid-column: 1 / -1; }
+.imp-preview:empty { display: none; }
+.imp-card { border-radius: 12px; padding: 10px 12px; margin-top: 2px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border: 1px solid rgba(212,175,90,0.32); animation: verdictIn 0.4s cubic-bezier(0.26,1.1,0.4,1) both; }
+.imp-rows { display: grid; grid-template-columns: 52px 1fr 1fr; gap: 5px 10px; align-items: center; }
+.imp-h { font-size: 8px; font-weight: 800; letter-spacing: 1.1px; color: var(--ink-dim); }
+.imp-r { font-size: 8px; font-weight: 800; letter-spacing: 1px; color: var(--ink-dim); }
+.imp-c { font-size: 11px; font-weight: 800; }
+.imp-c.b { color: var(--blue-main); } .imp-c.r { color: var(--red-main); }
+.imp-c.miss { color: #ff8a89; font-weight: 600; font-style: italic; }
+.imp-apply { margin-top: 9px; display: flex; gap: 8px; align-items: center; }
+.imp-apply button { height: 27px; padding: 0 14px; border-radius: 8px; cursor: pointer;
+  font-size: 9px; font-weight: 800; letter-spacing: 1.2px; }
+.imp-yes { background: rgba(127,224,160,0.16); border: 1px solid rgba(127,224,160,0.5); color: #a7e8bd; }
+.imp-no { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); color: var(--ink-dim); }
+.imp-note { font-size: 8.5px; color: var(--ink-dim); font-style: italic; }
+/* The box takes a URL or a whole page of source, so it grows into a textarea
+   rather than staying a single line the paste visibly overflows. */
+textarea.imp-input { height: 30px; min-height: 30px; max-height: 96px; padding: 7px 11px;
+  line-height: 1.25; resize: vertical; white-space: pre; overflow-x: hidden; }
+textarea.imp-input:focus { height: 30px; }
 .adv-note { font-size: 9.5px; color: var(--ink-dim); font-style: italic; margin-top: 7px; line-height: 1.5; }
 /* Power window strip */
 .pw-strip { display: flex; height: 34px; border-radius: 9px; overflow: hidden; position: relative;
@@ -2112,10 +2426,28 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
 
   <div class="picker-row glass">
     <div id="blue-picks" class="picks-grid"></div>
-    <div class="spacer-cell"><button type="button" class="reset-btn" id="reset-btn" title="Clear all picks">RESET</button></div>
+    <div class="spacer-cell">
+      <button type="button" class="imp-open" id="import-open" title="Load a draft from a gol.gg match page">
+        <svg class="imp-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="imp-arrow" d="M12 3.5 V13.5 M12 13.5 L8.2 9.7 M12 13.5 L15.8 9.7"
+            fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4.6 15.4 v2.4 a2.2 2.2 0 0 0 2.2 2.2 h10.4 a2.2 2.2 0 0 0 2.2 -2.2 v-2.4"
+            fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+        </svg>
+        <span class="imp-lbl">IMPORT</span>
+      </button>
+      <button type="button" class="reset-btn" id="reset-btn" title="Clear all picks">RESET</button>
+    </div>
     <div id="red-picks" class="picks-grid"></div>
   </div>
 
+  <div class="import-bar" id="import-bar">
+    <textarea id="import-url" class="imp-input" spellcheck="false" rows="1"
+      placeholder="Paste a gol.gg match link and press Enter — or the page source (Ctrl+U) if opened from a file"></textarea>
+    <button type="button" class="imp-go" id="import-go">IMPORT</button>
+    <div class="imp-msg" id="import-msg"></div>
+    <div class="imp-preview" id="import-preview"></div>
+  </div>
   <div class="tables-wrap glass">
     <table class="stats side-table-blue">
       <thead><tr id="blue-thead"></tr></thead>
@@ -2137,12 +2469,30 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
   </div>
 
   <div class="winprob-wrap glass">
-    <div class="winprob-card"><div class="winprob-label blue">WIN PROBABILITY</div><div class="winprob-panel blue" id="winprob-blue">50.00%</div><div class="synergy-notes" id="synergy-blue"></div></div>
+    <div class="wp-scale" id="wp-scale">
+      <div class="wp-scale-fill" id="wp-scale-fill"></div>
+      <div class="wp-scale-mark" id="wp-scale-mark"></div>
+    </div>
+    <div class="winprob-card">
+      <div class="wp-head"><span class="wp-th blue">WIN PROBABILITY</span><span class="wp-lead" id="wp-lead-blue"></span></div>
+      <div class="wp-body">
+        <div class="winprob-panel blue" id="winprob-blue">50.00%</div>
+      </div>
+    </div>
     <div class="center-stack">
       <button type="button" class="graphs-btn" id="phase-btn" title="Open the full graph breakdown">GRAPHS</button>
       <div class="margin-panel"><div class="margin-label">Margin</div><div id="margin-val">&plusmn;0.00%</div></div>
     </div>
-    <div class="winprob-card"><div class="winprob-label red">WIN PROBABILITY</div><div class="winprob-panel red" id="winprob-red">50.00%</div><div class="synergy-notes" id="synergy-red"></div></div>
+    <div class="winprob-card">
+      <div class="wp-head"><span class="wp-lead" id="wp-lead-red"></span><span class="wp-th red">WIN PROBABILITY</span></div>
+      <div class="wp-body">
+        <div class="winprob-panel red" id="winprob-red">50.00%</div>
+      </div>
+    </div>
+    <div class="wp-notes">
+      <div class="synergy-notes side-b" id="synergy-blue"></div>
+      <div class="synergy-notes side-r" id="synergy-red"></div>
+    </div>
   </div>
 
   <div class="modal-overlay" id="phase-modal" aria-hidden="true">
@@ -2159,7 +2509,6 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
       <div class="tabbar" id="tabbar">
         <div class="tab-ink" id="tab-ink"></div>
         <button class="tab" data-tab="timeline">TIMELINE</button>
-        <button class="tab" data-tab="rift">RIFT</button>
         <button class="tab" data-tab="breakdown">BREAKDOWN</button>
         <button class="tab" data-tab="lanes">MATCHUPS</button>
         <button class="tab" data-tab="economy">ECONOMY</button>
@@ -2172,29 +2521,10 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
       <div class="tab-stage" id="tab-stage">
         <section class="tab-page" data-page="timeline">
           <div class="page-lead">Win probability read minute by minute, with the model&rsquo;s expected fight pressure underneath. Hover anywhere on the chart to read that exact minute &mdash; kills, who wins a 5v5, and what is happening.</div>
+          <div class="tl-phases" id="tl-phases"></div>
           <div class="sec-box" id="phase-chart"></div>
           <div class="sec-box fr-box" id="phase-readout"></div>
           <div class="phase-cards" id="phase-cards"></div>
-        </section>
-
-        <section class="tab-page" data-page="rift">
-          <div class="page-lead">The draft laid on the map it will be played on. Lane colour is who owns that lane at the selected minute &mdash; drag the scrubber to watch control move. Hover any lane, jungle quadrant or pit for the detail behind it.</div>
-          <div class="rift-wrap">
-            <div class="rift-stage sec-box" id="rift-stage"></div>
-            <div class="rift-side">
-              <div class="sec-box rift-read" id="rift-read"></div>
-              <div class="adv-h gold" style="margin-top:11px">MAP CONTROL AT THIS MINUTE</div>
-              <div class="sec-box" id="rift-control"></div>
-              <div class="adv-h gold" style="margin-top:11px">WHAT THE MAP SAYS</div>
-              <div class="sec-box rift-verdict" id="rift-verdict"></div>
-            </div>
-          </div>
-          <div class="rift-scrub sec-box">
-            <span class="rs-lab">MINUTE</span>
-            <input type="range" id="rift-time" min="0" max="40" step="1" value="15" class="rs-range">
-            <span class="rs-t" id="rift-tval">15:00</span>
-            <button type="button" class="rs-play" id="rift-play" title="Play the game through">&#9654; PLAY</button>
-          </div>
         </section>
 
         <section class="tab-page" data-page="breakdown">
@@ -2248,8 +2578,10 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
         </section>
 
         <section class="tab-page" data-page="gameplan">
-          <div class="page-lead">What kind of draft each side actually is, and how it wins.</div>
+          <div class="page-lead">What kind of draft each side actually is, and how it wins. The band underneath each plan is the game itself &mdash; the stretch where that draft is favoured is lit.</div>
           <div class="gp-plans" id="gp-plans"></div>
+          <div class="adv-h gold" style="margin-top:2px">THE TWO PLANS, SIDE BY SIDE</div>
+          <div class="sec-box" id="gp-clash"></div>
           <div class="gp-grid">
             <div>
               <div class="adv-h gold">ARCHETYPE FIT</div>
@@ -2269,6 +2601,7 @@ table.stats tbody tr:hover .rd-read { opacity: 1; }
           <div class="adv-h gold">POWER WINDOWS &mdash; WHO IS FAVOURED, MINUTE BY MINUTE</div>
           <div class="sec-box" id="adv-window"></div>
           <div class="adv-h gold" style="margin-top:13px">THE FIGHT &mdash; WHO EACH SIDE HAS TO PROTECT, AND WHO THEY CAN REACH</div>
+          <div class="sec-box" id="adv-fight"></div>
           <div class="prot-split" id="adv-protection"></div>
           <div class="adv-split" style="margin-top:13px">
             <div>
@@ -2714,6 +3047,53 @@ function champPowerAt(c, t) {
 // Full curve: one win-probability reading per minute, plus the moments a coach
 // would actually circle -- where the lead changes hands, and where each side
 // peaks.
+// ---------------------------------------------------------------------------
+// GAME LENGTH, AND WHY THE HEADLINE NEEDED IT
+//
+// The headline win probability and the Timeline were two separate models that
+// nothing forced to agree. Measured over 4,000 drafts they correlated only
+// 0.48, with a mean gap of 3.7 points and a worst case of 18.5 -- and the
+// reason is structural: the headline had NO OPINION ABOUT WHEN a draft is
+// strong. Scaling moved the curve and never touched the win probability, so a
+// draft that wins minutes 10-30 and one that only wins after 40 read
+// identically.
+//
+// Real games do not last a random length. Solo-queue games cluster around 29
+// minutes, so an advantage sitting at minute 40 is worth far less than the
+// same advantage at minute 27 -- most games are already over.
+//
+// TEMPO is the correction: the phase advantage weighted by where games
+// actually end, MINUS the flat average of that same advantage. Subtracting the
+// flat average is what keeps this honest -- it removes the overall level of the
+// curve (which would restate draft strength the model already counts) and
+// leaves only the genuinely new question: is your strength where the games are?
+const GAME_LEN_MU = 29, GAME_LEN_SD = 7.5;
+const GAME_LEN_W = (function () {
+  const w = [];
+  let tot = 0;
+  for (let t = 0; t <= GAME_END_MIN; t++) {
+    // games shorter than ~15 minutes are remakes and stomps, not draft outcomes
+    const v = t < 12 ? 0 : Math.exp(-((t - GAME_LEN_MU) ** 2) / (2 * GAME_LEN_SD * GAME_LEN_SD));
+    w.push(v); tot += v;
+  }
+  return w.map((v) => v / tot);
+})();
+
+// Phase advantage in z units at each minute, and the tempo term derived from it.
+function tempoAdvantage(blueChamps, redChamps) {
+  const bf = blueChamps.filter(Boolean), rf = redChamps.filter(Boolean);
+  if (!bf.length || !rf.length) return null;
+  let weighted = 0, flat = 0;
+  for (let t = 0; t <= GAME_END_MIN; t++) {
+    const bz = bf.reduce((s, c) => s + champPowerAt(c, t), 0) / bf.length;
+    const rz = rf.reduce((s, c) => s + champPowerAt(c, t), 0) / rf.length;
+    const d = bz - rz;
+    weighted += d * GAME_LEN_W[t];
+    flat += d / (GAME_END_MIN + 1);
+  }
+  return { weighted, flat, tempo: weighted - flat };
+}
+
 function powerCurveReport(blueChamps, redChamps) {
   const bf = blueChamps.filter(Boolean), rf = redChamps.filter(Boolean);
   const any = bf.length > 0 || rf.length > 0;
@@ -2772,6 +3152,7 @@ function winProbBreakdown(blue, red, blueChamps, redChamps, actualDistance) {
             - red.rows.reduce((s, r) => s + (r.counterAdj || 0), 0)) * LP;
   const ec = ((blue.econAdj || 0) - (red.econAdj || 0)) * LP;
   const pr = ((blue.protAdj || 0) - (red.protAdj || 0)) * LP;
+  const tm = ((blue.tempoAdj || 0) - (red.tempoAdj || 0)) * LP;
   // LP = 25 is the logistic slope at an even matchup, so raw terms only sum to
   // the true distance from 50% when the result IS near 50%. Rather than show a
   // waterfall that visibly fails to add up, apportion the ACTUAL distance
@@ -2784,6 +3165,7 @@ function winProbBreakdown(blue, red, blueChamps, redChamps, actualDistance) {
     { key: "ct", label: "Counters", note: "measured lane counter data", v: ct },
     { key: "ec", label: "Economy", note: "is the gold aimed at picks that spend it", v: ec },
     { key: "pr", label: "Protection", note: "peel and frontline vs enemy dive", v: pr },
+    { key: "tm", label: "Tempo", note: "is your strength where games actually end", v: tm },
   ];
   const rawSum = raw.reduce((s, x) => s + x.v, 0);
   const target = actualDistance;
@@ -3248,10 +3630,14 @@ const COUNTER_LOGODDS = 0.035;
 // Reference means and sds are measured empirically over role-legal drafts --
 // see the measurement block printed at build time. Hardcoding a measured
 // constant is the same approach already used for tempoZ and engageZ.
+// Tempo carries real weight -- it is the term that ties the headline to the
+// Timeline, and it is the only one that knows when a draft is strong.
+const TEMPO_LOGODDS_PER_SD = 0.052;
+const TEMPO_REF = { sd: 0.1486 };  // measured over 9,000 role-legal drafts
 const ECON_LOGODDS_PER_SD    = 0.030;
 const PROTECT_LOGODDS_PER_SD = 0.038;
 const ECON_REF    = { mean: 8.1203, sd: 0.6838 };  // 30,000 role-legal drafts, re-measured after aim became a correlation
-const PROTECT_REF = { mean: 3.1153, sd: 0.9131 };  // 30,000 role-legal drafts
+const PROTECT_REF = { mean: 4.5426, sd: 0.9829 };  // 30,000 role-legal drafts, re-measured after Frontline entered exposure
 const COUNTERS = {"Mordekaiser":["Yone","Yorick","Nasus"],"Garen":["Tryndamere","Teemo","Sett"],"Sett":["Illaoi","Nasus","Malphite"],"Darius":["Sett","Teemo","Nasus"],"Teemo":["Yorick","Nasus","Malphite"],"Nasus":["Illaoi","Garen"],"Malphite":["Dr. Mundo","Nasus","Mordekaiser"],"Aatrox":["Garen","Mordekaiser","Yone"],"Jax":["Garen","Nasus","Sett"],"Renekton":["Nasus","Garen","Mordekaiser"],"Dr. Mundo":["Nasus","Yone","Garen"],"Yorick":["Yone","Nasus","Tryndamere"],"Illaoi":["Teemo","Yorick","Mordekaiser"],"Tryndamere":["Nasus","Malphite","Teemo"],"Gangplank":["Sett","Garen","Mordekaiser"],"Volibear":["Jax","Nasus","Garen"],"Gwen":["Garen","Sett","Mordekaiser"],"Irelia":["Sett","Garen","Darius"],"Viego":["Warwick","Shyvana","Briar"],"Lee Sin":["Nocturne","Kayn","Graves"],"Graves":["Shyvana","Wukong","Naafiri"],"Kayn":["Briar","Nocturne","Warwick"],"Master Yi":["Warwick","Viego","Nocturne"],"Nocturne":["Shyvana","Wukong","Amumu"],"Warwick":["Rammus","Karthus","Amumu"],"Briar":["Wukong","Amumu","Jax"],"Shyvana":["Sylas","Trundle","Tryndamere"],"Shaco":["Graves","Kayn","Nocturne"],"Vi":["Nocturne","Warwick","Kayn"],"Wukong":["Amumu","Lillia","Warwick"],"Bel'Veth":["Vi","Jarvan IV","Wukong"],"Jarvan IV":["Amumu","Shyvana","Lillia"],"Kha'Zix":["Nocturne","Graves","Kayn"],"Lillia":["Teemo","Shyvana","Briar"],"Naafiri":["Nocturne","Briar","Kayn"],"Xin Zhao":["Shyvana","Kayn","Warwick"],"Yasuo":["Malzahar","Veigar","Yone"],"Yone":["Veigar","Ahri","Akali"],"Ahri":["Veigar","Viktor","Yasuo"],"Zed":["Fizz","Malzahar","Sylas"],"Sylas":["Yasuo","Viktor","Yone"],"Veigar":["Xerath","Katarina","Fizz"],"Malzahar":["Xerath","Hwei","Smolder"],"Viktor":["Xerath","Vel'Koz","Hwei"],"Akali":["Galio","Ahri","Yasuo"],"Katarina":["Fizz","Yasuo","Malzahar"],"Fizz":["Lissandra","Sylas","Viktor"],"Syndra":["Fizz","Katarina","Zed"],"Locke":["Yasuo","Yone","Ahri"],"Galio":["Yone","Ahri","Yasuo"],"Xerath":["Fizz","Katarina","Diana"],"Vex":["Veigar","Syndra","Viktor"],"Diana":["Yasuo","Ahri","Yone"],"Lissandra":["Viktor","Syndra","Ahri"],"Hwei":["Fizz","Yasuo","Syndra"],"Caitlyn":["Ziggs","Jinx","Twitch"],"Kai'Sa":["Jinx","Xayah","Ashe"],"Miss Fortune":["Smolder","Twitch","Jinx"],"Jhin":["Tristana","Jinx","Kai'Sa"],"Jinx":["Twitch","Xerath","Ziggs"],"Ezreal":["Kai'Sa","Jhin","Caitlyn"],"Ashe":["Jinx","Tristana","Miss Fortune"],"Tristana":["Veigar","Aphelios","Samira"],"Lucian":["Miss Fortune","Caitlyn","Jhin"],"Samira":["Jinx","Yunara","Xayah"],"Yunara":["Tristana","Jinx","Caitlyn"],"Vayne":["Twitch","Jinx","Zeri"],"Twitch":["Nilah","Yasuo","Viktor"],"Smolder":["Twitch","Jinx","Veigar"],"Xayah":["Twitch","Jinx","Smolder"],"Aphelios":["Jinx","Samira","Miss Fortune"],"Ziggs":["Vayne","Twitch","Kai'Sa"],"Sivir":["Twitch","Jinx","Xayah"],"Draven":["Jinx","Caitlyn","Miss Fortune"],"Lux":["Leona","Nautilus","Blitzcrank"],"Seraphine":["Milio","Zyra","Xerath"],"Thresh":["Morgana","Seraphine","Leona"],"Nautilus":["Leona","Seraphine","Thresh"],"Leona":["Soraka","Milio","Morgana"],"Morgana":["Milio","Senna","Brand"],"Pyke":["Nautilus","Thresh","Seraphine"],"Blitzcrank":["Leona","Nautilus","Morgana"],"Lulu":["Seraphine","Thresh","Nautilus"],"Pantheon":["Leona","Thresh","Lulu"],"Nami":["Leona","Hwei","Amumu"],"Senna":["Blitzcrank","Nautilus","Lux"],"Yuumi":["Nautilus","Thresh","Lux"],"Swain":["Morgana","Lulu","Seraphine"],"Brand":["Nami","Vel'Koz","Xerath"],"Milio":["Braum","Blitzcrank","Teemo"],"Karma":["Nautilus","Thresh","Seraphine"],"Soraka":["Sona","Nami","Rell"],"Camille":["Nautilus","Thresh","Seraphine"]};
 
 function counterVerdict(mine, theirs) {
@@ -3482,8 +3868,48 @@ function round(v, dp) {
 // is the thing being predicted -- feeding it back in as an input would be
 // circular.
 // ---------------------------------------------------------------------------
-const GOLD_PER_MIN_ROLE = { Top: 375, Jungle: 360, Mid: 395, ADC: 415, Support: 230 };
-const ITEM_COST = [1300, 3200, 6300, 9500, 12700, 16000];
+// Gold income is NOT a flat rate, and treating it as one is what produced
+// third items at minute 50. Real income ramps in three phases: laning, the
+// mid-game once turrets fall and jungle rotations start, and the late game
+// where waves are bigger and every objective pays. These are per-minute rates
+// for each phase, and they reproduce the timings a real game actually has --
+// an ADC completing item one around minute 9, two around 15, three around 22.
+const GOLD_PHASES = {
+  Top:     { start: 500, early: 290, mid: 440, late: 580 },
+  Jungle:  { start: 500, early: 300, mid: 430, late: 570 },
+  Mid:     { start: 500, early: 300, mid: 460, late: 600 },
+  ADC:     { start: 500, early: 300, mid: 480, late: 620 },
+  // Support income includes the support item's own gold generation, which is
+  // why the early rate is not simply 'minions they do not take'.
+  Support: { start: 500, early: 225, mid: 355, late: 490 },
+};
+// Completed-item costs. Supports buy materially cheaper items, so pricing them
+// against a carry's build was the other half of the bug -- it charged a support
+// 6300 gold for a third item they would never buy.
+const ITEM_COST_ROLE = {
+  Top:     [3100, 6200, 9300],
+  Jungle:  [3000, 6100, 9200],
+  Mid:     [3000, 6100, 9300],
+  ADC:     [3000, 6100, 9200],
+  Support: [2200, 4400, 6600],
+};
+// Each role's normal share of team gold, used to turn a champion's actual
+// share into a multiplier relative to what that role usually gets.
+const ROLE_GOLD_BASE = { ADC: 0.255, Mid: 0.235, Top: 0.225, Jungle: 0.195, Support: 0.090 };
+// Cumulative gold for a role at minute t.
+function goldAt(role, t) {
+  const g = GOLD_PHASES[role] || GOLD_PHASES.Mid;
+  return g.start + g.early * Math.min(t, 10)
+       + g.mid * Math.max(0, Math.min(t, 25) - 10)
+       + g.late * Math.max(0, t - 25);
+}
+// Minute at which a role reaches a gold total, scaled by how much of the team's
+// income this particular champion actually takes.
+function minuteForGold(role, gold, shareMult) {
+  const m = Math.max(0.55, Math.min(1.6, shareMult || 1));
+  for (let t = 1; t <= 60; t++) if (goldAt(role, t) * m >= gold) return t;
+  return 60;
+}
 
 function economyReport(champs) {
   const filled = champs.filter(Boolean);
@@ -3535,11 +3961,17 @@ function economyReport(champs) {
     name: c.name, role: c.role, share: share[i], itemDep: c.ItemDep || 5,
     // gold-to-power: what one point of team income is worth on this champion
     convert: round(((c.ItemDep || 5) / 10) * (0.55 + 0.45 * (c.DMG / 10)), 3),
-    // minute this champion completes their 1st / 2nd / 3rd item at this share
-    spikes: ITEM_COST.slice(0, 3).map((cost) => {
-      const gpm = (GOLD_PER_MIN_ROLE[c.role] || 350) * (share[i] * 5);
-      return Math.round(cost / Math.max(120, gpm));
-    }),
+    // Minute this champion completes item 1 / 2 / 3. shareMult is this pick's
+    // slice of team gold measured against an even fifth, so a farm-heavy
+    // champion is genuinely faster and a starved one genuinely slower -- but it
+    // is a modifier on a realistic role curve, not a divisor on a flat rate.
+    // shareMult is measured against THIS ROLE's normal share, not against an
+    // even fifth. Against a fifth, a support's 8.6% became a 0.43x multiplier
+    // stacked on top of a gold curve that already encodes a support's income --
+    // charging them for being a support twice, which is what pushed third items
+    // out past minute 35.
+    spikes: (ITEM_COST_ROLE[c.role] || ITEM_COST_ROLE.Mid)
+      .map((cost) => minuteForGold(c.role, cost, share[i] / (ROLE_GOLD_BASE[c.role] || 0.2))),
   }));
   return {
     aim, security: round(security, 2), hhi: round(hhi, 4),
@@ -3547,8 +3979,10 @@ function economyReport(champs) {
     coherence: round(coherence, 3),
     index: aim * 0.68 + security * 0.32,
     // team gold curve, for the chart
+    // Team gold over time, on the same three-phase curve the item timings use,
+    // so the chart and the spikes can never disagree with each other.
     curve: Array.from({ length: 41 }, (_, t) =>
-      Math.round(filled.reduce((s, c) => s + (GOLD_PER_MIN_ROLE[c.role] || 350) * t, 0) + 1500 * filled.length)),
+      Math.round(filled.reduce((s, c) => s + goldAt(c.role, t), 0))),
   };
 }
 
@@ -3590,8 +4024,16 @@ function protectionReport(mine, theirs) {
 
   const gs = me.map((c) => c.GoldShare || 0.2);
   const gtot = gs.reduce((a, b) => a + b, 0) || 1;
-  const exposure = me.reduce((s, c, i) =>
-    s + (gs[i] / gtot) * (c.DMG / 10) * ((10 - c.Mobility) / 10), 0) * 10;
+  // EXPOSURE. The first version was damage x lack-of-mobility, and it was
+  // wrong in a way that only showed when the verdict was written out in words:
+  // it named MALPHITE as the pick Blue had to protect, ahead of Jinx. A tank
+  // with seven damage and no dash scored higher than a carry, because the
+  // formula never asked whether the champion could survive being reached.
+  // Frontline is the missing term -- a champion is exposed when they carry
+  // damage, cannot escape, AND cannot take the hit. With it, Malphite drops to
+  // 0.04 and Jinx rises to 0.29, which is the answer a coach would give.
+  const expOf = (c) => (c.DMG / 10) * ((10 - c.Mobility) / 10) * ((10 - (c.Frontline || 5)) / 10);
+  const exposure = me.reduce((s, c, i) => s + (gs[i] / gtot) * expOf(c), 0) * 10;
 
   const dive = foe.length
     ? foe.map((c) => c.Mobility * 0.5 + c.DMG * 0.5).sort((a, b) => b - a).slice(0, 2)
@@ -3604,9 +4046,14 @@ function protectionReport(mine, theirs) {
     peel: round(peel, 2), front: round(front, 2), cover: round(cover, 2),
     exposure: round(exposure, 2), dive: round(dive, 2), risk: round(risk, 2),
     index: cover - risk * 1.35,
-    weakest: me.slice().sort((a, b) =>
-      ((b.DMG / 10) * ((10 - b.Mobility) / 10)) - ((a.DMG / 10) * ((10 - a.Mobility) / 10)))[0]?.name || "",
-    best: me.slice().sort((a, b) => (b.Peel || 0) - (a.Peel || 0))[0]?.name || "",
+    weakest: me.slice().sort((a, b) => expOf(b) - expOf(a))[0]?.name || "",
+    // A team can genuinely have nobody who peels. Reporting the least-bad
+    // champion as "the protector" was actively misleading -- it named Fiora,
+    // whose peel rating is 4, as the answer to who keeps Draven alive.
+    best: (function () {
+      const top = me.slice().sort((a, b) => (b.Peel || 0) - (a.Peel || 0))[0];
+      return top && (top.Peel || 0) >= 6 ? top.name : "";
+    })(),
   };
 }
 
@@ -4139,9 +4586,16 @@ function championReport(side, slotIndex, bluePicks, redPicks) {
     })(),
     objectives: OBJECTIVES.map((o) => ({ t: o.t, key: o.key, label: o.label,
       v: rel.length ? rel[Math.min(rel.length - 1, o.t)].v : null })),
-    stats: { DMG: c.DMG, CC: c.CC, Mobility: c.Mobility, Scaling: c.Scaling,
-      Sustain: c.Sustain, Safety: c.Safety, Utility: c.Utility, Waveclear: c.Waveclear,
-      Teamfight: c.Teamfight, combo: c.combo, Versatility: c.Versatility },
+    stats: (function () {
+      // Every numeric rating on the champion, copied wholesale. The previous
+      // version listed the keys by hand and silently went stale each time a
+      // rating was added.
+      const s = {};
+      ["DMG", "CC", "Peel", "Frontline", "Mobility", "Scaling", "Sustain", "Safety",
+       "Utility", "Waveclear", "Teamfight", "ItemDep", "combo", "Versatility"]
+        .forEach((k) => { if (typeof c[k] === "number") s[k] = c[k]; });
+      return s;
+    })(),
   };
 }
 
@@ -4210,6 +4664,8 @@ function computeMatchup(bluePicks, redPicks) {
   const redCounterSum = red.rows.reduce((s, r) => s + (r.counterAdj || 0), 0);
 
   // Economy and protection, evaluated once per side.
+  const tempo = tempoAdvantage(blueChamps, redChamps);
+  const tempoAdj = tempo ? Math.max(-3, Math.min(3, tempo.tempo / TEMPO_REF.sd)) * TEMPO_LOGODDS_PER_SD : 0;
   const blueEcon = economyReport(blueChamps), redEcon = economyReport(redChamps);
   const blueProt = protectionReport(blueChamps, redChamps);
   const redProt = protectionReport(redChamps, blueChamps);
@@ -4266,12 +4722,13 @@ function computeMatchup(bluePicks, redPicks) {
   // five slots, so an unfinished draft isn't scored as though its empty slots
   // were zero-strength champions.
   const sumTo5 = (arr) => (arr.length === 0 ? 0 : (arr.reduce((a, b) => a + b, 0) / arr.length) * 5);
+  blue.tempoAdj = tempoAdj / 2; red.tempoAdj = -tempoAdj / 2;
   blue.econAdj = blueEconAdj; red.econAdj = redEconAdj;
   blue.protAdj = blueProtAdj; red.protAdj = redProtAdj;
   blue.economy = blueEcon; red.economy = redEcon;
   blue.protection = blueProt; red.protection = redProt;
-  const blueLogOdds = sumTo5(blueComposites) + blueCounterSum + blueEconAdj + blueProtAdj;
-  const redLogOdds = sumTo5(redComposites) + redCounterSum + redEconAdj + redProtAdj;
+  const blueLogOdds = sumTo5(blueComposites) + blueCounterSum + blueEconAdj + blueProtAdj + tempoAdj / 2;
+  const redLogOdds = sumTo5(redComposites) + redCounterSum + redEconAdj + redProtAdj - tempoAdj / 2;
   const diff = blueLogOdds - redLogOdds;
 
   const anyPicks = blueFilled > 0 || redFilled > 0;
@@ -4377,6 +4834,7 @@ function computeMatchup(bluePicks, redPicks) {
     damageShare: { blue: damageShare(blueChamps), red: damageShare(redChamps) },
     control: { blue: controlBudget(blueChamps), red: controlBudget(redChamps) },
     banTargets: { blue: banTargets(red.rows), red: banTargets(blue.rows) },
+    tempo,
     economy: { blue: blueEcon, red: redEcon },
     protection: { blue: blueProt, red: redProt },
   };
@@ -4601,17 +5059,35 @@ function setupPickers() {
   }
 }
 
+// Push whatever is in `state` out to the ten input boxes. This is the half of
+// the old restorePicks() that anything setting a draft programmatically
+// actually wants.
+function syncPicksToInputs() {
+  ["blue", "red"].forEach((side) => {
+    for (let i = 0; i < 5; i++) {
+      if (pickInputs[side][i]) pickInputs[side][i].value = state[side][i] || "";
+      updateClearBtn(side, i);
+    }
+  });
+}
+
+// Load the saved draft from storage INTO state, then show it. Only correct at
+// startup.
+//
+// This used to be the only function available, and calling it after setting
+// `state` by hand -- which both the match import and the live-game auto-fill
+// did -- silently threw the new draft away and reinstated the saved one. It is
+// invisible in any environment with empty storage, which is exactly why it
+// survived testing: jsdom starts with nothing in localStorage, so loadPicks()
+// returned null, restorePicks() bailed out early, and the assignment appeared
+// to work. On a real browser with a previous draft saved, it never did.
 function restorePicks() {
   const saved = loadPicks();
   if (!saved) return;
   ["blue", "red"].forEach((side) => {
-    for (let i = 0; i < 5; i++) {
-      const name = saved[side][i] || "";
-      state[side][i] = name;
-      if (pickInputs[side][i]) pickInputs[side][i].value = name;
-      updateClearBtn(side, i);
-    }
+    for (let i = 0; i < 5; i++) state[side][i] = saved[side][i] || "";
   });
+  syncPicksToInputs();
 }
 
 function resetPicks() {
@@ -4731,7 +5207,7 @@ function buildRadarSVG(champ, colorHex, ghost, ghostCol) {
       const v = Math.max(0, Math.min(10, radarValue(ghost, ax.key)));
       return pt(i, (v / 10) * maxR).join(",");
     }).join(" ")}" fill="none" stroke="${ghostCol || "rgba(255,255,255,0.5)"}" stroke-width="1.6"
-    stroke-dasharray="3.5 3" stroke-linejoin="round"><title>${ghost.name}</title></polygon>` : "";
+    stroke-dasharray="3.5 3" stroke-linejoin="round"/>` : "";
   // One transparent wedge per axis, spanning the half-step either side of the
   // spoke, so the whole pie slice is hoverable rather than only the thin line.
   const hits = RADAR_AXES.map((ax, i) => {
@@ -4755,31 +5231,69 @@ function buildRadarSVG(champ, colorHex, ghost, ghostCol) {
       <text class="rd-rk" x="${cx}" y="${cy + 10}" text-anchor="middle" dominant-baseline="middle"
         font-size="6.5" font-weight="800" letter-spacing="0.7" fill="rgba(255,255,255,0.5)">${topAx.label}</text>
     </g>`;
-  // ---- HEAT FILL --------------------------------------------------------
-  // The shape is split into one triangle per pair of adjacent axes and each
-  // triangle is coloured by the value of those two axes. A single flat tint
-  // says "here is the shape"; this says WHICH PART of the shape is hot, which
-  // is the thing you actually want from a five-axis chart at 112px. A champion
-  // strong on damage and mobility and weak everywhere else now reads at a
-  // glance instead of needing the outline traced by eye.
+  // Stable per-chart id for the gradient/filter defs below.
+  const uid = "r" + Math.abs(hashStr(champ.name + colorHex)).toString(36);
+  // ---- HEAT FIELD -------------------------------------------------------
+  // Five flat triangles was the first attempt and it looked exactly like five
+  // flat triangles -- hard seams on every spoke, and a colour that jumped
+  // rather than graded. This builds the field out of 60 thin wedges instead,
+  // interpolating BOTH the radius and the colour between adjacent axes, so the
+  // heat flows continuously around the chart. Each wedge is drawn as a stack of
+  // radial bands so the colour also cools toward the centre, which is what
+  // makes it read as a field rather than as a filled polygon.
+  // Team-tinted heat. A single universal ramp made both sides look identical at
+  // a glance, which defeats the point of a mirrored table -- you should be able
+  // to tell whose row you are reading without checking which side of the screen
+  // it is on. Blue runs deep navy -> cyan -> white-hot; red runs deep maroon ->
+  // orange -> white-hot. Both keep the same LUMINANCE curve, so "hot" reads the
+  // same on either side and the two are still directly comparable.
+  const isRed = colorHex === "#ff6b6a";
   const heatOf = (v) => {
-    // cold navy -> team gold -> hot orange, mapped over the 1-10 rating scale
-    const stops = [[0, 24, 52, 92], [4.5, 62, 96, 140], [6.5, 212, 175, 90], [8.2, 255, 154, 92], [10, 255, 92, 70]];
+    const stops = isRed
+      ? [[0, 42, 14, 26], [3.5, 96, 30, 44], [5.5, 168, 52, 60],
+         [7, 232, 88, 76], [8.5, 255, 146, 96], [10, 255, 216, 176]]
+      : [[0, 12, 34, 68], [3.5, 24, 78, 132], [5.5, 42, 132, 186],
+         [7, 79, 186, 232], [8.5, 128, 222, 250], [10, 224, 248, 255]];
     const x = Math.max(0, Math.min(10, v));
     let a = stops[0], b = stops[stops.length - 1];
-    for (let i = 0; i < stops.length - 1; i++) if (x >= stops[i][0] && x <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; break; }
+    for (let s = 0; s < stops.length - 1; s++) if (x >= stops[s][0] && x <= stops[s + 1][0]) { a = stops[s]; b = stops[s + 1]; break; }
     const f = b[0] === a[0] ? 0 : (x - a[0]) / (b[0] - a[0]);
-    return `rgb(${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)},${Math.round(a[3] + (b[3] - a[3]) * f)})`;
+    return [Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f), Math.round(a[3] + (b[3] - a[3]) * f)];
   };
-  const heatSectors = RADAR_AXES.map((ax, i) => {
-    const j = (i + 1) % n;
-    const v1 = Math.max(0, Math.min(10, radarValue(champ, ax.key)));
-    const v2 = Math.max(0, Math.min(10, radarValue(champ, RADAR_AXES[j].key)));
-    const p1 = pt(i, (v1 / 10) * maxR), p2 = pt(j, (v2 / 10) * maxR);
-    const mid = (v1 + v2) / 2;
-    return `<polygon class="rd-heat" data-ax="${i}" points="${cx},${cy} ${p1.join(",")} ${p2.join(",")}"
-      fill="${heatOf(mid)}" fill-opacity="${(0.30 + (mid / 10) * 0.45).toFixed(2)}" stroke="none"/>`;
-  }).join("");
+  const axV = RADAR_AXES.map((ax) => Math.max(0, Math.min(10, radarValue(champ, ax.key))));
+  const WEDGES = 60, BANDS = 5;
+  let heatSectors = "";
+  for (let s = 0; s < WEDGES; s++) {
+    const f0 = s / WEDGES, f1 = (s + 1) / WEDGES;
+    const at = (f) => {
+      const g = f * n, i0 = Math.floor(g) % n, i1 = (i0 + 1) % n, k = g - Math.floor(g);
+      // smoothstep between the two axes so the seam on each spoke disappears
+      const e = k * k * (3 - 2 * k);
+      return axV[i0] + (axV[i1] - axV[i0]) * e;
+    };
+    const vMid = at((f0 + f1) / 2);
+    const [r, gg, b] = heatOf(vMid);
+    const a0 = startAngle + f0 * Math.PI * 2, a1 = startAngle + f1 * Math.PI * 2;
+    const r0 = (at(f0) / 10) * maxR, r1 = (at(f1) / 10) * maxR;
+    for (let bd = 0; bd < BANDS; bd++) {
+      const lo = bd / BANDS, hi = (bd + 1) / BANDS;
+      const p1 = [cx + r0 * lo * Math.cos(a0), cy + r0 * lo * Math.sin(a0)];
+      const p2 = [cx + r0 * hi * Math.cos(a0), cy + r0 * hi * Math.sin(a0)];
+      const p3 = [cx + r1 * hi * Math.cos(a1), cy + r1 * hi * Math.sin(a1)];
+      const p4 = [cx + r1 * lo * Math.cos(a1), cy + r1 * lo * Math.sin(a1)];
+      // opacity climbs outward: cool and open in the middle, dense at the rim
+      // Opacity climbs steeply outward: the centre is almost clear, the rim is
+      // dense. A field that is bright in the middle fights the shape -- every
+      // champion looks like a hot dot with a faint outline, because the centre
+      // is the one place all five axes overlap. Pushing the density to the RIM
+      // means what you see is where the champion's ratings actually reach.
+      const op = (0.015 + 0.86 * Math.pow(hi, 2.3)) * (0.38 + 0.62 * (vMid / 10));
+      heatSectors += `<polygon points="${p1[0].toFixed(1)},${p1[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)} ${p3[0].toFixed(1)},${p3[1].toFixed(1)} ${p4[0].toFixed(1)},${p4[1].toFixed(1)}" fill="rgb(${r},${gg},${b})" fill-opacity="${op.toFixed(3)}" stroke="none"/>`;
+    }
+  }
+  // A slow highlight that travels around the rim, so a settled chart is never
+  // completely dead. Pure decoration, and the only pure decoration on it.
+  heatSectors += `<g class="rd-sweep"><path d="M ${cx} ${cy - maxR} A ${maxR} ${maxR} 0 0 1 ${(cx + maxR * Math.cos(-Math.PI / 2 + 1.1)).toFixed(1)} ${(cy + maxR * Math.sin(-Math.PI / 2 + 1.1)).toFixed(1)}" fill="none" stroke="url(#${uid}w)" stroke-width="3" stroke-linecap="round"/></g>`;
 
   // Fill and stroke are separate elements so they can animate independently:
   // the fill blooms outward from the centre while the outline draws itself
@@ -4791,20 +5305,29 @@ function buildRadarSVG(champ, colorHex, ghost, ghostCol) {
   // the shape is lit rather than drawn. The gradient must use
   // gradientUnits="userSpaceOnUse" -- an axis-aligned shape has a zero-area
   // bounding box on one dimension and objectBoundingBox gradients collapse.
-  const uid = "r" + Math.abs(hashStr(champ.name + colorHex)).toString(36);
-  return `<svg viewBox="0 0 124 112" width="115" height="104">
+  return `<svg viewBox="0 0 124 112" width="115" height="104" style="--ox:${cx}px;--oy:${cy}px">
       <defs>
+        <!-- Inverted deliberately. This gradient used to be brightest at the
+             centre, which pulled against the heat field underneath it and
+             turned every chart into a bright core with a vague edge. Both
+             layers now agree: clear in the middle, saturated at the rim. -->
         <radialGradient id="${uid}f" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
-          <stop offset="0" stop-color="${colorHex}" stop-opacity="0.62"/>
-          <stop offset="0.55" stop-color="${colorHex}" stop-opacity="0.30"/>
-          <stop offset="1" stop-color="${colorHex}" stop-opacity="0.10"/>
+          <stop offset="0" stop-color="${colorHex}" stop-opacity="0.03"/>
+          <stop offset="0.5" stop-color="${colorHex}" stop-opacity="0.16"/>
+          <stop offset="1" stop-color="${colorHex}" stop-opacity="0.42"/>
         </radialGradient>
         <radialGradient id="${uid}g" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
-          <stop offset="0" stop-color="${colorHex}" stop-opacity="0.20"/>
-          <stop offset="1" stop-color="${colorHex}" stop-opacity="0"/>
+          <stop offset="0" stop-color="${colorHex}" stop-opacity="0"/>
+          <stop offset="0.7" stop-color="${colorHex}" stop-opacity="0.07"/>
+          <stop offset="1" stop-color="${colorHex}" stop-opacity="0.16"/>
         </radialGradient>
+        <linearGradient id="${uid}w" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="0.5" stop-color="#fff" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
         <filter id="${uid}s" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2.4"/>
+          <feGaussianBlur stdDeviation="1.5"/>
         </filter>
         <filter id="${uid}b" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur stdDeviation="2.1" result="bl"/>
@@ -4814,7 +5337,11 @@ function buildRadarSVG(champ, colorHex, ghost, ghostCol) {
       <circle cx="${cx}" cy="${cy}" r="${maxR}" fill="url(#${uid}g)"/>
       ${rings}${spokes}
       ${ghostPoly}
-      <circle class="radar-pulse" cx="${cx}" cy="${cy}" r="${maxR}" fill="none" stroke="${colorHex}" stroke-width="1.6"/>
+      <g class="rd-rings">
+        <circle class="rd-ring" cx="${cx}" cy="${cy}" r="${maxR}" fill="none" stroke="${colorHex}" stroke-width="1.4"/>
+        <circle class="rd-ring" cx="${cx}" cy="${cy}" r="${maxR}" fill="none" stroke="${colorHex}" stroke-width="1.1"/>
+        <circle class="rd-ring" cx="${cx}" cy="${cy}" r="${maxR}" fill="none" stroke="${colorHex}" stroke-width="0.9"/>
+      </g>
       <g class="radar-data">
         <g class="rd-heatg" filter="url(#${uid}s)">${heatSectors}</g>
         <polygon class="radar-fill" points="${dataPts}" fill="url(#${uid}f)" stroke="none"/>
@@ -4864,444 +5391,19 @@ function wireRadarAxes() {
   });
 }
 
-// ---------------------------------------------------------------------------
-// THE RIFT
-//
-// Every other page in this app is a chart. This one is the map the game is
-// actually played on, with the draft laid onto it -- because "Blue is +1.8 in
-// bot lane" and "Blue owns the bottom half of the map, which is where four of
-// the seven drakes spawn" are the same fact, and only one of them is a plan.
-//
-// Nothing here is decoration except the terrain. Lane stroke colour is that
-// lane's control AT THE SCRUBBED MINUTE, computed from the two champions' own
-// power curves rather than from a static lane edge -- which is the point of
-// the scrubber: a lane that is blue at 8 minutes and red at 30 is a completely
-// different draft problem from one that is blue all game, and the flat
-// "Lane Edge" number cannot tell those apart.
-// ---------------------------------------------------------------------------
-const RIFT_GEO = {
-  // Blue base bottom-left, red base top-right, mid on the main diagonal and the
-  // river on the anti-diagonal -- Baron in the upper river, Drake in the lower.
-  lanes: {
-    Top: "M 74 452 L 74 116 Q 74 74 116 74 L 452 74",
-    Mid: "M 128 472 L 472 128",
-    ADC: "M 148 526 L 484 526 Q 526 526 526 484 L 526 148",
-  },
-  river: "M 470 470 L 130 130",
-  jungle: {
-    blueTop: { d: "M 96 430 L 96 150 L 300 150 L 150 300 L 150 430 Z", cx: 168, cy: 300, side: "blue", half: "top" },
-    blueBot: { d: "M 130 452 L 300 452 L 452 300 L 452 504 L 172 504 Z", cx: 300, cy: 432, side: "blue", half: "bot" },
-    redTop:  { d: "M 148 96 L 428 96 L 428 172 L 300 172 L 172 300 Z", cx: 300, cy: 168, side: "red", half: "top" },
-    redBot:  { d: "M 450 148 L 504 148 L 504 428 L 300 428 L 450 300 Z", cx: 432, cy: 300, side: "red", half: "bot" },
-  },
-  baron: { x: 212, y: 212 },
-  drake: { x: 388, y: 388 },
-  nexusBlue: { x: 68, y: 532 },
-  nexusRed: { x: 532, y: 68 },
-  // three turrets per lane per side, as a fraction along the lane path
-  turretT: [0.18, 0.33, 0.45, 0.55, 0.67, 0.82],
-};
-const RIFT_LANE_LABEL = { Top: "TOP", Mid: "MID", ADC: "BOT" };
-// Three sample points along each lane, used as heat-field anchors. Taken from
-// the lane paths themselves so they stay on the lane if the geometry changes.
-const RIFT_ANCHORS = {
-  Top: [[74, 360], [74, 150], [230, 74]],
-  Mid: [[190, 410], [300, 300], [410, 190]],
-  ADC: [[240, 526], [470, 526], [526, 260]],
-};
 
 // Control in one lane at one minute: the two champions' own power curves,
 // pushed through the same logistic the rest of the app uses. 0 = red owns it,
 // 100 = blue owns it.
-function riftLaneControl(blueChamps, redChamps, slot, t) {
-  const b = blueChamps[slot], r = redChamps[slot];
-  if (!b && !r) return 50;
-  if (!b) return 22;
-  if (!r) return 78;
-  const d = engine.champPowerAt(b, t) - engine.champPowerAt(r, t);
-  return 100 / (1 + Math.exp(-d * 0.30));
-}
-// Jungle influence on a half of the map: the jungler's own control, pulled
-// toward the two lanes that half actually touches, because a jungler's
-// presence bottom is worth little if both bottom lanes are lost.
-function riftJungleControl(blueChamps, redChamps, half, t) {
-  const jg = riftLaneControl(blueChamps, redChamps, 1, t);
-  const lanes = half === "top"
-    ? [riftLaneControl(blueChamps, redChamps, 0, t), riftLaneControl(blueChamps, redChamps, 2, t)]
-    : [riftLaneControl(blueChamps, redChamps, 3, t), riftLaneControl(blueChamps, redChamps, 4, t)];
-  return jg * 0.55 + ((lanes[0] + lanes[1]) / 2) * 0.45;
-}
-const riftTint = (v) => {
-  // v is 0-100 blue-ness. Kept deliberately desaturated in the middle so a
-  // genuinely even lane reads as neutral terrain rather than as a weak colour.
-  const k = (v - 50) / 50;
-  return k > 0
-    ? `rgba(79,195,247,${(0.30 + Math.abs(k) * 0.62).toFixed(2)})`
-    : `rgba(255,107,106,${(0.30 + Math.abs(k) * 0.62).toFixed(2)})`;
-};
 
-function buildRiftSVG(result, t) {
-  const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
-  const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
-  const G = RIFT_GEO;
-  let out = `<svg viewBox="0 0 600 600" id="rift-svg">
-    <defs>
-      <radialGradient id="rfBg" cx="0.5" cy="0.5" r="0.72">
-        <stop offset="0" stop-color="#0e1420"/><stop offset="1" stop-color="#070a11"/>
-      </radialGradient>
-      <linearGradient id="rfRiver" x1="470" y1="470" x2="130" y2="130" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stop-color="rgba(120,190,220,0.20)"/>
-        <stop offset="0.5" stop-color="rgba(150,215,240,0.30)"/>
-        <stop offset="1" stop-color="rgba(120,190,220,0.20)"/>
-      </linearGradient>
-      <linearGradient id="rfScale" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#ff6b6a"/><stop offset="0.5" stop-color="rgba(255,255,255,0.25)"/><stop offset="1" stop-color="#4fc3f7"/>
-      </linearGradient>
-      <filter id="rfHeat" x="-15%" y="-15%" width="130%" height="130%">
-        <feGaussianBlur stdDeviation="26"/>
-      </filter>
-      <filter id="rfGlow" x="-40%" y="-40%" width="180%" height="180%">
-        <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-    </defs>
-    <rect x="0" y="0" width="600" height="600" rx="14" fill="url(#rfBg)"/>
-    <g opacity="0.10">${Array.from({ length: 11 }, (_, i) => {
-      const v = 54.5 * (i + 1);
-      return `<line x1="${v}" y1="0" x2="${v}" y2="600" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>`
-           + `<line x1="0" y1="${v}" x2="600" y2="${v}" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>`;
-    }).join("")}</g>`;
 
-  // ---- HEAT FIELD ------------------------------------------------------
-  // A real interpolated field, not a decorative gradient. Control is known at a
-  // handful of anchor points -- three points along each lane, the four jungle
-  // quadrant centres, and the two objective pits -- and every cell of a 16x16
-  // grid takes an inverse-square-distance weighted average of those anchors.
-  // The result is then blurred, so what you see is where each team's control is
-  // CONCENTRATED rather than five disconnected coloured lines. Alpha carries
-  // certainty: a cell that reads 50/50 is nearly transparent, so the map only
-  // shows colour where the draft actually says something.
-  const anchors = [];
-  ["Top", "Mid", "ADC"].forEach((lane) => {
-    const slot = lane === "Top" ? 0 : lane === "Mid" ? 2 : 3;
-    const v = riftLaneControl(bC, rC, slot, t);
-    (RIFT_ANCHORS[lane] || []).forEach((pnt) => anchors.push({ x: pnt[0], y: pnt[1], v, w: 1 }));
-  });
-  Object.values(G.jungle).forEach((q) => {
-    anchors.push({ x: q.cx, y: q.cy, v: riftJungleControl(bC, rC, q.half, t), w: 1.15 });
-  });
-  anchors.push({ x: G.baron.x, y: G.baron.y, v: riftJungleControl(bC, rC, "top", t), w: 1.3 });
-  anchors.push({ x: G.drake.x, y: G.drake.y, v: riftJungleControl(bC, rC, "bot", t), w: 1.3 });
-  // bases are unambiguously owned -- without them the corners read as neutral
-  anchors.push({ x: G.nexusBlue.x, y: G.nexusBlue.y, v: 88, w: 1.5 });
-  anchors.push({ x: G.nexusRed.x, y: G.nexusRed.y, v: 12, w: 1.5 });
 
-  const N = 22, cell = 600 / N;
-  let heat = `<g class="rf-heat" filter="url(#rfHeat)">`;
-  for (let gy = 0; gy < N; gy++) {
-    for (let gx = 0; gx < N; gx++) {
-      const px = gx * cell + cell / 2, py = gy * cell + cell / 2;
-      let num = 0, den = 0;
-      for (const a of anchors) {
-        const d2 = (a.x - px) ** 2 + (a.y - py) ** 2;
-        const wgt = a.w / (d2 + 6400);
-        num += a.v * wgt; den += wgt;
-      }
-      const v = den ? num / den : 50;
-      const k = Math.abs(v - 50) / 50;
-      if (k < 0.02) continue;
-      const col = v > 50 ? "79,195,247" : "255,107,106";
-      heat += `<rect x="${(gx * cell).toFixed(1)}" y="${(gy * cell).toFixed(1)}" width="${cell.toFixed(1)}" height="${cell.toFixed(1)}" fill="rgba(${col},${(k * 0.55).toFixed(3)})"/>`;
-    }
-  }
-  heat += `</g>`;
-  out += heat;
-
-  // Jungle: hover targets only. These used to be drawn polygons, and that was
-  // the single worst thing on the map -- four hand-cut shapes that overlapped
-  // each other and the lanes, reading as opaque slabs laid over the terrain.
-  // The heat field already shows jungle control far better than a flat fill
-  // could, so all these have to be now is somewhere to point.
-  Object.entries(G.jungle).forEach(([k, q]) => {
-    out += `<circle class="rf-jg" data-kind="jg" data-key="${k}" cx="${q.cx}" cy="${q.cy}" r="52"
-      fill="transparent" stroke="none"><title>${q.side} ${q.half} jungle</title></circle>`;
-  });
-  // river
-  out += `<path d="${G.river}" fill="none" stroke="url(#rfRiver)" stroke-width="34" stroke-linecap="round"/>`;
-  out += `<path d="${G.river}" fill="none" stroke="rgba(180,225,245,0.16)" stroke-width="1.5" stroke-dasharray="6 9"/>`;
-
-  // lanes
-  ["Top", "Mid", "ADC"].forEach((lane, li) => {
-    const slot = lane === "Top" ? 0 : lane === "Mid" ? 2 : 3;
-    const v = riftLaneControl(bC, rC, slot, t);
-    out += `<path class="rf-lane" data-kind="lane" data-slot="${slot}" data-lane="${lane}" d="${G.lanes[lane]}"
-      fill="none" stroke="${riftTint(v)}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"
-      stroke-dasharray="900" style="animation-delay:${stg(li, 140, 100)}ms"/>`;
-    out += `<path class="rf-lane-hit" data-kind="lane" data-slot="${slot}" data-lane="${lane}" d="${G.lanes[lane]}"
-      fill="none" stroke="transparent" stroke-width="30" stroke-linecap="round"/>`;
-  });
-  // turrets, drawn on the lane paths by walking each path
-  out += `<g class="rf-tur">`;
-  ["Top", "Mid", "ADC"].forEach((lane) => {
-    const slot = lane === "Top" ? 0 : lane === "Mid" ? 2 : 3;
-    const v = riftLaneControl(bC, rC, slot, t);
-    G.turretT.forEach((f, i) => {
-      const owner = i < 3 ? "blue" : "red";
-      // a turret is "pressured" when the other side owns that lane right now
-      const pressured = owner === "blue" ? v < 42 : v > 58;
-      const col = owner === "blue" ? "#4fc3f7" : "#ff6b6a";
-      out += `<circle class="rf-t" data-lane="${lane}" data-f="${f}" r="${pressured ? 5.5 : 4}"
-        fill="${pressured ? col : "rgba(10,14,22,0.9)"}" stroke="${col}" stroke-width="1.6"
-        opacity="${pressured ? 1 : 0.62}"/>`;
-    });
-  });
-  out += `</g>`;
-
-  // objective pits
-  const dkB = result.drakes && result.drakes.blue, dkR = result.drakes && result.drakes.red;
-  const soul = dkB ? dkB.slice().sort((a, b) => b.affinity - a.affinity)[0] : null;
-  const drakeCtl = riftJungleControl(bC, rC, "bot", t);
-  const baronCtl = riftJungleControl(bC, rC, "top", t);
-  const pit = (o, label, ctl, key) => `<g class="rf-pit" data-kind="pit" data-key="${key}">
-      <circle cx="${o.x}" cy="${o.y}" r="26" fill="${riftTint(ctl)}" fill-opacity="0.28" filter="url(#rfGlow)"/>
-      <circle cx="${o.x}" cy="${o.y}" r="19" fill="rgba(8,12,20,0.85)" stroke="${riftTint(ctl)}" stroke-width="2.4"/>
-      <text x="${o.x}" y="${o.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="8.5"
-        font-weight="900" letter-spacing="0.4" fill="rgba(255,255,255,0.9)">${label}</text>
-      <text x="${o.x}" y="${o.y + 13}" text-anchor="middle" dominant-baseline="middle" font-size="7"
-        font-weight="800" fill="${ctl >= 50 ? "#9bdcff" : "#ffb3b2"}">${ctl.toFixed(0)}%</text>
-    </g>`;
-  out += pit(G.baron, "BARON", baronCtl, "baron");
-  out += pit(G.drake, "DRAKE", drakeCtl, "drake");
-
-  // nexuses
-  [[G.nexusBlue, "#4fc3f7", "blue"], [G.nexusRed, "#ff6b6a", "red"]].forEach(([o, col, side]) => {
-    out += `<g class="rf-nexus"><circle cx="${o.x}" cy="${o.y}" r="30" fill="${col}" opacity="0.14" filter="url(#rfGlow)"/>
-      <circle cx="${o.x}" cy="${o.y}" r="17" fill="rgba(8,12,20,0.9)" stroke="${col}" stroke-width="2.6"/>
-      <circle cx="${o.x}" cy="${o.y}" r="7" fill="${col}" opacity="0.85"/></g>`;
-  });
-  // Champion markers, placed where that role actually stands rather than
-  // evenly around the frame -- top on the top lane, the bot duo together at the
-  // bottom, junglers in their own half. Positions are chosen to clear the two
-  // objective pits, which is why bot sits inside the lane corner rather than on
-  // the diagonal.
-  const markers = [
-    { slot: 0, x: 74,  y: 318, side: "blue" }, { slot: 0, x: 318, y: 74,  side: "red" },
-    { slot: 1, x: 176, y: 336, side: "blue" }, { slot: 1, x: 424, y: 264, side: "red" },
-    { slot: 2, x: 206, y: 394, side: "blue" }, { slot: 2, x: 394, y: 206, side: "red" },
-    { slot: 3, x: 286, y: 526, side: "blue" }, { slot: 3, x: 526, y: 286, side: "red" },
-    { slot: 4, x: 344, y: 492, side: "blue" }, { slot: 4, x: 492, y: 344, side: "red" },
-  ];
-  markers.forEach((m) => {
-    const ch = (m.side === "blue" ? bC : rC)[m.slot];
-    if (!ch) return;
-    const col = m.side === "blue" ? "#4fc3f7" : "#ff6b6a";
-    const lc = riftLaneControl(bC, rC, m.slot, t);
-    const owns = m.side === "blue" ? lc >= 55 : lc <= 45;
-    out += `<g class="rf-mk" data-kind="champ" data-slot="${m.slot}" data-side="${m.side}" style="cursor:pointer">
-      ${owns ? `<circle cx="${m.x}" cy="${m.y}" r="20" fill="${col}" opacity="0.16"/>` : ""}
-      <circle cx="${m.x}" cy="${m.y}" r="13.5" fill="rgba(7,11,19,0.94)" stroke="${col}" stroke-width="${owns ? 2.4 : 1.5}" opacity="${owns ? 1 : 0.78}"/>
-      <text x="${m.x}" y="${m.y + 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="7.5"
-        font-weight="900" letter-spacing="-0.2" fill="${col}">${ch.name.slice(0, 3).toUpperCase()}</text>
-      <title>${ch.name} - ${ROLES[m.slot]} - ${(m.side === "blue" ? lc : 100 - lc).toFixed(0)}% of this lane</title></g>`;
-  });
-  out += `<rect x="0" y="0" width="600" height="600" rx="14" fill="none" stroke="rgba(212,175,90,0.24)" stroke-width="1.5"/>
-    <g class="rf-legend">
-      <rect x="14" y="14" width="128" height="30" rx="8" fill="rgba(6,10,18,0.72)" stroke="rgba(255,255,255,0.09)"/>
-      <text x="22" y="27" font-size="7.5" font-weight="800" letter-spacing="0.8" fill="rgba(255,255,255,0.5)">MAP CONTROL</text>
-      <rect x="22" y="31" width="112" height="7" rx="3.5" fill="url(#rfScale)"/>
-      <text x="22" y="46" font-size="6.5" font-weight="700" fill="#ff6b6a">RED</text>
-      <text x="134" y="46" font-size="6.5" font-weight="700" fill="#4fc3f7" text-anchor="end">BLUE</text>
-    </g></svg>`;
-  return out;
-}
 
 
 // Rift painting + interaction. Kept out of renderPhaseModal so the scrubber can
 // repaint on its own without recomputing the entire draft 40 times a second.
-function paintRift(t) {
-  const result = window.__riftResult;
-  if (!result) return;
-  window.__riftT = t;
-  const stage = document.getElementById("rift-stage");
-  if (!stage) return;
-  stage.innerHTML = buildRiftSVG(result, t);
-  placeRiftTurrets();
-  const tv = document.getElementById("rift-tval");
-  if (tv) tv.textContent = t + ":00";
-  const rng = document.getElementById("rift-time");
-  if (rng && +rng.value !== t) rng.value = t;
 
-  const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
-  const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
-  const ctl = ROLES.map((role, i) => ({ role, i, v: riftLaneControl(bC, rC, i, t) }));
-  const topHalf = riftJungleControl(bC, rC, "top", t);
-  const botHalf = riftJungleControl(bC, rC, "bot", t);
 
-  document.getElementById("rift-control").innerHTML =
-    ctl.map((x, i) => `<div class="rc-row" style="animation-delay:${stg(i, 120, 60)}ms">
-        <div class="rc-k">${(RIFT_LANE_LABEL[x.role] || x.role).toUpperCase()}</div>
-        <div class="rc-track"><div class="rc-b" style="width:${x.v.toFixed(1)}%"></div><div class="rc-r" style="width:${(100 - x.v).toFixed(1)}%"></div></div>
-        <div class="rc-v" style="color:${x.v >= 50 ? "var(--blue-main)" : "var(--red-main)"}">${x.v.toFixed(0)}%</div>
-      </div>`).join("")
-    + `<div class="rc-row" style="margin-top:5px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">
-        <div class="rc-k" style="color:var(--gold-bright)">TOP&nbsp;½</div>
-        <div class="rc-track"><div class="rc-b" style="width:${topHalf.toFixed(1)}%"></div><div class="rc-r" style="width:${(100 - topHalf).toFixed(1)}%"></div></div>
-        <div class="rc-v" style="color:${topHalf >= 50 ? "var(--blue-main)" : "var(--red-main)"}">${topHalf.toFixed(0)}%</div></div>
-      <div class="rc-row">
-        <div class="rc-k" style="color:var(--gold-bright)">BOT&nbsp;½</div>
-        <div class="rc-track"><div class="rc-b" style="width:${botHalf.toFixed(1)}%"></div><div class="rc-r" style="width:${(100 - botHalf).toFixed(1)}%"></div></div>
-        <div class="rc-v" style="color:${botHalf >= 50 ? "var(--blue-main)" : "var(--red-main)"}">${botHalf.toFixed(0)}%</div></div>`;
-
-  // Verdict: the map's own reading, not a restatement of the win probability.
-  const owned = ctl.filter((x) => x.v > 56).length, lost = ctl.filter((x) => x.v < 44).length;
-  const half = Math.abs(topHalf - botHalf) > 6
-    ? `Control is lopsided: <b>${topHalf > botHalf ? "the top half" : "the bottom half"}</b> is the stronger side of the map at this minute`
-    : "Control is even across both halves of the map";
-  const objLine = botHalf >= 55 ? "Blue should be taking drakes uncontested" : botHalf <= 45 ? "Red should be taking drakes uncontested"
-    : "Every drake is a real fight";
-  const baronLine = topHalf >= 55 ? "Blue can set up Baron vision" : topHalf <= 45 ? "Red can set up Baron vision" : "Neither side owns the Baron approach";
-  const wp = result.curve && result.curve.series ? result.curve.series[Math.min(t, result.curve.series.length - 1)] : null;
-  document.getElementById("rift-verdict").innerHTML =
-    `At minute <b>${t}</b>, Blue holds <b>${owned}</b> of five lanes and is behind in <b>${lost}</b>. ${half}. `
-    + `${objLine}; ${baronLine}. `
-    + (wp != null ? `The model reads the game at <b>${(typeof wp === "number" ? wp : wp.v).toFixed(1)}%</b> for Blue here.` : "");
-
-  if (!document.getElementById("rift-read").innerHTML) riftReadDefault();
-}
-
-// Turrets are positioned by walking the real lane path, so they always sit ON
-// the lane no matter how the geometry is edited later.
-function placeRiftTurrets() {
-  const svg = document.getElementById("rift-svg");
-  if (!svg || !svg.querySelector) return;
-  const paths = {};
-  svg.querySelectorAll(".rf-lane").forEach((p) => { paths[p.dataset.lane] = p; });
-  svg.querySelectorAll(".rf-t").forEach((t) => {
-    const p = paths[t.dataset.lane];
-    if (!p || !p.getTotalLength) return;
-    let L = 0;
-    try { L = p.getTotalLength(); } catch (e) { return; }
-    if (!L) return;
-    const pt = p.getPointAtLength(L * parseFloat(t.dataset.f));
-    t.setAttribute("cx", pt.x); t.setAttribute("cy", pt.y);
-  });
-}
-
-function riftReadDefault() {
-  const el = document.getElementById("rift-read");
-  if (!el) return;
-  el.innerHTML = `<div class="rr-hd"><span class="rr-t">THE MAP</span><span class="rr-sub">hover a lane, jungle or pit</span></div>
-    <div class="rr-body">Lane colour is who owns that lane at the scrubbed minute, computed from both champions&rsquo; own power curves &mdash; not from a flat lane-edge number. A lane that is blue at minute 8 and red at minute 30 is a different draft problem from one that is blue all game, and this is where that shows.</div>`;
-}
-
-function wireRift() {
-  const stage = document.getElementById("rift-stage");
-  if (!stage || stage.dataset.wired) return;
-  stage.dataset.wired = "1";
-  const read = document.getElementById("rift-read");
-  const focus = (el, on) => {
-    const svg = document.getElementById("rift-svg");
-    if (!svg) return;
-    svg.classList.toggle("focus", on);
-    svg.querySelectorAll(".rf-lane, .rf-jg, .rf-pit").forEach((n) => n.classList.remove("on"));
-    if (!on || !el) return;
-    if (el.dataset.kind === "lane") {
-      svg.querySelectorAll(`.rf-lane[data-lane="${el.dataset.lane}"]`).forEach((n) => n.classList.add("on"));
-    } else if (el.dataset.kind === "jg") {
-      svg.querySelector(`.rf-jg[data-key="${el.dataset.key}"]`).classList.add("on");
-    } else if (el.dataset.kind === "pit") {
-      svg.querySelector(`.rf-pit[data-key="${el.dataset.key}"]`).classList.add("on");
-    }
-  };
-  stage.addEventListener("mouseover", (ev) => {
-    const el = ev.target.closest && ev.target.closest("[data-kind]");
-    if (!el) return;
-    focus(el, true);
-    read.innerHTML = riftDetail(el, window.__riftT == null ? 15 : window.__riftT);
-  });
-  stage.addEventListener("mouseleave", () => { focus(null, false); riftReadDefault(); });
-
-  const rng = document.getElementById("rift-time");
-  if (rng && !rng.dataset.wired) {
-    rng.dataset.wired = "1";
-    rng.addEventListener("input", () => paintRift(+rng.value));
-  }
-  const play = document.getElementById("rift-play");
-  if (play && !play.dataset.wired) {
-    play.dataset.wired = "1";
-    play.addEventListener("click", () => {
-      if (window.__riftTimer) { clearInterval(window.__riftTimer); window.__riftTimer = null; play.innerHTML = "&#9654; PLAY"; return; }
-      play.innerHTML = "&#10074;&#10074; STOP";
-      let t = 0;
-      window.__riftTimer = setInterval(() => {
-        paintRift(t);
-        t += 1;
-        if (t > 40) { clearInterval(window.__riftTimer); window.__riftTimer = null; play.innerHTML = "&#9654; PLAY"; }
-      }, 130);
-    });
-  }
-}
-
-function riftDetail(el, t) {
-  const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
-  const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
-  const result = window.__riftResult;
-  const kind = el.dataset.kind;
-  if (kind === "lane" || kind === "champ") {
-    const slot = +el.dataset.slot;
-    const b = bC[slot], r = rC[slot];
-    const v = riftLaneControl(bC, rC, slot, t);
-    // when does this lane change hands?
-    let flip = null, best = { t: 0, v: 50 };
-    for (let m = 0; m <= 40; m++) {
-      const x = riftLaneControl(bC, rC, slot, m);
-      if (flip === null && m > 0 && (riftLaneControl(bC, rC, slot, m - 1) - 50) * (x - 50) < 0) flip = m;
-      if (Math.abs(x - 50) > Math.abs(best.v - 50)) best = { t: m, v: x };
-    }
-    const row = result && result.blue.rows[slot];
-    return `<div class="rr-hd"><span class="rr-t">${(RIFT_LANE_LABEL[ROLES[slot]] || ROLES[slot]).toUpperCase()} LANE</span>
-        <span class="rr-sub">minute ${t}</span></div>
-      <div class="rr-vs">
-        <span class="rr-nm" style="color:var(--blue-main)">${b ? b.name : "&mdash;"}</span>
-        <span class="rr-pill">${v.toFixed(0)}% &ndash; ${(100 - v).toFixed(0)}%</span>
-        <span class="rr-nm r" style="color:var(--red-main)">${r ? r.name : "&mdash;"}</span>
-      </div>
-      <div class="rr-body">
-        ${b && r ? `Strongest for <b>${best.v >= 50 ? (b ? b.name : "Blue") : (r ? r.name : "Red")}</b> at minute <b>${best.t}</b> (${Math.abs(best.v - 50).toFixed(0)} points clear).
-        ${flip ? `The lane changes hands at <b>minute ${flip}</b>.` : "It never changes hands."}` : "Both sides need a pick in this slot."}
-        ${row && !row.empty ? ` Lane edge <b>${row.laneEdge > 0 ? "+" : ""}${row.laneEdge.toFixed(1)}</b> points of team win probability.` : ""}
-      </div>`;
-  }
-  if (kind === "jg") {
-    const q = RIFT_GEO.jungle[el.dataset.key];
-    const v = riftJungleControl(bC, rC, q.half, t);
-    const jb = bC[1], jr = rC[1];
-    return `<div class="rr-hd"><span class="rr-t">${q.side.toUpperCase()} ${q.half.toUpperCase()} JUNGLE</span><span class="rr-sub">minute ${t}</span></div>
-      <div class="rr-vs">
-        <span class="rr-nm" style="color:var(--blue-main)">${jb ? jb.name : "&mdash;"}</span>
-        <span class="rr-pill">${v.toFixed(0)}%</span>
-        <span class="rr-nm r" style="color:var(--red-main)">${jr ? jr.name : "&mdash;"}</span>
-      </div>
-      <div class="rr-body">Jungle control here is the jungler&rsquo;s own read weighted 55/45 against the two lanes this half of the map touches &mdash; a jungler winning his matchup is worth little on a half where both lanes are losing.
-        ${v >= 56 ? " Blue should be taking this side&rsquo;s camps and vision." : v <= 44 ? " Red should be taking this side&rsquo;s camps and vision." : " Neither side owns it; expect it to be contested."}</div>`;
-  }
-  if (kind === "pit") {
-    const isBaron = el.dataset.key === "baron";
-    const v = riftJungleControl(bC, rC, isBaron ? "top" : "bot", t);
-    const dk = result && result.drakes;
-    const topB = dk && dk.blue ? dk.blue.slice().sort((a, b) => b.affinity - a.affinity)[0] : null;
-    const topR = dk && dk.red ? dk.red.slice().sort((a, b) => b.affinity - a.affinity)[0] : null;
-    return `<div class="rr-hd"><span class="rr-t">${isBaron ? "BARON PIT" : "DRAKE PIT"}</span><span class="rr-sub">minute ${t}</span></div>
-      <div class="rr-vs">
-        <span class="rr-nm" style="color:var(--blue-main)">BLUE</span>
-        <span class="rr-pill">${v.toFixed(0)}% &ndash; ${(100 - v).toFixed(0)}%</span>
-        <span class="rr-nm r" style="color:var(--red-main)">RED</span>
-      </div>
-      <div class="rr-body">${isBaron
-        ? `Baron is decided by the top half of the map, and it spawns at 20:00. ${t < 20 ? `Still <b>${20 - t} minutes</b> away.` : v >= 55 ? "Blue owns the approach." : v <= 45 ? "Red owns the approach." : "The approach is contested &mdash; expect a fight rather than a free take."}`
-        : `Four of the seven drakes decide the soul. ${topB && topR ? `Blue gains most from <b>${topB.name}</b>, Red from <b>${topR.name}</b>.` : ""} ${v >= 55 ? " Blue can take them uncontested." : v <= 45 ? " Red can take them uncontested." : " Every spawn is a real fight."}`}</div>`;
-  }
-  return "";
-}
 
 // Tab bars gain arrow-key navigation and a transient `moving` class so the ink
 // pill can catch light while it travels. Delegated once for both bars.
@@ -5459,7 +5561,11 @@ function renderRow(tbody, side, row, changed, opts) {
         const foeCh = foeName ? engine.findChampion(foeName) : null;
         wrap.innerHTML = buildRadarSVG(champ, colorHex, foeCh,
           side === "blue" ? "rgba(255,107,106,0.62)" : "rgba(79,195,247,0.62)");
-        wrap.title = radarTooltip(champ);
+        // No `title` here. A native tooltip is drawn by the OS on top of
+        // everything, cannot be styled, and appears exactly where the
+        // magnifier is trying to render -- so the browser's white box was
+        // covering the panel built to replace it. The magnifier carries all of
+        // this information already.
       }
       td.appendChild(wrap);
     } else {
@@ -5530,10 +5636,378 @@ function renderTotalRow(side, totals, mvp) {
 // animations only play for the slot you just touched.
 let prevPickState = { blue: ["", "", "", "", ""], red: ["", "", "", "", ""] };
 
+// ---------------------------------------------------------------------------
+// LIVE GAME
+//
+// Polls /live, which only exists when scry-live.py is serving this page. On the
+// hosted site the endpoint is absent, the first fetch fails, and the whole
+// feature switches itself off permanently -- so this costs nothing and shows
+// nothing to anyone not running the helper.
+//
+// It will not overwrite a draft you are editing by hand: the fill only happens
+// when the detected game differs from what is already on screen, and a manual
+// edit made after a fill suppresses further fills until the next game.
+// ---------------------------------------------------------------------------
+function initLiveGame() {
+  if (window.__liveInit) return;
+  window.__liveInit = true;
+  // No fetch, nothing to poll. Guarding here rather than letting the first
+  // call throw matters: the throw happens inside an async function, so it
+  // surfaces as an unhandled rejection rather than an error anyone can see,
+  // and it took down page startup in a headless environment without printing
+  // anything at all. A feature that cannot run should switch itself off, not
+  // fail loudly somewhere else.
+  if (typeof fetch !== "function") return;
+  let strikes = 0, lastSig = null, suppressed = false;
+
+  const badge = document.createElement("div");
+  badge.id = "live-badge";
+  badge.innerHTML = '<span class="lb-dot"></span><span class="lb-txt">LIVE GAME</span>';
+  document.body.appendChild(badge);
+
+  const show = (on, txt) => {
+    badge.classList.toggle("on", !!on);
+    if (txt) badge.querySelector(".lb-txt").textContent = txt;
+  };
+
+  async function tick() {
+    let s;
+    try {
+      if (typeof fetch !== "function") { show(false); return; }
+      const r = await fetch("live", { cache: "no-store" });
+      if (!r.ok) throw new Error("no helper");
+      s = await r.json();
+      strikes = 0;
+    } catch (e) {
+      // Not being served by the helper is the normal case, not an error.
+      if (++strikes >= 2) { show(false); return; }
+      return;
+    }
+    if (!s.active) { show(false); lastSig = null; suppressed = false; return; }
+
+    const sig = s.blue.join("|") + "//" + s.red.join("|");
+    const cur = state.blue.join("|") + "//" + state.red.join("|");
+    const mins = Math.floor((s.gameTime || 0) / 60);
+    show(true, "LIVE \u00b7 " + mins + ":" + String(Math.floor((s.gameTime || 0) % 60)).padStart(2, "0"));
+
+    if (sig === lastSig) return;          // same game, already loaded
+    if (sig === cur) { lastSig = sig; return; }
+    if (suppressed && lastSig) return;    // user edited by hand after a fill
+
+    // Only accept champions this build actually knows, so a new release Riot
+    // ships before the roster is updated cannot blank a slot silently.
+    const clean = (arr) => arr.map((n) => (n && engine.findChampion(n) ? n : ""));
+    state.blue = clean(s.blue);
+    state.red = clean(s.red);
+    lastSig = sig;
+    syncPicksToInputs();
+    recompute();
+    savePicks();
+    badge.classList.add("flash");
+    setTimeout(() => badge.classList.remove("flash"), 900);
+  }
+  tick();
+  setInterval(tick, 2500);
+  // A manual edit after an auto-fill means the reader wants their own draft.
+  document.addEventListener("input", (ev) => {
+    if (ev.target && ev.target.classList && ev.target.classList.contains("pick-input")) suppressed = true;
+  }, true);
+}
+
+// ---------------------------------------------------------------------------
+// MATCH IMPORT
+//
+// Only appears when scry-live.py is serving the page, because the fetch has to
+// happen outside the browser. The result is always PREVIEWED before it is
+// applied -- earlier versions of this feature filled the table silently and
+// were wrong often enough to be removed entirely. A preview makes a bad read
+// something you decline rather than something you discover later.
+// ---------------------------------------------------------------------------
+function initImport() {
+  if (window.__impInit) return;
+  window.__impInit = true;
+  const bar = document.getElementById("import-bar");
+  const input = document.getElementById("import-url");
+  const go = document.getElementById("import-go");
+  const msg = document.getElementById("import-msg");
+  const prev = document.getElementById("import-preview");
+  if (!bar || typeof fetch !== "function") return;
+
+// The page can tell exactly which of three situations it is in, so it should
+  // say so rather than reporting a generic "not responding". Almost every time
+  // this fails it is not because the helper crashed -- it is because the page
+  // being looked at was never served by the helper in the first place.
+// ---- Reading a gol.gg page in the browser -------------------------------
+  // The same rule the helper uses, running here instead. A gol.gg match page
+  // lists champions three times -- bans, picks in DRAFT order, and the two
+  // scoreboards in ROLE order -- and only a scoreboard row is a champion icon
+  // followed by a PLAYER link. Matching that pair is what separates the ten
+  // rows that matter from the twenty that do not, and it is why reading the
+  // "Picks" block gives a scrambled draft.
+  //
+  // Working on pasted source rather than a fetch is not a workaround, it is
+  // strictly more reliable: there is no request to be blocked, no proxy to go
+  // down, no CORS rule to satisfy, and it works identically on the hosted site,
+  // on the file opened directly, and on a phone.
+  function readGolggSource(text) {
+    const toks = [];
+    const icon = /champions_icon\/([A-Za-z0-9_'.]+)\.png/gi;
+    const play = /players\/player-stats\/\d+/gi;
+    let m;
+    while ((m = icon.exec(text))) toks.push({ k: "c", i: m.index, v: m[1] });
+    while ((m = play.exec(text))) toks.push({ k: "p", i: m.index });
+    toks.sort((a, b) => a.i - b.i);
+    const rows = [];
+    for (let a = 0; a < toks.length; a++) {
+      if (toks[a].k !== "c") continue;
+      for (let b = a + 1; b < toks.length; b++) {
+        if (toks[b].k === "c") break;
+        if (toks[b].k === "p") { rows.push(toks[a].v); break; }
+      }
+    }
+    if (rows.length !== 10) {
+      return { ok: false, reason: `found ${rows.length} scoreboard rows in that text, expected exactly 10.`,
+        hint: rows.length === 0
+          ? "That looks like the visible page text rather than its source. On the match page press <b>Ctrl+U</b> to show the source, then <b>Ctrl+A</b> and <b>Ctrl+C</b>, and paste here."
+          : "Make sure it is a game page &mdash; the URL should end in <b>/page-game/</b> &mdash; not a preview or a summary." };
+    }
+    return { ok: true, blue: rows.slice(0, 5), red: rows.slice(5), source: "pasted gol.gg source" };
+  }
+
+    function whereAmI() {
+    const p = location.protocol, h = location.hostname;
+    if (p === "file:") return "file";
+    if (h === "localhost" || h === "127.0.0.1") return "local";
+    return "hosted";
+  }
+  function helperAdvice() {
+    const w = whereAmI();
+    if (w === "file") {
+      return "<b>You opened index.html directly from the folder.</b> The address bar shows "
+        + "a path starting <b>file:///</b>, and a page opened that way has no helper behind it. "
+        + "<br>Double-click <b>Scry Live.bat</b> in this same folder, then use the tab it opens at "
+        + "<b>http://localhost:8777</b> &mdash; the import box works there. Keep the black window open.";
+    }
+    if (w === "hosted") {
+      return "<b>You are on the hosted site (" + location.hostname + ").</b> Importing has to fetch "
+        + "another website, which a browser is not allowed to do, so it only works on the copy served "
+        + "by the local helper. <br>Double-click <b>Scry Live.bat</b> in your <b>lol-analyzer-site</b> "
+        + "folder and use <b>http://localhost:8777</b> instead.";
+    }
+    return "<b>The helper is not answering.</b> The address is right, so scry-live.py has probably "
+      + "stopped &mdash; check the black window is still open, and restart <b>Scry Live.bat</b> if it closed.";
+  }
+
+    const openBtn = document.getElementById("import-open");
+  // Checked on EVERY open, not cached at startup. Someone who opens the page,
+  // realises they need the helper, starts it, and comes back would otherwise be
+  // told forever that it is not running.
+  const checkHelper = () => fetch("import", { cache: "no-store" })
+    .then((r) => !!r.ok).catch(() => false);
+
+  if (openBtn) {
+    openBtn.addEventListener("click", async () => {
+      const showing = bar.classList.toggle("on");
+      openBtn.classList.toggle("open", showing);
+      if (!showing) return;
+      say("Checking for the local helper&hellip;");
+      const helper = await checkHelper();
+      if (helper) {
+        say("Paste a <b>gol.gg</b> match link and press Enter.");
+        input.focus();
+      } else {
+        // Opened from disk, a link can never work: the page has no web address,
+        // so its requests carry no origin and every relay refuses them. Saying
+        // that up front is better than letting someone paste and wait.
+        if (location.protocol === "file:") {
+          say("<b>Links cannot be fetched from a file.</b> This page was opened straight from the "
+            + "folder, so it has no web address and relay services refuse its requests &mdash; "
+            + "that is a browser rule, not something this page can work around."
+            + "<br><b>Open <a href=\"https://captainkar.github.io/Scry/\" target=\"_blank\" "
+            + "style=\"color:var(--gold-bright)\">captainkar.github.io/Scry</a> instead</b> and links "
+            + "will just work, every time, with nothing running."
+            + "<br><span style=\"opacity:.75\">Or right now, without leaving: open the match page, "
+            + "press <b>Ctrl+U</b>, then <b>Ctrl+A</b> and <b>Ctrl+C</b>, and paste that below.</span>", true);
+          input.focus();
+          return;
+        }
+        say("Paste a <b>gol.gg</b> match link and press Enter."
+          + "<br><span style=\"opacity:.7\">op.gg, u.gg, your.gg and mobalytics cannot be read by "
+          + "anything &mdash; they build their pages inside your browser, so the page itself contains "
+          + "no champions.</span>");
+        input.focus();
+      }
+    });
+  }
+
+  // Riot's icon filenames are not display names (LeeSin, TwistedFate, Kha'Zix
+  // as Khazix). The roster already carries that mapping as splashId, so it is
+  // used rather than maintaining a second list that could drift.
+  const bySplash = {};
+  engine.CHAMPIONS().forEach((ch) => { bySplash[String(ch.splashId).toLowerCase()] = ch.name; });
+  const resolve = (icon) => {
+    if (!icon) return null;
+    const k = String(icon).toLowerCase();
+    if (bySplash[k]) return bySplash[k];
+    const direct = engine.findChampion(icon);
+    return direct ? direct.name : null;
+  };
+
+  const say = (t, bad) => { msg.innerHTML = t || ""; msg.classList.toggle("bad", !!bad); };
+
+  async function run() {
+    const raw = (input.value || "").trim();
+    prev.innerHTML = "";
+    if (!raw) { say("Paste a gol.gg match link first.", true); return; }
+
+    // Pasted source is anything that carries the markers of a real page. It is
+    // tried FIRST, because it needs nothing at all -- no helper, no server, no
+    // network -- and therefore cannot fail for reasons outside this page.
+    const looksLikeSource = /champions_icon\/|player-stats\//i.test(raw);
+    // Refuse the JavaScript-rendered sites up front rather than fetching them
+    // and reporting a confusing "0 rows": their HTML genuinely has no
+    // champions in it, so no relay and no helper can help.
+    const JS_ONLY = { "op.gg": 1, "u.gg": 1, "your.gg": 1, "mobalytics.gg": 1, "porofessor.gg": 1 };
+    if (!looksLikeSource) {
+      const host = (raw.match(/^https?:\/\/([^/]+)/i) || [])[1] || "";
+      const bare = host.replace(/^www\./, "").toLowerCase();
+      const hit = Object.keys(JS_ONLY).find((k) => bare.endsWith(k));
+      if (hit) {
+        say("<b>" + hit + " builds its pages inside your browser</b>, so the page itself contains "
+          + "no champions at all &mdash; there is nothing for anything to read. "
+          + "<b>gol.gg</b> match pages work; for your own games, use the live auto-fill instead.", true);
+        return;
+      }
+    }
+    let d;
+    if (looksLikeSource) {
+      go.disabled = true; say("Reading the pasted page&hellip;");
+      d = readGolggSource(raw);
+      go.disabled = false;
+    } else {
+      const url = raw.split(/\s+/)[0];
+      if (!/^https?:\/\//i.test(url)) {
+        say("That does not look like a link. Copy the address of a <b>gol.gg</b> match page "
+          + "&mdash; it ends in <b>/page-game/</b> &mdash; and paste it here.", true);
+        return;
+      }
+      go.disabled = true;
+      d = null;
+
+      // 1. the local helper, if this page is being served by it. Fastest and
+      //    most private -- the request never leaves the machine except to
+      //    gol.gg itself.
+      try {
+        say("Fetching that page&hellip;");
+        const r = await fetch("import?url=" + encodeURIComponent(url), { cache: "no-store" });
+        const j = await r.json();
+        if (j && (j.ok || j.reason)) d = j;
+      } catch (e) { /* no helper here -- fall through */ }
+
+      // 2. a public CORS relay. A browser may not read another site directly,
+      //    but it may read a service that has said "anyone can read me", and
+      //    that service can. This is what makes a plain link work on the hosted
+      //    site with nothing installed.
+      //
+      //    Two are tried because one being down or rate-limited should not end
+      //    the attempt. Only public esports pages are ever sent, and only the
+      //    URL you paste -- but it IS a third party seeing that URL, which is
+      //    why the offline paste route is kept and recommended for anyone who
+      //    would rather nothing left their machine.
+      const relayLog = [];
+      if (!d || (!d.ok && !d.blue)) {
+        // Several relays, because any one of them can be down, rate-limited, or
+        // blocked on a given network. Each failure is RECORDED rather than
+        // swallowed -- "could not reach that page" with no detail is impossible
+        // to act on, and the cause is usually specific and fixable.
+        const relays = [
+          ["allorigins", (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)],
+          ["codetabs",   (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u)],
+          ["corsproxy",  (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u)],
+          ["isomorphic", (u) => "https://cors.isomorphic-git.org/" + u.replace(/^https?:\/\//, "")],
+        ];
+        for (let i = 0; i < relays.length; i++) {
+          const [name, build] = relays[i];
+          try {
+            say(`Fetching that page&hellip; <span style="opacity:.6">(${name})</span>`);
+            const ctl = typeof AbortController === "function" ? new AbortController() : null;
+            const timer = ctl ? setTimeout(() => ctl.abort(), 12000) : null;
+            const r = await fetch(build(url), ctl ? { signal: ctl.signal, redirect: "follow" } : {});
+            if (timer) clearTimeout(timer);
+            if (!r.ok) { relayLog.push(name + " " + r.status); continue; }
+            const html = await r.text();
+            const parsed = readGolggSource(html);
+            if (parsed.ok) { d = parsed; d.source = "gol.gg"; break; }
+            relayLog.push(name + " " + (html.length < 400 ? "empty reply" : "no scoreboard"));
+            d = parsed;
+          } catch (e) {
+            relayLog.push(name + " " + (e && e.name === "AbortError" ? "timed out" : "blocked"));
+          }
+        }
+      }
+      go.disabled = false;
+      if (!d) {
+        // Say what actually happened, and name the one cause that is both very
+        // common and completely invisible: a page opened straight off the disk
+        // has no web origin, and the relay services refuse those requests.
+        const isFile = location.protocol === "file:";
+        say((isFile
+              ? "<b>This page is opened straight from the folder</b> (the address starts "
+                + "<b>file:///</b>), and relay services refuse requests from a page with no web "
+                + "address. That is what blocked it, not your link.<br>"
+                + "Open <b>https://captainkar.github.io/Scry/</b> instead and paste the link there "
+                + "&mdash; or run <b>Scry Live.bat</b> and use <b>http://localhost:8777</b>."
+              : "<b>Could not reach that page.</b> Every relay refused: "
+                + "<span style=\"opacity:.75\">" + (relayLog.join(", ") || "no response") + "</span>. "
+                + "They may be blocked on your network, or by an ad-blocker or privacy extension.")
+          + "<br><span style=\"opacity:.8\">Always works, no network needed: open the match page, "
+          + "press <b>Ctrl+U</b>, then <b>Ctrl+A</b> and <b>Ctrl+C</b>, and paste that into this box.</span>", true);
+        return;
+      }
+    }
+    if (!d.ok) {
+      say("<b>Could not import.</b> " + d.reason + (d.hint ? " " + d.hint : ""), true);
+      return;
+    }
+    const blue = d.blue.map(resolve), red = d.red.map(resolve);
+    const missing = d.blue.concat(d.red).filter((x, i) => !blue.concat(red)[i]);
+    say(`Read <b>10</b> champions from <b>${d.source}</b>. Check them before applying.`);
+    prev.innerHTML = `<div class="imp-card">
+      <div class="imp-rows">
+        <span class="imp-h"></span><span class="imp-h" style="color:var(--blue-main)">BLUE</span><span class="imp-h" style="color:var(--red-main)">RED</span>
+        ${ROLES.map((role, i) => `<span class="imp-r">${role.toUpperCase()}</span>
+          <span class="imp-c ${blue[i] ? "b" : "miss"}">${blue[i] || "not in roster: " + d.blue[i]}</span>
+          <span class="imp-c ${red[i] ? "r" : "miss"}">${red[i] || "not in roster: " + d.red[i]}</span>`).join("")}
+      </div>
+      <div class="imp-apply">
+        <button type="button" class="imp-yes" id="imp-yes">USE THIS DRAFT</button>
+        <button type="button" class="imp-no" id="imp-no">CANCEL</button>
+        <span class="imp-note">gol.gg lists blue side first &mdash; swap the sides afterwards if it is the other way round.</span>
+      </div>
+    </div>`;
+    document.getElementById("imp-yes").onclick = () => {
+      state.blue = blue.map((x) => x || "");
+      state.red = red.map((x) => x || "");
+      syncPicksToInputs(); recompute(); savePicks();
+      prev.innerHTML = ""; say("Draft loaded.");
+    };
+    document.getElementById("imp-no").onclick = () => { prev.innerHTML = ""; say(""); };
+  }
+  go.addEventListener("click", run);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+}
+
 function recompute() {
   wireRadarAxes();
   radarMagnifier();
   wireTabExtras();
+  // These two were written and wired to nothing: an earlier edit appended them
+  // with a string replace whose anchor never matched, so neither ever ran and
+  // the IMPORT button had no click listener at all. Both are idempotent -- they
+  // guard on their own flag -- so calling them on every recompute is safe and
+  // means they cannot be missed again.
+  initLiveGame();
+  initImport();
   const result = engine.computeMatchup(state.blue, state.red);
 
   renderHeader("blue");
@@ -5588,21 +6062,36 @@ function recompute() {
   animateWinProb(blueWpEl, prevBlue, result.winProbBlue);
   animateWinProb(redWpEl, prevRed, result.winProbRed);
   document.getElementById("margin-val").textContent = "±" + fmtNum(result.margin, 2) + "%";
+  // Flag the leading card so the styling answers "who is ahead" before the
+  // number is read.
+  (function () {
+    const b = document.getElementById("winprob-blue"), r = document.getElementById("winprob-red");
+    if (!b || !r) return;
+    const bc = b.closest(".winprob-card"), rc = r.closest(".winprob-card");
+    const lead = result.winProbBlue - 50;
+    if (bc) bc.classList.toggle("ahead", lead > 0.15);
+    if (rc) rc.classList.toggle("ahead", lead < -0.15);
+    const sf = document.getElementById("wp-scale-fill"), sm = document.getElementById("wp-scale-mark");
+    if (sf) sf.style.width = result.winProbBlue.toFixed(2) + "%";
+    if (sm) sm.style.left = result.winProbBlue.toFixed(2) + "%";
+    const lb = document.getElementById("wp-lead-blue"), lr = document.getElementById("wp-lead-red");
+    const gap = Math.abs(lead).toFixed(2);
+    if (lb) lb.textContent = lead > 0.15 ? "+" + gap + " AHEAD" : "";
+    if (lr) lr.textContent = lead < -0.15 ? "+" + gap + " AHEAD" : "";
+  })();
 
   renderSynergyNotes("synergy-blue", result.blueSynergyNotes);
   renderSynergyNotes("synergy-red", result.redSynergyNotes);
 
-  const blueLeads = result.winProbBlue >= result.winProbRed;
-  blueWpEl.classList.toggle("leading", blueLeads);
-  redWpEl.classList.toggle("leading", !blueLeads);
-  blueCard.classList.toggle("leading", blueLeads);
-  redCard.classList.toggle("leading", !blueLeads);
-
+  // A short pop on the number when the draft changes, so a recompute is
+  // visible without the card animating its own transform (which is what the
+  // retired `surge`/`leading` pair used to do, fighting the `ahead` state).
   if (blueChanged) {
-    [blueCard, redCard].forEach((el) => {
-      el.classList.remove("surge");
+    [blueWpEl, redWpEl].forEach((el) => {
+      if (!el) return;
+      el.classList.remove("pop");
       void el.offsetWidth;
-      el.classList.add("surge");
+      el.classList.add("pop");
     });
   }
 
@@ -6001,23 +6490,6 @@ function renderFightReadout(fc, curve, t) {
           }).join("")
         : `<div class="fr-ev quiet"><span class="fr-en">Nothing scheduled at this minute &mdash; farm, reset, and set up the next objective.</span></div>`}
     </div>
-    <div class="fr-lanes">
-      <div class="fr-lk">MAP AT MINUTE ${t}</div>
-      <div class="fr-lrow">${(function () {
-        const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
-        const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
-        return ROLES.map((role, i) => {
-          const v = riftLaneControl(bC, rC, i, t);
-          const lab = { Top: "TOP", Jungle: "JG", Mid: "MID", ADC: "BOT", Support: "SUP" }[role] || role;
-          return `<div class="fr-lane" title="${role}: ${v.toFixed(0)}% Blue">
-            <div class="fr-ll">${lab}</div>
-            <div class="fr-lt"><div class="fr-lb" style="height:${v.toFixed(0)}%"></div></div>
-            <div class="fr-lv" style="color:${v >= 50 ? "#9bdcff" : "#ffb3b2"}">${v.toFixed(0)}</div>
-          </div>`;
-        }).join("");
-      })()}</div>
-      <div class="fr-ln">Each column is who owns that lane at this exact minute, from both champions&rsquo; own power curves. Blue fills from the bottom.</div>
-    </div>
     <div class="fr-foot">Fight pressure is a model of game rhythm from objective timers, level and item spikes, and how much these two drafts can commit to a fight. It is not a prediction of a specific game. <b id="fr-pin-note"></b></div>`;
 }
 
@@ -6215,10 +6687,66 @@ function buildTeamRadar(profiles) {
     hits += `<path class="tr-hit" data-ax="${i}" d="${d}" fill="transparent"/>`;
   });
 
+  // Pulse rings leaving the centre, matching the table charts. Three of them on
+  // a staggered loop, so both sizes of this instrument behave the same way.
+  grid += `<g class="tr-rings">${[0, 1, 2].map((k) =>
+    `<circle class="tr-ring-pulse" cx="${cx}" cy="${cy}" r="${maxR}" fill="none"
+      stroke="rgba(212,175,90,0.5)" stroke-width="${1.5 - k * 0.25}" style="animation-delay:${k * 1.4}s"/>`).join("")}</g>`;
   // Slow gold sweep around the rim so the chart keeps a pulse after it settles.
   grid += `<g class="tr-sweep" style="--rc:${cx}px ${cy}px">
     <path d="M ${cx} ${cy - maxR - 12} A ${maxR + 12} ${maxR + 12} 0 0 1 ${cx + (maxR + 12) * Math.cos(-Math.PI / 2 + 0.7)} ${cy + (maxR + 12) * Math.sin(-Math.PI / 2 + 0.7)}"
       fill="none" stroke="url(#trSweepG)" stroke-width="2" stroke-linecap="round"/></g>`;
+  // The big radar gets the same wedge-built heat field as the table charts, so
+  // the two read as the same instrument at two sizes rather than as two
+  // different charts that happen to both be radars.
+  const bigHeat = (prof, red) => {
+    const axV = AX.map((ax) => {
+      const f = prof.find((p) => p.key === ax.k);
+      return Math.max(0, Math.min(10, f ? f.v : 0));
+    });
+    const hOf = (v) => {
+      const stops = red
+        ? [[0, 42, 14, 26], [3.5, 96, 30, 44], [5.5, 168, 52, 60], [7, 232, 88, 76], [8.5, 255, 146, 96], [10, 255, 216, 176]]
+        : [[0, 12, 34, 68], [3.5, 24, 78, 132], [5.5, 42, 132, 186], [7, 79, 186, 232], [8.5, 128, 222, 250], [10, 224, 248, 255]];
+      const x = Math.max(0, Math.min(10, v));
+      let a = stops[0], b = stops[stops.length - 1];
+      for (let s = 0; s < stops.length - 1; s++) if (x >= stops[s][0] && x <= stops[s + 1][0]) { a = stops[s]; b = stops[s + 1]; break; }
+      const f = b[0] === a[0] ? 0 : (x - a[0]) / (b[0] - a[0]);
+      return `rgb(${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)},${Math.round(a[3] + (b[3] - a[3]) * f)})`;
+    };
+    const N2 = n, WED = 128, BND = 7;
+    let s = "";
+    for (let k = 0; k < WED; k++) {
+      const f0 = k / WED, f1 = (k + 1) / WED;
+      const at = (f) => {
+        const g = f * N2, i0 = Math.floor(g) % N2, i1 = (i0 + 1) % N2, kk = g - Math.floor(g);
+        const e = kk * kk * (3 - 2 * kk);
+        return axV[i0] + (axV[i1] - axV[i0]) * e;
+      };
+      const vm = at((f0 + f1) / 2), col2 = hOf(vm);
+      const wa0 = a0 + f0 * Math.PI * 2, wa1 = a0 + f1 * Math.PI * 2;
+      const r0 = (at(f0) / 10) * maxR, r1 = (at(f1) / 10) * maxR;
+      for (let bd = 0; bd < BND; bd++) {
+        const lo = bd / BND, hi = (bd + 1) / BND;
+        const q1 = [cx + r0 * lo * Math.cos(wa0), cy + r0 * lo * Math.sin(wa0)];
+        const q2 = [cx + r0 * hi * Math.cos(wa0), cy + r0 * hi * Math.sin(wa0)];
+        const q3 = [cx + r1 * hi * Math.cos(wa1), cy + r1 * hi * Math.sin(wa1)];
+        const q4 = [cx + r1 * lo * Math.cos(wa1), cy + r1 * lo * Math.sin(wa1)];
+        // Identical curve to the table charts -- same exponent, same floor, same
+        // ceiling. The two were 0.80/0.36 against 0.86/0.38, which is invisible
+        // in isolation and obvious when you look from one to the other.
+        const op = (0.010 + 0.52 * Math.pow(hi, 2.4)) * (0.34 + 0.66 * (vm / 10));
+        s += `<polygon points="${q1[0].toFixed(1)},${q1[1].toFixed(1)} ${q2[0].toFixed(1)},${q2[1].toFixed(1)} ${q3[0].toFixed(1)},${q3[1].toFixed(1)} ${q4[0].toFixed(1)},${q4[1].toFixed(1)}" fill="${col2}" fill-opacity="${op.toFixed(3)}" stroke="none"/>`;
+      }
+    }
+    // Both teams' fields are drawn on the same chart, so the second one cannot
+    // simply sit on top of the first. `screen` blending adds light instead of
+    // replacing it: where blue and red overlap the result is brighter than
+    // either, and where only one team reaches, that team's colour survives at
+    // full strength. Opacity comes down to match -- additive blending needs far
+    // less of it to read.
+    return `<g class="tr-heat${red ? " r" : " b"}">${s}</g>`;
+  };
   const poly = (prof, col, delay) => {
     const pts = AX.map((ax, i) => {
       const f = prof.find((p) => p.key === ax.k);
@@ -6226,7 +6754,8 @@ function buildTeamRadar(profiles) {
       return pt(i, (v / 10) * maxR).join(",");
     }).join(" ");
     const gid = col === "#ff6b6a" ? "trFillR" : "trFillB";
-    return `<polygon class="tr-poly" style="animation-delay:${delay}ms" points="${pts}" fill="url(#${gid})" stroke="${col}" stroke-width="2.6" stroke-linejoin="round" filter="url(#trGlow)"/>`
+    return bigHeat(prof, col === "#ff6b6a")
+      + `<polygon class="tr-poly" style="animation-delay:${delay}ms" points="${pts}" fill="url(#${gid})" stroke="${col}" stroke-width="2.6" stroke-linejoin="round" filter="url(#trGlow)"/>`
       + AX.map((ax, i) => {
           const f = prof.find((p) => p.key === ax.k);
           const v = Math.max(0, Math.min(10, f ? f.v : 0));
@@ -6236,7 +6765,7 @@ function buildTeamRadar(profiles) {
   };
   // profiles.red may be omitted (the champion modal shows a single profile) --
   // drawing a zeroed polygon would leave a dot at the centre.
-  return `<svg viewBox="0 0 ${S} ${S}" class="radar-svg big">
+  return `<svg viewBox="0 0 ${S} ${S}" class="radar-svg big" style="--ox:${cx}px;--oy:${cy}px">
     <defs>
       <linearGradient id="trSweepG" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="rgba(212,175,90,0)"/>
@@ -6244,24 +6773,25 @@ function buildTeamRadar(profiles) {
         <stop offset="1" stop-color="rgba(243,226,184,0)"/>
       </linearGradient>
       <radialGradient id="trFillB" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
-        <stop offset="0" stop-color="#4fc3f7" stop-opacity="0.44"/>
-        <stop offset="0.6" stop-color="#4fc3f7" stop-opacity="0.20"/>
-        <stop offset="1" stop-color="#4fc3f7" stop-opacity="0.06"/>
+        <stop offset="0" stop-color="#4fc3f7" stop-opacity="0.03"/>
+        <stop offset="0.55" stop-color="#4fc3f7" stop-opacity="0.15"/>
+        <stop offset="1" stop-color="#4fc3f7" stop-opacity="0.40"/>
       </radialGradient>
       <radialGradient id="trFillR" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
-        <stop offset="0" stop-color="#ff6b6a" stop-opacity="0.44"/>
-        <stop offset="0.6" stop-color="#ff6b6a" stop-opacity="0.20"/>
-        <stop offset="1" stop-color="#ff6b6a" stop-opacity="0.06"/>
+        <stop offset="0" stop-color="#ff6b6a" stop-opacity="0.03"/>
+        <stop offset="0.55" stop-color="#ff6b6a" stop-opacity="0.15"/>
+        <stop offset="1" stop-color="#ff6b6a" stop-opacity="0.40"/>
       </radialGradient>
-      <radialGradient id="trCore" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR * 0.75}">
-        <stop offset="0" stop-color="rgba(212,175,90,0.16)"/>
-        <stop offset="1" stop-color="rgba(212,175,90,0)"/>
+      <radialGradient id="trCore" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
+        <stop offset="0" stop-color="rgba(212,175,90,0)"/>
+        <stop offset="0.72" stop-color="rgba(212,175,90,0.04)"/>
+        <stop offset="1" stop-color="rgba(212,175,90,0.13)"/>
       </radialGradient>
       <filter id="trGlow" x="-30%" y="-30%" width="160%" height="160%">
         <feGaussianBlur stdDeviation="3.2" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
-    </defs><circle cx="${cx}" cy="${cy}" r="${maxR * 0.75}" fill="url(#trCore)"/>${wedges}${grid}
+    </defs><circle cx="${cx}" cy="${cy}" r="${maxR}" fill="url(#trCore)"/>${wedges}${grid}
     ${profiles.red ? poly(profiles.red, "#ff6b6a", 260) : ""}
     ${profiles.blue ? poly(profiles.blue, profiles.soloColor || "#4fc3f7", 140) : ""}${hits}</svg>`;
 }
@@ -6596,19 +7126,139 @@ function renderPhaseModal(result) {
   }
 
 
-  // --- Rift map ----------------------------------------------------------
-  const riftStage = document.getElementById("rift-stage");
-  if (riftStage) {
-    window.__riftResult = result;
-    const anyPick = state.blue.some(Boolean) || state.red.some(Boolean);
-    if (!anyPick) {
-      riftStage.innerHTML = '<div class="swap-none" style="padding:60px 0">Pick some champions to see the draft on the map.</div>';
-      document.getElementById("rift-read").innerHTML = "";
-      document.getElementById("rift-control").innerHTML = "";
-      document.getElementById("rift-verdict").innerHTML = "";
+
+
+
+  // --- Timeline: the three phases, above the chart -----------------------
+  // The chart shows every minute; this shows the three stretches a coach
+  // actually plans around, each with its own sparkline so the SHAPE of that
+  // phase is readable before the chart is studied.
+  const tlHost = document.getElementById("tl-phases");
+  if (tlHost) {
+    const pts = (result.curve && result.curve.points) || [];
+    if (!pts.length) { tlHost.innerHTML = ""; }
+    else {
+      const PH = [
+        { k: "EARLY", a: 0, b: 14, n: "lane phase, first drakes" },
+        { k: "MID", a: 15, b: 27, n: "grouping, Herald and Baron setup" },
+        { k: "LATE", a: 28, b: GAME_END_MIN, n: "soul, Elder, one fight decides it" },
+      ];
+      tlHost.innerHTML = PH.map((ph, i) => {
+        const seg = pts.slice(ph.a, ph.b + 1);
+        if (!seg.length) return "";
+        const avg = seg.reduce((s, p) => s + p.blue, 0) / seg.length;
+        const lead = avg >= 50;
+        const w = 120, h = 16;
+        const lo = Math.min(...seg.map((p) => p.blue)), hi = Math.max(...seg.map((p) => p.blue));
+        const sp = Math.max(1.2, hi - lo);
+        const d = seg.map((p, k) => `${((k / (seg.length - 1 || 1)) * w).toFixed(1)},${(h - ((p.blue - lo) / sp) * h).toFixed(1)}`).join(" L ");
+        const col = lead ? "#4fc3f7" : "#ff6b6a";
+        return `<div class="tl-ph lead ${lead ? "b" : "r"}" style="animation-delay:${stg(i, 140, 95)}ms">
+          <div class="tl-pk">${ph.k} &middot; ${ph.a}&ndash;${ph.b} MIN</div>
+          <div class="tl-pv" style="color:${col}">${(lead ? avg : 100 - avg).toFixed(1)}%<span style="font-size:9px;font-weight:800;letter-spacing:1px;margin-left:5px;color:var(--ink-dim)">${lead ? "BLUE" : "RED"}</span></div>
+          <div class="tl-pn">${ph.n}</div>
+          <svg class="tl-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+            <path d="M ${d}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+          </svg>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  // --- Game Plan: the clash strip ----------------------------------------
+  // Each side's plan drawn on one game-length axis, so the minutes where BOTH
+  // drafts want to force something are visible as an overlap rather than
+  // inferred from two separate paragraphs.
+  const gpClash = document.getElementById("gp-clash");
+  if (gpClash) {
+    const cw = result.curve;
+    const winB = (result.winConditions && result.winConditions.blue) || null;
+    const winR = (result.winConditions && result.winConditions.red) || null;
+    const arch = result.archetypes || {};
+    // Window = the stretch of the game where that side's curve is above 50.
+    const win = (side) => {
+      if (!cw || !cw.points) return [0, GAME_END_MIN];
+      const ok = cw.points.map((p, i) => ({ i, on: side === "blue" ? p.blue >= 50 : p.red > 50 })).filter((x) => x.on);
+      if (!ok.length) return null;
+      let best = { a: ok[0].i, b: ok[0].i }, cur = { a: ok[0].i, b: ok[0].i };
+      for (let k = 1; k < ok.length; k++) {
+        if (ok[k].i === ok[k - 1].i + 1) cur.b = ok[k].i;
+        else { if (cur.b - cur.a > best.b - best.a) best = { ...cur }; cur = { a: ok[k].i, b: ok[k].i }; }
+      }
+      if (cur.b - cur.a > best.b - best.a) best = { ...cur };
+      return [best.a, best.b];
+    };
+    const wb = win("blue"), wr = win("red");
+    const pct = (t) => (t / GAME_END_MIN) * 100;
+    const nameOf = (side) => {
+      const a = arch[side];
+      return a && a.length ? a.slice().sort((x, y) => y.v - x.v)[0].key.toUpperCase() : side.toUpperCase();
+    };
+    const band = (w, cls, label) => w
+      ? `<div class="gc-band ${cls}" style="left:${pct(w[0]).toFixed(1)}%;width:${Math.max(6, pct(w[1] - w[0])).toFixed(1)}%">${label} &middot; ${w[0]}&ndash;${w[1]} min</div>`
+      : `<div class="gc-band ${cls}" style="left:0;width:6%;opacity:.4">no window</div>`;
+    // overlap = both sides contesting the same minutes
+    let ov = null;
+    if (wb && wr) { const a = Math.max(wb[0], wr[0]), b = Math.min(wb[1], wr[1]); if (b > a) ov = [a, b]; }
+    gpClash.innerHTML = `<div class="gp-clash">
+      ${[10, 20, 30, 40].map((t) => `<div class="gc-tick" style="left:${pct(t)}%"></div>`).join("")}
+      ${ov ? `<div class="gc-clash" style="left:${pct(ov[0]).toFixed(1)}%;width:${pct(ov[1] - ov[0]).toFixed(1)}%"></div>
+              <div class="gc-lab" style="left:${pct(ov[0]).toFixed(1)}%">CONTESTED ${ov[0]}&ndash;${ov[1]}</div>` : ""}
+      ${band(wb, "b", "BLUE &mdash; " + nameOf("blue"))}
+      ${band(wr, "r", "RED &mdash; " + nameOf("red"))}
+      <div class="gc-axis"><span>0 min</span><span>20</span><span>${GAME_END_MIN} min</span></div>
+    </div>
+    <div class="adv-note">${ov
+      ? `Both drafts are favoured somewhere between <b>minute ${ov[0]} and ${ov[1]}</b>. That overlap is where the game is decided &mdash; neither side can afford to concede it.`
+      : wb && wr
+        ? `The two windows do not overlap: ${wb[0] < wr[0] ? "Blue" : "Red"} has to close the game before the other side's window opens.`
+        : "One side is favoured for the whole game; there is no window to trade."}</div>`;
+  }
+
+  // --- Advisor: the fight diagram -----------------------------------------
+  const fightHost = document.getElementById("adv-fight");
+  if (fightHost) {
+    const pr = result.protection || {};
+    if (!pr.blue || !pr.red) {
+      fightHost.innerHTML = '<div class="swap-none">Both sides need at least one pick.</div>';
     } else {
-      paintRift(window.__riftT == null ? 15 : window.__riftT);
-      wireRift();
+      const chip = (side, ch, other) => {
+        if (!ch) return "";
+        // exposure: damage that cannot save itself. threat: can reach it.
+        const exp = (ch.DMG / 10) * ((10 - ch.Mobility) / 10);
+        const thr = (ch.Mobility * 0.5 + ch.DMG * 0.5) / 10;
+        const prot = (ch.Peel || 0) / 10;
+        const kind = prot >= 0.8 ? "protector" : exp >= 0.5 ? "exposed" : thr >= 0.82 ? "threat" : "";
+        const tag = kind === "protector" ? "PROTECTS" : kind === "exposed" ? "EXPOSED" : kind === "threat" ? "DIVES" : "";
+        const tone = kind === "protector" ? "#7fe0a0" : kind === "exposed" ? "#ff8a89" : kind === "threat" ? "#ff9a5c" : "var(--ink-dim)";
+        const w = Math.round(Math.max(exp, thr, prot) * 100);
+        return `<div class="fc ${kind}" title="${ch.name}">
+          <span class="fc-n" style="color:${side === "blue" ? "var(--blue-main)" : "var(--red-main)"}">${ch.name}</span>
+          <span class="fc-t" style="color:${tone}">${tag}</span>
+          <span class="fc-bar" style="width:${w}%;background:${tone};opacity:.55"></span>
+        </div>`;
+      };
+      const bC = state.blue.map((n) => (n ? engine.findChampion(n) : null));
+      const rC = state.red.map((n) => (n ? engine.findChampion(n) : null));
+      fightHost.innerHTML = `<div class="fight-wrap">
+        <div class="fight-side">${bC.map((ch, i) => chip("blue", ch, rC[i])).join("")}</div>
+        <div class="fight-mid">
+          <div class="fm-lab">RED<br/>REACHES</div>
+          <div class="fm-arrow">&#10096;&#10096;</div>
+          <div class="fm-lab">BLUE<br/>REACHES</div>
+          <div class="fm-arrow" style="animation-direction:reverse">&#10097;&#10097;</div>
+        </div>
+        <div class="fight-side">${rC.map((ch, i) => chip("red", ch, bC[i])).join("")}</div>
+      </div>
+      <div class="fight-verdict">
+        Blue must keep <b>${pr.blue.weakest}</b> alive and <b>${pr.blue.best}</b> is who does it;
+        Red is bringing <b>${pr.red.dive.toFixed(1)}/10</b> of dive at them.
+        Red must keep <b>${pr.red.weakest}</b> alive and <b>${pr.red.best}</b> is who does it;
+        Blue is bringing <b>${pr.blue.dive.toFixed(1)}/10</b>.
+        ${pr.blue.risk > pr.red.risk + 0.7 ? " On balance <b>Blue&rsquo;s carry is the easier one to reach</b>, so Blue is the side that has to fight on its own terms."
+          : pr.red.risk > pr.blue.risk + 0.7 ? " On balance <b>Red&rsquo;s carry is the easier one to reach</b>, so Red is the side that has to fight on its own terms."
+          : " Neither carry is meaningfully easier to reach than the other."}
+      </div>`;
     }
   }
 
@@ -7030,7 +7680,9 @@ function renderChampModal(rep) {
     const me = rep.stats, them = cmp.champ;
     let wins = 0, losses = 0;
     const rows = KEYS.map((k, i) => {
-      const a = me[k[0]], b = them[k[0]], d = a - b;
+      const a = me[k[0]], b = them[k[0]];
+      if (typeof a !== "number" || typeof b !== "number") return "";
+      const d = a - b;
       if (d > 0) wins++; else if (d < 0) losses++;
       const tot = (a + b) || 1;
       return `<div class="cs-row" style="animation-delay:${stg(i, 140, 58)}ms">
