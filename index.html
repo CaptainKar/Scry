@@ -5864,9 +5864,8 @@ function initImport() {
     // tried FIRST, because it needs nothing at all -- no helper, no server, no
     // network -- and therefore cannot fail for reasons outside this page.
     const looksLikeSource = /champions_icon\/|player-stats\//i.test(raw);
-    // Refuse the JavaScript-rendered sites up front rather than fetching them
-    // and reporting a confusing "0 rows": their HTML genuinely has no
-    // champions in it, so no relay and no helper can help.
+    // Sites whose pages are built in the browser: their HTML genuinely has no
+    // champions in it, so neither a relay nor the helper can read them.
     const JS_ONLY = { "op.gg": 1, "u.gg": 1, "your.gg": 1, "mobalytics.gg": 1, "porofessor.gg": 1 };
     if (!looksLikeSource) {
       const host = (raw.match(/^https?:\/\/([^/]+)/i) || [])[1] || "";
@@ -5886,6 +5885,29 @@ function initImport() {
       go.disabled = false;
     } else {
       const url = raw.split(/\s+/)[0];
+      // Check the link BEFORE spending half a minute on it. Six relays were
+      // being fired at whatever was in the box -- including, once, the address
+      // of this page itself -- and the only feedback was six failures forty
+      // seconds later. A link that cannot possibly work should be rejected
+      // instantly and by name.
+      const mHost = url.match(/^https?:\/\/([^/]+)/i);
+      const uHost = mHost ? mHost[1].replace(/^www\./, "").toLowerCase() : "";
+      if (uHost && !uHost.endsWith("gol.gg") && !Object.keys(JS_ONLY).some((k) => uHost.endsWith(k))) {
+        const self = uHost === location.hostname.replace(/^www\./, "").toLowerCase();
+        say(self
+          ? "<b>That is the address of this page.</b> Paste the link to the <b>gol.gg match</b> you "
+            + "want to load &mdash; open the game on gol.gg and copy the address from your browser. "
+            + "It looks like <span style=\"opacity:.75\">gol.gg/game/stats/<b>82693</b>/page-game/</span>."
+          : "<b>" + uHost + " is not a match page this can read.</b> Only <b>gol.gg</b> game pages work "
+            + "&mdash; their address ends in <b>/page-game/</b>.", true);
+        return;
+      }
+      if (uHost.endsWith("gol.gg") && !/\/page-game\/?/i.test(url)) {
+        say("<b>That is a gol.gg link, but not a game page.</b> Open the specific game and copy the "
+          + "address then &mdash; it ends in <b>/page-game/</b>. A preview or summary page has no "
+          + "scoreboard on it to read.", true);
+        return;
+      }
       if (!/^https?:\/\//i.test(url)) {
         say("That does not look like a link. Copy the address of a <b>gol.gg</b> match page "
           + "&mdash; it ends in <b>/page-game/</b> &mdash; and paste it here.", true);
