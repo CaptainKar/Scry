@@ -5973,9 +5973,15 @@ function initImport() {
                 + "address. That is what blocked it, not your link.<br>"
                 + "Open <b>https://captainkar.github.io/Scry/</b> instead and paste the link there "
                 + "&mdash; or run <b>Scry Live.bat</b> and use <b>http://localhost:8777</b>."
-              : "<b>Could not reach that page.</b> Every relay refused: "
-                + "<span style=\"opacity:.75\">" + (relayLog.join(", ") || "no response") + "</span>. "
-                + "They may be blocked on your network, or by an ad-blocker or privacy extension.")
+              : "<b>The relays could not fetch that page.</b> "
+                + "<span style=\"opacity:.7\">" + (relayLog.join(", ") || "no response") + "</span>"
+                + "<br>gol.gg blocks these free relay services, so this works only when one of them "
+                + "happens to have the page cached &mdash; which is why one link succeeded and the "
+                + "next did not. It is not your link and not your network."
+                + "<br><b>For any page, every time:</b> double-click <b>Scry Live.bat</b> in your "
+                + "lol-analyzer-site folder and use <b>http://localhost:8777</b>. It fetches gol.gg "
+                + "straight from your PC with no relay in the way, and it now starts minimised "
+                + "&mdash; no window in your face.")
           + "<br><span style=\"opacity:.8\">Always works, no network needed: open the match page, "
           + "press <b>Ctrl+U</b>, then <b>Ctrl+A</b> and <b>Ctrl+C</b>, and paste that into this box.</span>", true);
         return;
