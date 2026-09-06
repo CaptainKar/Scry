@@ -2203,6 +2203,36 @@ table.stats tbody tr:hover .rd-ring { animation-duration: 1.9s; }
 .imp-msg:empty { display: none; }
 .imp-msg b { color: var(--gold-bright); }
 .imp-msg.bad { color: #ffb3b2; }
+/* ---- ONE-CLICK IMPORT (the bookmarklet) ----------------------------------
+   Presented as a thing you drag, because that is literally what you do with
+   it, and the drag target has to look like an object rather than a button --
+   a button invites a click, and clicking a bookmarklet on the page it came
+   from does nothing useful. */
+.imp-bm { grid-column: 1 / -1; margin-top: 3px; border-radius: 12px; padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(94,160,255,0.07), rgba(94,160,255,0.02));
+  border: 1px solid rgba(94,160,255,0.28); }
+.imp-bm-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.imp-bm-drag { display: inline-flex; align-items: center; gap: 7px; cursor: grab;
+  padding: 7px 13px; border-radius: 9px; text-decoration: none; white-space: nowrap;
+  font-size: 10px; font-weight: 800; letter-spacing: 1.1px; color: #0d1526;
+  background: linear-gradient(180deg, #ffd479, var(--gold-bright, #d4af5a));
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 3px 12px rgba(212,175,90,0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease; }
+.imp-bm-drag:hover { transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(212,175,90,0.5), inset 0 1px 0 rgba(255,255,255,0.6); }
+.imp-bm-drag:active { cursor: grabbing; transform: scale(0.98); }
+.imp-bm-drag svg { width: 12px; height: 12px; }
+.imp-bm-lede { font-size: 9.5px; line-height: 1.55; color: var(--ink-dim); flex: 1 1 190px; }
+.imp-bm-lede b { color: var(--gold-bright); }
+.imp-bm-steps { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.imp-bm-steps li { font-size: 9.5px; line-height: 1.5; color: var(--ink-dim);
+  display: grid; grid-template-columns: 15px 1fr; align-items: baseline; }
+.imp-bm-steps li::before { content: counter(bmstep); counter-increment: bmstep;
+  font-size: 8px; font-weight: 800; color: var(--gold-bright); }
+.imp-bm-steps { counter-reset: bmstep; }
+.imp-bm-note { margin-top: 7px; font-size: 9px; line-height: 1.5; color: rgba(255,255,255,0.42); }
+.imp-bm-note code { font-family: inherit; color: rgba(255,255,255,0.62); }
 .imp-preview { grid-column: 1 / -1; }
 .imp-preview:empty { display: none; }
 .imp-card { border-radius: 12px; padding: 10px 12px; margin-top: 2px;
@@ -2445,6 +2475,25 @@ textarea.imp-input:focus { height: 30px; }
     <textarea id="import-url" class="imp-input" spellcheck="false" rows="1"
       placeholder="Paste a gol.gg match link — or, from any other site, select the scoreboard, copy it, and paste it here"></textarea>
     <button type="button" class="imp-go" id="import-go">IMPORT</button>
+    <div class="imp-bm" id="import-bm">
+      <div class="imp-bm-top">
+        <a class="imp-bm-drag" id="bm-link" href="#" draggable="true" title="Drag me to your bookmarks bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          SCRY THIS MATCH
+        </a>
+        <div class="imp-bm-lede"><b>Works on every site &mdash; one click, no link needed.</b>
+          Drag that onto your bookmarks bar once. It reads the match you are looking at.</div>
+      </div>
+      <ol class="imp-bm-steps">
+        <li>Drag the gold button up to your bookmarks bar <span style="opacity:.6">(press <b>Ctrl+Shift+B</b> if you cannot see the bar)</span></li>
+        <li>Open any match on op.gg, u.gg, mobalytics, your.gg, blitz &mdash; anywhere</li>
+        <li>Click the bookmark. Scry opens with that draft already loaded.</li>
+      </ol>
+      <div class="imp-bm-note">It reads the champions off the page you can already see, so there is
+        nothing to fetch and nothing to be blocked &mdash; which is why it works where pasting a link
+        cannot.</div>
+    </div>
     <div class="imp-msg" id="import-msg"></div>
     <div class="imp-preview" id="import-preview"></div>
   </div>
@@ -5081,6 +5130,55 @@ function syncPicksToInputs() {
 // survived testing: jsdom starts with nothing in localStorage, so loadPicks()
 // returned null, restorePicks() bailed out early, and the assignment appeared
 // to work. On a real browser with a previous draft saved, it never did.
+// ---------------------------------------------------------------------------
+// DRAFT HANDED IN THROUGH THE URL
+//
+// This is what makes one-click import possible from sites that cannot be
+// fetched. A browser may not read op.gg's page, but a script running ON op.gg
+// may, and it can send what it found here in the address. That inverts the
+// problem: instead of Scry reaching out to a page it is not allowed to touch,
+// the page hands its draft over.
+//
+// The fragment (#draft=...) is used rather than a query string because a
+// fragment is never sent to the server -- it stays in the browser. GitHub Pages
+// logs would otherwise carry every draft anyone ever imported.
+//
+// Format:  #draft=a,b,c,d,e;f,g,h,i,j   -- semicolon separates the two sides
+//          #draft=a,b,c,d,e,f,g,h,i,j   -- ten in order, first five are blue
+// Names may be display names ("Lee Sin") or Riot icon keys ("LeeSin", "KSante"),
+// because a script scraping a page usually only has the icon filename.
+// ---------------------------------------------------------------------------
+function draftFromUrl() {
+  const m = (location.hash || "").match(/(?:^#|&)draft=([^&]+)/i);
+  if (!m) return null;
+  let raw;
+  try { raw = decodeURIComponent(m[1]); } catch (e) { raw = m[1]; }
+  const sides = raw.split(";");
+  const parse = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
+  let blue, red;
+  if (sides.length >= 2) { blue = parse(sides[0]); red = parse(sides[1]); }
+  else { const all = parse(raw); blue = all.slice(0, 5); red = all.slice(5, 10); }
+  if (blue.length !== 5 || red.length !== 5) return null;
+
+  // Resolve against the roster the same way the import preview does: icon key
+  // first (KSante, LeeSin, MonkeyKing), then display name.
+  // Both sides of the lookup are stripped to bare letters, so Kai'Sa, KaiSa and
+  // Kaisa all land on the same entry -- an icon filename never carries the
+  // punctuation the display name has.
+  const bare = (s) => String(s).toLowerCase().replace(/[^a-z]/g, "");
+  const byKey = {};
+  engine.CHAMPIONS().forEach((ch) => {
+    byKey[bare(ch.splashId)] = ch.name;
+    byKey[bare(ch.name)] = ch.name;
+  });
+  const fix = (n) => {
+    if (byKey[bare(n)]) return byKey[bare(n)];
+    const direct = engine.findChampion(n);
+    return direct ? direct.name : "";
+  };
+  return { blue: blue.map(fix), red: red.map(fix) };
+}
+
 function restorePicks() {
   const saved = loadPicks();
   if (!saved) return;
@@ -5723,6 +5821,8 @@ function initLiveGame() {
 // were wrong often enough to be removed entirely. A preview makes a bad read
 // something you decline rather than something you discover later.
 // ---------------------------------------------------------------------------
+const BOOKMARKLET = "!function(){var e=/champions?(?:[-_\\/]icons?)?\\/([A-Za-z][A-Za-z0-9'._-]*)\\.(?:png|jpe?g|webp|avif)/i,t=/^(?:none|default|unknown|placeholder)$/i;function n(n){var r=[n.getAttribute(\"src\"),n.getAttribute(\"data-src\"),n.currentSrc],i=\"\";try{i=window.getComputedStyle(n).backgroundImage||\"\"}catch(e){}r.push(i);for(var a=0;a<r.length;a++)if(r[a]){var l=String(r[a]).match(e);if(l&&!t.test(l[1]))return l[1]}return null}for(var r=[],i=document.querySelectorAll(\"img,[style*='champion'],[data-src*='champion']\"),a=0;a<i.length;a++){var l=n(i[a]);if(l){var o=i[a].getBoundingClientRect?i[a].getBoundingClientRect():{width:99,height:99};o.width<8||o.height<8||r.push({el:i[a],key:l,w:o.width})}}if(!(r.length<10)){var u=/summoner|profile|player|\\/users?\\//i,c=r.filter(function(e){for(var t=e.el,n=0;t&&n++<6&&(t=t.parentElement);){if(r.filter(function(e){return t.contains(e.el)}).length>1)return!1;for(var i=t.querySelectorAll?t.querySelectorAll(\"a[href]\"):[],a=0;a<i.length;a++){var l=i[a].getAttribute(\"href\")||\"\";if(u.test(l)&&!/\\/matches?\\//i.test(l))return!0}}return!1});if(c.length>=10)return g(h(s(c)||c));var f=s(r);return g(h(f||r))}function h(e){return e.slice(0,10).map(function(e){return e.key})}function s(e){for(var t=null,n=0;n<e.length;n++)for(var r=e[n].el,i=0;r&&i++<12&&(r=r.parentElement);){var a=e.filter(function(e){return r.contains(e.el)});if(a.length>=10){var l=(r.textContent||\"\").length;(!t||l<t.size)&&(t={size:l,list:a});break}}return t?t.list:null}function g(e){var t=\"__SCRY_URL__#draft=\"+encodeURIComponent(e.join(\",\"));window.open(t,\"_blank\")||(location.href=t)}alert(\"Scry: could not find a scoreboard on this page.\\n\\nFound \"+r.length+\" champion icons, and a draft needs 10.\\n\\nOpen the full match detail so all ten players are visible, then click this again.\")}();";
+
 function initImport() {
   if (window.__impInit) return;
   window.__impInit = true;
@@ -5841,7 +5941,25 @@ function initImport() {
       + "stopped &mdash; check the black window is still open, and restart <b>Scry Live.bat</b> if it closed.";
   }
 
-    const openBtn = document.getElementById("import-open");
+    // ---- the one-click bookmarklet -----------------------------------------
+  // Set as a property rather than in the markup: a javascript: URL written into
+  // HTML is stripped by some sanitizers and by a strict CSP, and it also has to
+  // carry this page's own address, which is only known at runtime.
+  const bmLink = document.getElementById("bm-link");
+  if (bmLink) {
+    const here = location.origin + location.pathname;
+    const body = BOOKMARKLET.replace(/__SCRY_URL__/g, here);
+    bmLink.href = "javascript:" + encodeURIComponent(body);
+    bmLink.addEventListener("click", (e) => {
+      // Clicking it here would scan Scry's own page, which has no scoreboard.
+      // Say what to do instead rather than letting it fail confusingly.
+      e.preventDefault();
+      say("<b>Drag it, do not click it.</b> Drag the gold button up onto your bookmarks bar "
+        + "&mdash; then click it while you are on a match page, not on this one.", true);
+    });
+  }
+
+  const openBtn = document.getElementById("import-open");
   // Checked on EVERY open, not cached at startup. Someone who opens the page,
   // realises they need the helper, starts it, and comes back would otherwise be
   // told forever that it is not running.
@@ -8086,7 +8204,34 @@ document.addEventListener("DOMContentLoaded", () => {
   renderHeader("blue");
   renderHeader("red");
   setupPickers();
-  restorePicks();
+  // A draft in the address wins over the saved one: arriving with a link that
+  // carries a draft is an explicit instruction, whereas the saved draft is just
+  // where you happened to leave off.
+  const fromUrl = draftFromUrl();
+  if (fromUrl) {
+    state.blue = fromUrl.blue;
+    state.red = fromUrl.red;
+    syncPicksToInputs();
+    savePicks();
+    // Clear it from the address so a refresh does not silently re-apply an old
+    // draft over whatever has been changed since.
+    if (window.history && history.replaceState) {
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+    const unknown = fromUrl.blue.concat(fromUrl.red).filter((x) => !x).length;
+    if (unknown) {
+      setTimeout(() => {
+        const m = document.getElementById("import-msg"), b = document.getElementById("import-bar");
+        if (!m || !b) return;
+        b.classList.add("on");
+        m.innerHTML = "<b>Loaded from the link, but " + unknown + " pick"
+          + (unknown === 1 ? " was" : "s were") + " not recognised.</b> Fill those in by hand.";
+        m.classList.add("bad");
+      }, 60);
+    }
+  } else {
+    restorePicks();
+  }
   recompute();
   // --- phase modal wiring ---
   const phaseModal = document.getElementById("phase-modal");
