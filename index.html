@@ -2246,13 +2246,19 @@ table.stats tbody tr:hover .rd-ring { animation-duration: 1.9s; }
 .imp-bm-lede { font-size: 9.5px; line-height: 1.55; color: var(--ink-dim); flex: 1 1 190px; }
 .imp-bm-lede b { color: var(--gold-bright); }
 .imp-bm-steps { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+/* Block + absolutely placed number: as a two-column grid, any inline element
+   inside a step (the Ctrl+Shift+B hint) became a third grid item and was
+   squeezed into the 15px number column, one word per line. */
 .imp-bm-steps li { font-size: 9.5px; line-height: 1.5; color: var(--ink-dim);
-  display: grid; grid-template-columns: 15px 1fr; align-items: baseline; }
+  display: block; position: relative; padding-left: 15px; }
 .imp-bm-steps li::before { content: counter(bmstep); counter-increment: bmstep;
-  font-size: 8px; font-weight: 800; color: var(--gold-bright); }
+  position: absolute; left: 0; top: 1px; font-size: 8px; font-weight: 800; color: var(--gold-bright); }
 .imp-bm-steps { counter-reset: bmstep; }
 .imp-bm-note { margin-top: 7px; font-size: 9px; line-height: 1.5; color: rgba(255,255,255,0.42); }
 .imp-bm-note code { font-family: inherit; color: rgba(255,255,255,0.62); }
+.imp-bm-new { margin-top: 7px; padding: 6px 9px; border-radius: 8px; font-size: 9px; line-height: 1.5;
+  color: var(--ink-dim); background: rgba(212,175,90,0.07); border: 1px solid rgba(212,175,90,0.22); }
+.imp-bm-new b { color: var(--gold-bright); }
 .imp-preview { grid-column: 1 / -1; }
 .imp-preview:empty { display: none; }
 .imp-card { border-radius: 12px; padding: 10px 12px; margin-top: 2px;
@@ -2571,6 +2577,11 @@ html[data-idle] #live-badge .lb-dot { animation-play-state: paused !important; }
       <div class="imp-bm-note">It reads the champions off the page you can already see, so there is
         nothing to fetch and nothing to be blocked &mdash; which is why it works where pasting a link
         cannot.</div>
+      <div class="imp-bm-new"><b>Updated for 26.20.</b> Now puts champions in the right lane even on
+        pick-order pages, reads sites that number their champion icons (leagueofgraphs, porofessor),
+        and falls back to reading names off the page text. <b>Already have the old one?</b> Drag this
+        button onto the bar again and delete the old bookmark &mdash; a bookmark keeps the code it was
+        saved with.</div>
     </div>
     <div class="imp-msg" id="import-msg"></div>
     <div class="imp-preview" id="import-preview"></div>
@@ -5245,6 +5256,52 @@ function syncPicksToInputs() {
 // Names may be display names ("Lee Sin") or Riot icon keys ("LeeSin", "KSante"),
 // because a script scraping a page usually only has the icon filename.
 // ---------------------------------------------------------------------------
+// Riot's numeric champion keys (Data Dragon "key"), for pages that name icon
+// files by number -- champion-icons/103.png is Ahri. The bookmarklet sends these
+// as "k103"; resolving them here keeps the bookmark itself small.
+const CHAMP_KEYS = {"1":"Annie","2":"Olaf","3":"Galio","4":"Twisted Fate","5":"Xin Zhao","6":"Urgot","7":"LeBlanc","8":"Vladimir","9":"Fiddlesticks","10":"Kayle","11":"Master Yi","12":"Alistar","13":"Ryze","14":"Sion","15":"Sivir","16":"Soraka","17":"Teemo","18":"Tristana","19":"Warwick","20":"Nunu & Willump","21":"Miss Fortune","22":"Ashe","23":"Tryndamere","24":"Jax","25":"Morgana","26":"Zilean","27":"Singed","28":"Evelynn","29":"Twitch","30":"Karthus","31":"Cho'Gath","32":"Amumu","33":"Rammus","34":"Anivia","35":"Shaco","36":"Dr. Mundo","37":"Sona","38":"Kassadin","39":"Irelia","40":"Janna","41":"Gangplank","42":"Corki","43":"Karma","44":"Taric","45":"Veigar","48":"Trundle","50":"Swain","51":"Caitlyn","53":"Blitzcrank","54":"Malphite","55":"Katarina","56":"Nocturne","57":"Maokai","58":"Renekton","59":"Jarvan IV","60":"Elise","61":"Orianna","62":"Wukong","63":"Brand","64":"Lee Sin","67":"Vayne","68":"Rumble","69":"Cassiopeia","72":"Skarner","74":"Heimerdinger","75":"Nasus","76":"Nidalee","77":"Udyr","78":"Poppy","79":"Gragas","80":"Pantheon","81":"Ezreal","82":"Mordekaiser","83":"Yorick","84":"Akali","85":"Kennen","86":"Garen","89":"Leona","90":"Malzahar","91":"Talon","92":"Riven","96":"Kog'Maw","98":"Shen","99":"Lux","101":"Xerath","102":"Shyvana","103":"Ahri","104":"Graves","105":"Fizz","106":"Volibear","107":"Rengar","110":"Varus","111":"Nautilus","112":"Viktor","113":"Sejuani","114":"Fiora","115":"Ziggs","117":"Lulu","119":"Draven","120":"Hecarim","121":"Kha'Zix","122":"Darius","126":"Jayce","127":"Lissandra","131":"Diana","133":"Quinn","134":"Syndra","136":"Aurelion Sol","141":"Kayn","142":"Zoe","143":"Zyra","145":"Kai'Sa","147":"Seraphine","150":"Gnar","154":"Zac","157":"Yasuo","161":"Vel'Koz","163":"Taliyah","164":"Camille","166":"Akshan","200":"Bel'Veth","201":"Braum","202":"Jhin","203":"Kindred","221":"Zeri","222":"Jinx","223":"Tahm Kench","233":"Briar","234":"Viego","235":"Senna","236":"Lucian","238":"Zed","240":"Kled","245":"Ekko","246":"Qiyana","254":"Vi","266":"Aatrox","267":"Nami","268":"Azir","350":"Yuumi","360":"Samira","412":"Thresh","420":"Illaoi","421":"Rek'Sai","427":"Ivern","429":"Kalista","432":"Bard","497":"Rakan","498":"Xayah","516":"Ornn","517":"Sylas","518":"Neeko","523":"Aphelios","526":"Rell","555":"Pyke","711":"Vex","777":"Yone","799":"Ambessa","800":"Mel","804":"Yunara","805":"Locke","875":"Sett","876":"Lillia","887":"Gwen","888":"Renata Glasc","893":"Aurora","895":"Nilah","897":"K'Sante","901":"Smolder","902":"Milio","904":"Zaahen","910":"Hwei","950":"Naafiri"};
+
+// ---------------------------------------------------------------------------
+// ROLE ORDER
+// A scraped or copied draft arrives in PAGE order. On a scoreboard that is role
+// order (top, jungle, mid, bot, support) -- but on a draft or pick-order page it
+// is the order the champions were picked, which drops Jinx into the top slot.
+// Try every arrangement of the five and keep the page's own order unless it is
+// clearly wrong: only re-order when another arrangement puts at least TWO more
+// champions on their main role. One champion off-role is normal (a flex pick
+// like Mel bot) and is respected; two or more off-role is the signature of pick
+// order. Ties go to the arrangement that moves the fewest champions.
+// ---------------------------------------------------------------------------
+// Two ways a page lists ten champions: team by team (5 blue, then 5 red), or
+// lane by lane with both teams on each row (blue top, red top, blue jungle...).
+// Read the wrong way, the second layout mixes the teams. Each reading is scored
+// by how many different main roles each team ends up with -- a real team covers
+// all five lanes -- and the lane-by-lane reading is only used when it is clearly
+// better (two or more more lanes covered), so ordinary scoreboards are untouched.
+function splitTeams(seq) {
+  const cov = (team) => new Set(team.map((n) => { const c = engine.findChampion(n); return c ? c.role : n; })).size;
+  const byTeam = [seq.slice(0, 5), seq.slice(5, 10)];
+  const byLane = [seq.filter((_, i) => i % 2 === 0), seq.filter((_, i) => i % 2 === 1)];
+  const s1 = cov(byTeam[0]) + cov(byTeam[1]), s2 = cov(byLane[0]) + cov(byLane[1]);
+  return s2 >= s1 + 2 ? byLane : byTeam;
+}
+
+function orderByRole(names) {
+  const champs = names.map((n) => (n ? engine.findChampion(n) : null));
+  if (champs.some((c) => !c) || champs.length !== 5) return names.slice();
+  const off = (p) => p.reduce((s, ci, slot) => s + (champs[ci].role === ROLES[slot] ? 0 : 1), 0);
+  const moved = (p) => p.reduce((s, ci, slot) => s + (ci === slot ? 0 : 1), 0);
+  const perms = [];
+  const build = (pre, rest) => { if (!rest.length) { perms.push(pre); return; }
+    rest.forEach((x, i) => build(pre.concat(x), rest.slice(0, i).concat(rest.slice(i + 1)))); };
+  build([], [0, 1, 2, 3, 4]);
+  let best = [0, 1, 2, 3, 4];
+  perms.forEach((p) => {
+    if (off(p) < off(best) || (off(p) === off(best) && moved(p) < moved(best))) best = p;
+  });
+  return off([0, 1, 2, 3, 4]) - off(best) >= 2 ? best.map((i) => names[i]) : names.slice();
+}
+
 function draftFromUrl() {
   const m = (location.hash || "").match(/(?:^#|&)draft=([^&]+)/i);
   if (!m) return null;
@@ -5269,11 +5326,13 @@ function draftFromUrl() {
     byKey[bare(ch.name)] = ch.name;
   });
   const fix = (n) => {
+    const num = String(n).match(/^k(\d{1,4})$/i);
+    if (num) return CHAMP_KEYS[num[1]] || "";
     if (byKey[bare(n)]) return byKey[bare(n)];
     const direct = engine.findChampion(n);
     return direct ? direct.name : "";
   };
-  return { blue: blue.map(fix), red: red.map(fix) };
+  return { blue: orderByRole(blue.map(fix)), red: orderByRole(red.map(fix)) };
 }
 
 function restorePicks() {
@@ -5946,7 +6005,8 @@ function initLiveGame() {
 // were wrong often enough to be removed entirely. A preview makes a bad read
 // something you decline rather than something you discover later.
 // ---------------------------------------------------------------------------
-const BOOKMARKLET = "!function(){var e=/champions?(?:[-_\\/]icons?)?\\/([A-Za-z][A-Za-z0-9'._-]*)\\.(?:png|jpe?g|webp|avif)/i,t=/^(?:none|default|unknown|placeholder)$/i;function n(n){var r=[n.getAttribute(\"src\"),n.getAttribute(\"data-src\"),n.currentSrc],i=\"\";try{i=window.getComputedStyle(n).backgroundImage||\"\"}catch(e){}r.push(i);for(var a=0;a<r.length;a++)if(r[a]){var l=String(r[a]).match(e);if(l&&!t.test(l[1]))return l[1]}return null}for(var r=[],i=document.querySelectorAll(\"img,[style*='champion'],[data-src*='champion']\"),a=0;a<i.length;a++){var l=n(i[a]);if(l){var o=i[a].getBoundingClientRect?i[a].getBoundingClientRect():{width:99,height:99};o.width<8||o.height<8||r.push({el:i[a],key:l,w:o.width})}}if(!(r.length<10)){var u=/summoner|profile|player|\\/users?\\//i,c=r.filter(function(e){for(var t=e.el,n=0;t&&n++<6&&(t=t.parentElement);){if(r.filter(function(e){return t.contains(e.el)}).length>1)return!1;for(var i=t.querySelectorAll?t.querySelectorAll(\"a[href]\"):[],a=0;a<i.length;a++){var l=i[a].getAttribute(\"href\")||\"\";if(u.test(l)&&!/\\/matches?\\//i.test(l))return!0}}return!1});if(c.length>=10)return g(h(s(c)||c));var f=s(r);return g(h(f||r))}function h(e){return e.slice(0,10).map(function(e){return e.key})}function s(e){for(var t=null,n=0;n<e.length;n++)for(var r=e[n].el,i=0;r&&i++<12&&(r=r.parentElement);){var a=e.filter(function(e){return r.contains(e.el)});if(a.length>=10){var l=(r.textContent||\"\").length;(!t||l<t.size)&&(t={size:l,list:a});break}}return t?t.list:null}function g(e){var t=\"__SCRY_URL__#draft=\"+encodeURIComponent(e.join(\",\"));window.open(t,\"_blank\")||(location.href=t)}alert(\"Scry: could not find a scoreboard on this page.\\n\\nFound \"+r.length+\" champion icons, and a draft needs 10.\\n\\nOpen the full match detail so all ten players are visible, then click this again.\")}();";
+// v2 (26.20): numeric icon keys, role-order correction in Scry, page-text fallback.
+const BOOKMARKLET = "!function(){var e=/champions?(?:[-_\\/]icons?)?\\/([A-Za-z][A-Za-z0-9'._-]*)\\.(?:png|jpe?g|webp|avif)/i,t=/champions?[^\"')\\s]*?\\/(\\d{1,4})\\.(?:png|jpe?g|webp|avif)/i,n=/^(?:none|default|unknown|placeholder)$/i;function r(r){var i=[r.getAttribute(\"src\"),r.getAttribute(\"data-src\"),r.currentSrc],o=\"\";try{o=window.getComputedStyle(r).backgroundImage||\"\"}catch(e){}i.push(o);for(var a=0;a<i.length;a++)if(i[a]){var l=String(i[a]).match(e);if(l&&!n.test(l[1]))return l[1];var c=String(i[a]).match(t);if(c&&+c[1]>0)return\"k\"+c[1]}return null}for(var i=[],o=document.querySelectorAll(\"img,[style*='champion'],[data-src*='champion']\"),a=0;a<o.length;a++){var l=r(o[a]);if(l){var c=o[a].getBoundingClientRect?o[a].getBoundingClientRect():{width:99,height:99};c.width<8||c.height<8||i.push({el:o[a],key:l,w:c.width})}}if(i.length<10){var u=String(window.getSelection?window.getSelection():\"\").trim(),f=document.body.innerText;if(!f){for(var h,g=document.createTreeWalker(document.body,4),d=[];h=g.nextNode();)/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(h.parentNode.nodeName)||d.push(h.nodeValue);f=d.join(\" \")}var s=(u.length>=20?u:f).replace(/\\s+/g,\" \");return s.length<20?void alert(\"Scry: could not find a scoreboard on this page.\\n\\nOpen the full match detail so all ten players are visible, then click this again.\"):b(\"#text=\"+encodeURIComponent(s.slice(0,2e4)))}function p(e){return e.slice(0,10).map(function(e){return e.key})}function v(e){for(var t=null,n=0;n<e.length;n++)for(var r=e[n].el,i=0;r&&i++<12&&(r=r.parentElement);){var o=e.filter(function(e){return r.contains(e.el)});if(o.length>=10){var a=(r.textContent||\"\").length;(!t||a<t.size)&&(t={size:a,list:o});break}}return t?t.list:null}var m=/summoner|profile|player|\\/users?\\//i,w=i.filter(function(e){for(var t=e.el,n=0;t&&n++<6&&(t=t.parentElement);){if(i.filter(function(e){return t.contains(e.el)}).length>1)return!1;for(var r=t.querySelectorAll?t.querySelectorAll(\"a[href]\"):[],o=0;o<r.length;o++){var a=r[o].getAttribute(\"href\")||\"\";if(m.test(a)&&!/\\/matches?\\//i.test(a))return!0}}return!1});if(w.length>=10)return y(p(v(w)||w));var S=v(i);return y(p(S||i));function y(e){b(\"#draft=\"+encodeURIComponent(e.join(\",\")))}function b(e){var t=\"__SCRY_URL__\"+e;window.open(t,\"_blank\")||(location.href=t)}}();";
 
 function initImport() {
   if (window.__impInit) return;
@@ -6038,7 +6098,8 @@ function initImport() {
         reason: "only found " + seq.length + " champion name" + (seq.length === 1 ? "" : "s") + " in that text.",
         hint: "Select the whole scoreboard &mdash; both teams, all ten rows &mdash; and copy that." };
     }
-    return { ok: true, blue: seq.slice(0, 5), red: seq.slice(5, 10),
+    const [tb, tr] = splitTeams(seq.slice(0, 10));
+    return { ok: true, blue: orderByRole(tb), red: orderByRole(tr),
       source: "copied text", extra: seq.length - 10 };
   }
 
@@ -8363,6 +8424,24 @@ document.addEventListener("DOMContentLoaded", () => {
     restorePicks();
   }
   recompute();
+  // Bookmarklet text fallback: the page had no readable champion icons, so it
+  // sent its visible text instead. Feed it through the same copied-text reader
+  // the import box uses, which always previews before anything is applied.
+  const tm = (location.hash || "").match(/(?:^#|&)text=([^&]*)/i);
+  if (tm) {
+    let txt = "";
+    try { txt = decodeURIComponent(tm[1]); } catch (e) { txt = ""; }
+    if (window.history && history.replaceState) history.replaceState(null, "", location.pathname + location.search);
+    setTimeout(() => {
+      const bar = document.getElementById("import-bar"), box = document.getElementById("import-url"),
+            go = document.getElementById("import-go"), openB = document.getElementById("import-open");
+      if (!bar || !box || !go || !txt) return;
+      bar.classList.add("on");
+      if (openB) openB.classList.add("open");
+      box.value = txt;
+      go.click();
+    }, 80);
+  }
   // --- phase modal wiring ---
   const phaseModal = document.getElementById("phase-modal");
   // Tabs. The ink bar slides between labels and the outgoing page leaves in the
